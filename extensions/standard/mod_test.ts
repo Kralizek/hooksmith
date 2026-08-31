@@ -30,7 +30,10 @@ const logger: Logger = {
 const context: Context = { log: logger };
 
 Deno.test("matches event and resource fields", async () => {
-  assertEquals(await eventType("page.published").evaluate(event, context), true);
+  assertEquals(
+    await eventType("page.published").evaluate(event, context),
+    true,
+  );
   assertEquals(await eventType("page.deleted").evaluate(event, context), false);
   assertEquals(await sourceKind("website").evaluate(event, context), true);
   assertEquals(await sourceId("example.com").evaluate(event, context), true);
@@ -53,7 +56,10 @@ Deno.test("composes conditions", async () => {
     ),
     true,
   );
-  assertEquals(await not(eventType("page.deleted")).evaluate(event, context), true);
+  assertEquals(
+    await not(eventType("page.deleted")).evaluate(event, context),
+    true,
+  );
 });
 
 Deno.test("condition composition short-circuits", async () => {

@@ -1,11 +1,5 @@
 import type { Config } from "@hooksmith/core";
-import {
-  any,
-  eventType,
-  logEvent,
-  not,
-  sourceKind,
-} from "@hooksmith/standard";
+import { any, eventType, logEvent, not, sourceKind } from "@hooksmith/standard";
 
 export default {
   routes: [

@@ -8,12 +8,7 @@ condition composition, and a simple event-logging listener.
 ## Conditions
 
 ```ts
-import {
-  all,
-  eventType,
-  sourceKind,
-  subjectKind,
-} from "@hooksmith/standard";
+import { all, eventType, sourceKind, subjectKind } from "@hooksmith/standard";
 
 const publishedWebPage = all(
   eventType("page.published"),

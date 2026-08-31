@@ -11,7 +11,10 @@ export function eventType<TEvent extends Event = Event>(
 export function sourceKind<TEvent extends Event = Event>(
   kind: string,
 ): Condition<TEvent> {
-  return condition(`source-kind:${kind}`, (event) => event.source.kind === kind);
+  return condition(
+    `source-kind:${kind}`,
+    (event) => event.source.kind === kind,
+  );
 }
 
 export function sourceId<TEvent extends Event = Event>(
