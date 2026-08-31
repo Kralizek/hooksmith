@@ -34,8 +34,7 @@ export default {
         not(sourceKind("scheduler")),
         metadata(
           "url",
-          (value) =>
-            typeof value === "string" && value.startsWith("https://"),
+          (value) => typeof value === "string" && value.startsWith("https://"),
         ),
       ),
       listeners: [logEvent()],
