@@ -19,5 +19,6 @@
       "actions",
       "extensions"
     ]
-  }
+  },
+  "lock": false
 }
