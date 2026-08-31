@@ -5,7 +5,6 @@ import {
   assertConfig,
   assertEventDocument,
   hydrateEvent,
-  type ListenerReport,
   runEvent,
   type RunReport,
 } from "@hooksmith/runtime";
