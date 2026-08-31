@@ -65,7 +65,7 @@ Deno.test("matches event data with sync and async predicates", async () => {
     true,
   );
   assertEquals(
-    await data<PageData>(async (value) => value.published).evaluate(
+    await data<PageData>((value) => Promise.resolve(value.published)).evaluate(
       event,
       context,
     ),
@@ -90,10 +90,11 @@ Deno.test("matches metadata by strict value and predicate", async () => {
     true,
   );
   assertEquals(
-    await metadata("url", async (value) => typeof value === "string").evaluate(
-      event,
-      context,
-    ),
+    await metadata("url", (value) => Promise.resolve(typeof value === "string"))
+      .evaluate(
+        event,
+        context,
+      ),
     true,
   );
   assertEquals(
