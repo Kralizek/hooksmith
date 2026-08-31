@@ -1,6 +1,6 @@
 import { assertEquals, assertThrows } from "@std/assert";
 import type { RunReport } from "@hooksmith/runtime";
-import { formatReport, parseArgs } from "./mod.ts";
+import { formatReport, loadEventDocument, parseArgs } from "./mod.ts";
 
 Deno.test("parses run options", () => {
   const options = parseArgs([
@@ -28,6 +28,22 @@ Deno.test("rejects more than one event file", () => {
     Error,
     "exactly one event file",
   );
+});
+
+Deno.test("loads YAML timestamps as strings", async () => {
+  const path = await Deno.makeTempFile({ suffix: ".yaml" });
+
+  try {
+    await Deno.writeTextFile(
+      path,
+      "type: page.published\ntimestamp: 2026-08-31T20:00:00Z\nsource:\n  kind: website\ndata: {}\n",
+    );
+
+    const document = await loadEventDocument(path) as Record<string, unknown>;
+    assertEquals(document.timestamp, "2026-08-31T20:00:00Z");
+  } finally {
+    await Deno.remove(path);
+  }
 });
 
 Deno.test("formats fallback report as tsv", () => {

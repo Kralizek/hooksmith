@@ -103,7 +103,7 @@ export async function loadEventDocument(path: string): Promise<unknown> {
   switch (extname(path).toLowerCase()) {
     case ".yaml":
     case ".yml":
-      return parseYaml(content);
+      return parseYaml(content, { schema: "core" });
     case ".json":
       return JSON.parse(content);
     default:
