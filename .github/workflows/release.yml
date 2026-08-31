@@ -211,30 +211,32 @@ jobs:
       - name: Pack release assets
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          ASSET_DIR: ${{ runner.temp }}/hooksmith-dist
         run: |
           set -euo pipefail
-          mkdir -p dist
+          mkdir -p "$ASSET_DIR"
 
           (
             cd packages/core
-            deno pack --output "../../dist/hooksmith-core-${VERSION}.tgz"
+            deno pack --output "$ASSET_DIR/hooksmith-core-${VERSION}.tgz"
           )
 
           (
             cd packages/runtime
-            deno pack --output "../../dist/hooksmith-runtime-${VERSION}.tgz"
+            deno pack --output "$ASSET_DIR/hooksmith-runtime-${VERSION}.tgz"
           )
 
           (
             cd packages/cli
-            deno pack --output "../../dist/hooksmith-cli-${VERSION}.tgz"
+            deno pack --output "$ASSET_DIR/hooksmith-cli-${VERSION}.tgz"
           )
 
       - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
-        run: gh release upload "$TAG" dist/*.tgz
+          ASSET_DIR: ${{ runner.temp }}/hooksmith-dist
+        run: gh release upload "$TAG" "$ASSET_DIR"/*.tgz
 
       - name: Publish packages
         run: deno publish
