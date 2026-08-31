@@ -1,0 +1,46 @@
+name: Publish
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+          cache: true
+
+      - name: Verify lockstep version
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+
+          for package in core runtime cli; do
+            actual="$(jq -r .version "packages/$package/deno.json")"
+            if [[ "$actual" != "$version" ]]; then
+              echo "packages/$package has version $actual, expected $version from tag $GITHUB_REF_NAME" >&2
+              exit 1
+            fi
+          done
+
+      - name: Check
+        run: deno task check
+
+      - name: Validate packages
+        run: deno publish --dry-run
+
+      - name: Publish packages
+        run: deno publish
