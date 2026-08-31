@@ -1,14 +1,5 @@
-import {
-  assertEquals,
-  assertRejects,
-} from "@std/assert";
-import type {
-  Config,
-  Context,
-  Event,
-  Listener,
-  Logger,
-} from "@hooksmith/core";
+import { assertEquals, assertRejects } from "@std/assert";
+import type { Config, Context, Event, Listener, Logger } from "@hooksmith/core";
 import { hydrateEvent, runEvent } from "./mod.ts";
 
 const logger: Logger = {

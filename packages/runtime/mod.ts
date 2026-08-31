@@ -38,16 +38,21 @@ export interface RunOptions {
   plan?: boolean;
 }
 
-export function hydrateEvent<TData>(document: EventDocument<TData>): Event<TData> {
+export function hydrateEvent<TData>(
+  document: EventDocument<TData>,
+): Event<TData> {
   assertEventDocument(document);
 
   let timestamp: Temporal.Instant;
   try {
     timestamp = Temporal.Instant.from(document.timestamp);
   } catch (error) {
-    throw new Error("Event timestamp must be a valid Temporal.Instant string.", {
-      cause: error,
-    });
+    throw new Error(
+      "Event timestamp must be a valid Temporal.Instant string.",
+      {
+        cause: error,
+      },
+    );
   }
 
   return {
@@ -76,7 +81,9 @@ export async function runEvent<TEvent extends Event>(
       const matches = await route.when.evaluate(event, context);
       if (typeof matches !== "boolean") {
         throw new Error(
-          `Condition ${route.when.name ?? `${routeName}/condition`} must return a boolean.`,
+          `Condition ${
+            route.when.name ?? `${routeName}/condition`
+          } must return a boolean.`,
         );
       }
       if (!matches) {
@@ -85,11 +92,25 @@ export async function runEvent<TEvent extends Event>(
     }
 
     matched = true;
-    await executeListeners(route.listeners, routeName, event, context, plan, results);
+    await executeListeners(
+      route.listeners,
+      routeName,
+      event,
+      context,
+      plan,
+      results,
+    );
   }
 
   if (!matched && config.fallback !== undefined) {
-    await executeListeners(config.fallback, "fallback", event, context, plan, results);
+    await executeListeners(
+      config.fallback,
+      "fallback",
+      event,
+      context,
+      plan,
+      results,
+    );
   }
 
   return {
@@ -114,7 +135,9 @@ async function executeListeners<TEvent extends Event>(
   plan: boolean,
   results: ListenerReport[],
 ): Promise<void> {
-  for (let listenerIndex = 0; listenerIndex < listeners.length; listenerIndex++) {
+  for (
+    let listenerIndex = 0; listenerIndex < listeners.length; listenerIndex++
+  ) {
     const listener = listeners[listenerIndex];
     const listenerName = listener.name ?? `listener-${listenerIndex + 1}`;
 
@@ -182,7 +205,9 @@ export function assertConfig(value: unknown): asserts value is Config {
   }
 }
 
-export function assertEventDocument(value: unknown): asserts value is EventDocument {
+export function assertEventDocument(
+  value: unknown,
+): asserts value is EventDocument {
   if (!isRecord(value)) {
     throw new Error("Event document must be an object.");
   }
@@ -240,7 +265,10 @@ function assertRoute(value: unknown, index: number): asserts value is Route {
   );
 }
 
-function assertListener(value: unknown, label: string): asserts value is Listener {
+function assertListener(
+  value: unknown,
+  label: string,
+): asserts value is Listener {
   if (!isRecord(value) || typeof value.run !== "function") {
     throw new Error(`${label} must expose run().`);
   }
@@ -262,7 +290,9 @@ function assertListenerResult(
   }
 
   if (value.message !== undefined && typeof value.message !== "string") {
-    throw new Error(`Listener ${route}/${listener} returned a non-string message.`);
+    throw new Error(
+      `Listener ${route}/${listener} returned a non-string message.`,
+    );
   }
 }
 

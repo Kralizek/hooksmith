@@ -16,7 +16,10 @@ Deno.test("parses run options", () => {
   assertEquals(options.format, "json");
   assertEquals(options.plan, true);
   assertEquals(options.eventFile.endsWith("event.yaml"), true);
-  assertEquals(options.configFile.endsWith("automation/hooksmith.config.ts"), true);
+  assertEquals(
+    options.configFile.endsWith("automation/hooksmith.config.ts"),
+    true,
+  );
 });
 
 Deno.test("rejects more than one event file", () => {

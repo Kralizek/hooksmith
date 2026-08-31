@@ -13,7 +13,9 @@ export default {
           name: "log-publication",
           run(event, { log }) {
             log.info(
-              `Published ${String(event.metadata?.url ?? event.subject?.id ?? "page")}`,
+              `Published ${
+                String(event.metadata?.url ?? event.subject?.id ?? "page")
+              }`,
             );
             return {
               success: true,

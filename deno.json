@@ -12,5 +12,12 @@
   "tasks": {
     "check": "deno fmt --check && deno lint && deno test -A",
     "test": "deno test -A"
+  },
+  "fmt": {
+    "exclude": [
+      "README.md",
+      "actions",
+      "extensions"
+    ]
   }
 }

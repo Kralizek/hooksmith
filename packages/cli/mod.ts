@@ -29,7 +29,9 @@ export async function main(args: string[]): Promise<number> {
     const event = hydrateEvent(eventDocument);
     const config = await loadConfig(options.configFile);
     const context: Context = { log: stderrLogger };
-    const report = await runEvent(event, config, context, { plan: options.plan });
+    const report = await runEvent(event, config, context, {
+      plan: options.plan,
+    });
 
     await writeStdout(`${formatReport(report, options.format)}\n`);
     return report.success ? 0 : 1;
@@ -162,12 +164,14 @@ function formatTable(report: RunReport): string {
 
 function formatTsv(report: RunReport): string {
   const header = ["route", "listener", "status", "message"].join("\t");
-  const rows = report.results.map((result) => [
-    result.route,
-    result.listener,
-    result.status,
-    result.message ?? "",
-  ].map(tsvCell).join("\t"));
+  const rows = report.results.map((result) =>
+    [
+      result.route,
+      result.listener,
+      result.status,
+      result.message ?? "",
+    ].map(tsvCell).join("\t")
+  );
 
   return [header, ...rows].join("\n");
 }
@@ -188,7 +192,9 @@ const stderrLogger: Logger = {
 };
 
 function logToStderr(level: string, message: string, args: unknown[]): void {
-  const suffix = args.length === 0 ? "" : ` ${args.map(renderLogValue).join(" ")}`;
+  const suffix = args.length === 0
+    ? ""
+    : ` ${args.map(renderLogValue).join(" ")}`;
   console.error(`[${level}] ${message}${suffix}`);
 }
 
