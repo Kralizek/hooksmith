@@ -41,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          latest_tag="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)"
+          latest_tag="$(git tag --list 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1 || true)"
 
           if [[ -z "$latest_tag" ]]; then
             version="0.1.0"
@@ -75,7 +75,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          deno eval --allow-read --allow-write '
+          deno eval --allow-read --allow-write --allow-env '
             const version = Deno.env.get("VERSION")!;
             const files = [
               "packages/core/deno.json",
