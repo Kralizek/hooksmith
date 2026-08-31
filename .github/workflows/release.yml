@@ -117,22 +117,18 @@ jobs:
             deno pack --output "../../dist/hooksmith-cli-${VERSION}.tgz"
           )
 
-      - name: Commit version
+      - name: Create release commit
         env:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           set -euo pipefail
 
-          if git diff --quiet; then
-            echo "Package versions already match $TAG; no version commit needed."
-            exit 0
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add packages/core/deno.json packages/runtime/deno.json packages/cli/deno.json
+            git commit -m "Release $TAG"
           fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/core/deno.json packages/runtime/deno.json packages/cli/deno.json
-          git commit -m "Release $TAG"
-          git push origin HEAD:master
 
       - name: Create tag
         env:
