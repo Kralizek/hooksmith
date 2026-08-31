@@ -2,7 +2,8 @@
   "workspace": [
     "./packages/core",
     "./packages/runtime",
-    "./packages/cli"
+    "./packages/cli",
+    "./extensions/standard"
   ],
   "imports": {
     "@std/assert": "jsr:@std/assert@^1",
@@ -16,8 +17,7 @@
   "fmt": {
     "exclude": [
       "README.md",
-      "actions",
-      "extensions"
+      "actions"
     ]
   },
   "lock": false

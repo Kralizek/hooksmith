@@ -1,29 +1,22 @@
 import type { Config } from "@hooksmith/core";
+import {
+  all,
+  eventType,
+  logEvent,
+  sourceKind,
+  subjectKind,
+} from "@hooksmith/standard";
 
 export default {
   routes: [
     {
       name: "published-pages",
-      when: {
-        name: "is-page-published",
-        evaluate: (event) => event.type === "page.published",
-      },
-      listeners: [
-        {
-          name: "log-publication",
-          run(event, { log }) {
-            log.info(
-              `Published ${
-                String(event.metadata?.url ?? event.subject?.id ?? "page")
-              }`,
-            );
-            return {
-              success: true,
-              message: "Publication observed",
-            };
-          },
-        },
-      ],
+      when: all(
+        eventType("page.published"),
+        sourceKind("website"),
+        subjectKind("page"),
+      ),
+      listeners: [logEvent()],
     },
   ],
   fallback: [
