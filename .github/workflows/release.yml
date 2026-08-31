@@ -26,6 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
 
     steps:
       - uses: actions/checkout@v6
@@ -93,16 +95,37 @@ jobs:
           --title "$TAG"
 
   publish:
-    if: github.event_name == 'release' && github.event.action == 'published'
+    needs: create-release
+    if: >-
+      always() &&
+      ((github.event_name == 'workflow_dispatch' && needs.create-release.result == 'success') ||
+       (github.event_name == 'release' && github.event.action == 'published'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
       id-token: write
 
     steps:
+      - name: Resolve release tag
+        id: release
+        shell: bash
+        env:
+          MANUAL_TAG: ${{ needs.create-release.outputs.tag }}
+          PUBLISHED_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            tag="$MANUAL_TAG"
+          else
+            tag="$PUBLISHED_TAG"
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ steps.release.outputs.tag }}
           fetch-depth: 0
 
       - uses: denoland/setup-deno@v2
@@ -114,7 +137,7 @@ jobs:
         id: version
         shell: bash
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ steps.release.outputs.tag }}
         run: |
           set -euo pipefail
 
@@ -175,7 +198,7 @@ jobs:
       - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ steps.release.outputs.tag }}
         run: gh release upload "$TAG" dist/*.tgz
 
       - name: Publish packages
