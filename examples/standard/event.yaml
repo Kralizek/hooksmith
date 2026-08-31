@@ -1,0 +1,10 @@
+type: page.updated
+timestamp: 2026-09-01T00:00:00Z
+source:
+  kind: website
+  id: example.com
+subject:
+  kind: page
+  id: /hello
+data:
+  title: Hello, Hooksmith

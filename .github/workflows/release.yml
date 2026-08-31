@@ -82,8 +82,10 @@ jobs:
         run: |
           deno eval --allow-read --allow-write --allow-env '
             const version = Deno.env.get("VERSION")!;
-            for (const packageName of ["core", "runtime", "cli"]) {
-              const file = `packages/${packageName}/deno.json`;
+            const root = JSON.parse(await Deno.readTextFile("deno.json"));
+
+            for (const member of root.workspace) {
+              const file = `${member}/deno.json`;
               const config = JSON.parse(await Deno.readTextFile(file));
               config.version = version;
               await Deno.writeTextFile(file, `${JSON.stringify(config, null, 2)}\n`);
@@ -101,9 +103,11 @@ jobs:
             exit 0
           fi
 
+          mapfile -t manifests < <(jq -r '.workspace[] + "/deno.json"' deno.json)
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/core/deno.json packages/runtime/deno.json packages/cli/deno.json
+          git add "${manifests[@]}"
           git commit -m "Release $TAG"
 
       - name: Validate
@@ -190,13 +194,13 @@ jobs:
           version="${TAG#v}"
           IFS='.' read -r major minor patch <<< "$version"
 
-          for package in core runtime cli; do
-            actual="$(jq -r .version "packages/$package/deno.json")"
+          while IFS= read -r manifest; do
+            actual="$(jq -r .version "$manifest")"
             if [[ "$actual" != "$version" ]]; then
-              echo "packages/$package has version $actual, expected $version from tag $TAG" >&2
+              echo "$manifest has version $actual, expected $version from tag $TAG" >&2
               exit 1
             fi
-          done
+          done < <(jq -r '.workspace[] + "/deno.json"' deno.json)
 
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "major_tag=v$major" >> "$GITHUB_OUTPUT"
@@ -216,20 +220,15 @@ jobs:
           set -euo pipefail
           mkdir -p "$ASSET_DIR"
 
-          (
-            cd packages/core
-            deno pack --output "$ASSET_DIR/hooksmith-core-${VERSION}.tgz"
-          )
+          while IFS= read -r member; do
+            name="$(jq -r .name "$member/deno.json")"
+            asset_name="${name#@hooksmith/}"
 
-          (
-            cd packages/runtime
-            deno pack --output "$ASSET_DIR/hooksmith-runtime-${VERSION}.tgz"
-          )
-
-          (
-            cd packages/cli
-            deno pack --output "$ASSET_DIR/hooksmith-cli-${VERSION}.tgz"
-          )
+            (
+              cd "$member"
+              deno pack --output "$ASSET_DIR/hooksmith-${asset_name}-${VERSION}.tgz"
+            )
+          done < <(jq -r '.workspace[]' deno.json)
 
       - name: Upload release assets
         env:

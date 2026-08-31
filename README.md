@@ -6,7 +6,7 @@ The project deliberately keeps event production outside the runtime. A static-si
 
 ## Status
 
-Hooksmith is at the beginning of its design and implementation. The initial packages use lockstep `0.1.0` versions and the public API should be considered experimental.
+Hooksmith is at the beginning of its design and implementation. The packages are versioned together and the public API should be considered experimental.
 
 ## Package family
 
@@ -17,8 +17,9 @@ The Hooksmith packages are versioned and released together.
 | [`@hooksmith/core`](https://jsr.io/@hooksmith/core) | [![latest](https://jsr.io/badges/@hooksmith/core)](https://jsr.io/@hooksmith/core) | [![downloads](https://jsr.io/badges/@hooksmith/core/total-downloads)](https://jsr.io/@hooksmith/core) | Public contracts for events, routes, conditions, listeners, execution context, and listener results. |
 | [`@hooksmith/runtime`](https://jsr.io/@hooksmith/runtime) | [![latest](https://jsr.io/badges/@hooksmith/runtime)](https://jsr.io/@hooksmith/runtime) | [![downloads](https://jsr.io/badges/@hooksmith/runtime/total-downloads)](https://jsr.io/@hooksmith/runtime) | Event hydration, validation, routing, planning, listener execution, fallback handling, and run reports. |
 | [`@hooksmith/cli`](https://jsr.io/@hooksmith/cli) | [![latest](https://jsr.io/badges/@hooksmith/cli)](https://jsr.io/@hooksmith/cli) | [![downloads](https://jsr.io/badges/@hooksmith/cli/total-downloads)](https://jsr.io/@hooksmith/cli) | Command-line interface for loading events and configuration, running or planning events, and rendering reports. |
+| [`@hooksmith/standard`](https://jsr.io/@hooksmith/standard) | [![latest](https://jsr.io/badges/@hooksmith/standard)](https://jsr.io/@hooksmith/standard) | [![downloads](https://jsr.io/badges/@hooksmith/standard/total-downloads)](https://jsr.io/@hooksmith/standard) | Standard generic conditions, condition composition, and basic listeners for authoring Hooksmith configuration. |
 
-For extension authors, `@hooksmith/core` is the primary dependency. Applications invoking Hooksmith from the command line normally use `@hooksmith/cli`.
+For extension authors, `@hooksmith/core` is the primary dependency. Applications invoking Hooksmith from the command line normally use `@hooksmith/cli`. `@hooksmith/standard` provides reusable configuration building blocks without depending on the runtime engine.
 
 ## Repository
 
@@ -28,6 +29,7 @@ packages/
   runtime/    Validation, routing, execution, planning, and reports
   cli/        Event loading, config discovery, formatting, and process behavior
 extensions/
+  standard/   Generic conditions, composition, and basic listeners
   web/        Reserved for first-party web extensions
   aws/        Reserved for first-party AWS extensions
 actions/
@@ -36,7 +38,7 @@ examples/
   basic/      Minimal event and configuration example
 ```
 
-The dependency direction is intentionally one-way: `core <- runtime <- cli`.
+The main runtime dependency direction is intentionally one-way: `core <- runtime <- cli`. The standard extension depends only on `core`.
 
 ## Event model
 
@@ -73,28 +75,28 @@ Hooksmith loads `./hooksmith.config.ts` from the current working directory by de
 
 ```ts
 import type { Config } from "@hooksmith/core";
+import {
+  all,
+  eventType,
+  logEvent,
+  sourceKind,
+} from "@hooksmith/standard";
 
 export default {
   routes: [
     {
       name: "published-pages",
-      when: {
-        name: "is-page-published",
-        evaluate: (event) => event.type === "page.published",
-      },
-      listeners: [
-        {
-          name: "log-publication",
-          run(event, { log }) {
-            log.info(`Published ${event.subject?.id}`);
-            return { success: true };
-          },
-        },
-      ],
+      when: all(
+        eventType("page.published"),
+        sourceKind("website"),
+      ),
+      listeners: [logEvent()],
     },
   ],
 } satisfies Config;
 ```
+
+`@hooksmith/standard` also provides `sourceId`, `subjectKind`, `subjectId`, `any`, and `not`. See [`extensions/standard`](extensions/standard) for usage examples.
 
 An event can match multiple routes. Routes and listeners execute sequentially in configuration order. If no route matches, optional fallback listeners execute instead.
 
