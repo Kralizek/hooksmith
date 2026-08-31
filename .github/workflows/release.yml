@@ -35,6 +35,11 @@ jobs:
           ref: master
           fetch-depth: 0
 
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+          cache: true
+
       - name: Calculate version
         id: version
         shell: bash
@@ -67,8 +72,44 @@ jobs:
             version="${major}.${minor}.${patch}"
           fi
 
+          echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=v$version" >> "$GITHUB_OUTPUT"
           echo "Releasing v$version"
+
+      - name: Set package versions
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          deno eval --allow-read --allow-write --allow-env '
+            const version = Deno.env.get("VERSION")!;
+            for (const packageName of ["core", "runtime", "cli"]) {
+              const file = `packages/${packageName}/deno.json`;
+              const config = JSON.parse(await Deno.readTextFile(file));
+              config.version = version;
+              await Deno.writeTextFile(file, `${JSON.stringify(config, null, 2)}\n`);
+            }
+          '
+
+      - name: Create release commit
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet; then
+            echo "Package versions already match $TAG; tagging current commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/core/deno.json packages/runtime/deno.json packages/cli/deno.json
+          git commit -m "Release $TAG"
+
+      - name: Validate
+        run: |
+          deno task check
+          deno publish --dry-run
 
       - name: Create immutable version tag
         env:
@@ -149,29 +190,23 @@ jobs:
           version="${TAG#v}"
           IFS='.' read -r major minor patch <<< "$version"
 
+          for package in core runtime cli; do
+            actual="$(jq -r .version "packages/$package/deno.json")"
+            if [[ "$actual" != "$version" ]]; then
+              echo "packages/$package has version $actual, expected $version from tag $TAG" >&2
+              exit 1
+            fi
+          done
+
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "major_tag=v$major" >> "$GITHUB_OUTPUT"
           echo "minor_tag=v$major.$minor" >> "$GITHUB_OUTPUT"
-
-      - name: Inject package version
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          deno eval --allow-read --allow-write --allow-env '
-            const version = Deno.env.get("VERSION")!;
-            for (const packageName of ["core", "runtime", "cli"]) {
-              const file = `packages/${packageName}/deno.json`;
-              const config = JSON.parse(await Deno.readTextFile(file));
-              config.version = version;
-              await Deno.writeTextFile(file, `${JSON.stringify(config, null, 2)}\n`);
-            }
-          '
 
       - name: Check
         run: deno task check
 
       - name: Validate packages
-        run: deno publish --dry-run --allow-dirty
+        run: deno publish --dry-run
 
       - name: Pack release assets
         env:
@@ -202,7 +237,7 @@ jobs:
         run: gh release upload "$TAG" dist/*.tgz
 
       - name: Publish packages
-        run: deno publish --allow-dirty
+        run: deno publish
 
       - name: Move action version tags
         env:
