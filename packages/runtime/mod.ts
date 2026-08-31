@@ -136,7 +136,9 @@ async function executeListeners<TEvent extends Event>(
   results: ListenerReport[],
 ): Promise<void> {
   for (
-    let listenerIndex = 0; listenerIndex < listeners.length; listenerIndex++
+    let listenerIndex = 0;
+    listenerIndex < listeners.length;
+    listenerIndex++
   ) {
     const listener = listeners[listenerIndex];
     const listenerName = listener.name ?? `listener-${listenerIndex + 1}`;
