@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: denoland/setup-deno@v2
         with:
@@ -23,3 +23,6 @@ jobs:
 
       - name: Check
         run: deno task check
+
+      - name: Validate packages
+        run: deno publish --dry-run
