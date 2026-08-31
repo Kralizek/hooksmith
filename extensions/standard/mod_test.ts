@@ -1,10 +1,12 @@
 import { assertEquals } from "@std/assert";
-import type { Context, Event, Logger } from "@hooksmith/core";
+import type { Config, Context, Event, Logger } from "@hooksmith/core";
 import {
   all,
   any,
+  data,
   eventType,
   logEvent,
+  metadata,
   not,
   sourceId,
   sourceKind,
@@ -12,12 +14,25 @@ import {
   subjectKind,
 } from "./mod.ts";
 
-const event: Event = {
+interface PageData {
+  title: string;
+  published: boolean;
+}
+
+const event: Event<PageData> = {
   type: "page.published",
   timestamp: Temporal.Instant.from("2026-08-31T20:00:00Z"),
   source: { kind: "website", id: "example.com" },
   subject: { kind: "page", id: "/hello" },
-  data: {},
+  metadata: {
+    publishedToday: true,
+    environment: "production",
+    url: "https://example.com/hello",
+  },
+  data: {
+    title: "Hello, Hooksmith",
+    published: true,
+  },
 };
 
 const logger: Logger = {
@@ -39,6 +54,52 @@ Deno.test("matches event and resource fields", async () => {
   assertEquals(await sourceId("example.com").evaluate(event, context), true);
   assertEquals(await subjectKind("page").evaluate(event, context), true);
   assertEquals(await subjectId("/hello").evaluate(event, context), true);
+});
+
+Deno.test("matches event data with sync and async predicates", async () => {
+  assertEquals(
+    await data<PageData>((value) => value.title.length > 0).evaluate(
+      event,
+      context,
+    ),
+    true,
+  );
+  assertEquals(
+    await data<PageData>(async (value) => value.published).evaluate(
+      event,
+      context,
+    ),
+    true,
+  );
+});
+
+Deno.test("matches metadata by strict value and predicate", async () => {
+  assertEquals(
+    await metadata("environment", "production").evaluate(event, context),
+    true,
+  );
+  assertEquals(
+    await metadata("publishedToday", false).evaluate(event, context),
+    false,
+  );
+  assertEquals(
+    await metadata(
+      "url",
+      (value) => typeof value === "string" && value.startsWith("https://"),
+    ).evaluate(event, context),
+    true,
+  );
+  assertEquals(
+    await metadata("url", async (value) => typeof value === "string").evaluate(
+      event,
+      context,
+    ),
+    true,
+  );
+  assertEquals(
+    await metadata("missing", () => true).evaluate(event, context),
+    false,
+  );
 });
 
 Deno.test("composes conditions", async () => {
@@ -76,6 +137,17 @@ Deno.test("condition composition short-circuits", async () => {
 
   await any(eventType("page.published"), second).evaluate(event, context);
   assertEquals(evaluated, false);
+});
+
+Deno.test("typed configs can contextualize data predicates", () => {
+  const config = {
+    routes: [{
+      when: data((value) => value.title.length > 0),
+      listeners: [],
+    }],
+  } satisfies Config<Event<PageData>>;
+
+  assertEquals(config.routes.length, 1);
 });
 
 Deno.test("logs events at the requested level", async () => {

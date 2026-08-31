@@ -6,5 +6,8 @@ source:
 subject:
   kind: page
   id: /hello
+metadata:
+  environment: production
+  url: https://example.com/hello
 data:
   title: Hello, Hooksmith

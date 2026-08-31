@@ -1,19 +1,43 @@
 import type { Config } from "@hooksmith/core";
-import { any, eventType, logEvent, not, sourceKind } from "@hooksmith/standard";
+import {
+  all,
+  any,
+  data,
+  eventType,
+  logEvent,
+  metadata,
+  not,
+  sourceKind,
+} from "@hooksmith/standard";
+
+interface PageData {
+  title: string;
+}
 
 export default {
   routes: [
     {
       name: "content-changes",
-      when: any(
-        eventType("page.published"),
-        eventType("page.updated"),
+      when: all(
+        any(
+          eventType("page.published"),
+          eventType("page.updated"),
+        ),
+        data<PageData>((value) => value.title.length > 0),
+        metadata("environment", "production"),
       ),
       listeners: [logEvent("debug")],
     },
     {
-      name: "non-scheduled-web-events",
-      when: not(sourceKind("scheduler")),
+      name: "secure-web-events",
+      when: all(
+        not(sourceKind("scheduler")),
+        metadata(
+          "url",
+          (value) =>
+            typeof value === "string" && value.startsWith("https://"),
+        ),
+      ),
       listeners: [logEvent()],
     },
   ],

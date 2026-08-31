@@ -38,6 +38,44 @@ export function subjectId<TEvent extends Event = Event>(
   return condition(`subject-id:${id}`, (event) => event.subject?.id === id);
 }
 
+export function data<TData>(
+  predicate: (data: TData) => boolean | Promise<boolean>,
+): Condition<Event<TData>> {
+  return {
+    name: "data",
+    evaluate(event) {
+      return predicate(event.data);
+    },
+  };
+}
+
+type MetadataPredicate = (value: unknown) => boolean | Promise<boolean>;
+
+export function metadata(
+  key: string,
+  predicate: MetadataPredicate,
+): Condition;
+export function metadata(key: string, value: unknown): Condition;
+export function metadata(
+  key: string,
+  valueOrPredicate: unknown,
+): Condition {
+  const predicate = typeof valueOrPredicate === "function"
+    ? valueOrPredicate as MetadataPredicate
+    : (value: unknown) => value === valueOrPredicate;
+
+  return {
+    name: `metadata:${key}`,
+    evaluate(event) {
+      if (event.metadata === undefined || !Object.hasOwn(event.metadata, key)) {
+        return false;
+      }
+
+      return predicate(event.metadata[key]);
+    },
+  };
+}
+
 export function all<TEvent extends Event = Event>(
   ...conditions: Condition<TEvent>[]
 ): Condition<TEvent> {

@@ -77,10 +77,16 @@ Hooksmith loads `./hooksmith.config.ts` from the current working directory by de
 import type { Config } from "@hooksmith/core";
 import {
   all,
+  data,
   eventType,
   logEvent,
+  metadata,
   sourceKind,
 } from "@hooksmith/standard";
+
+interface PageData {
+  title: string;
+}
 
 export default {
   routes: [
@@ -89,6 +95,8 @@ export default {
       when: all(
         eventType("page.published"),
         sourceKind("website"),
+        data<PageData>((value) => value.title.length > 0),
+        metadata("environment", "production"),
       ),
       listeners: [logEvent()],
     },
@@ -96,7 +104,7 @@ export default {
 } satisfies Config;
 ```
 
-`@hooksmith/standard` also provides `sourceId`, `subjectKind`, `subjectId`, `any`, and `not`. See [`extensions/standard`](extensions/standard) for usage examples.
+`@hooksmith/standard` also provides `sourceId`, `subjectKind`, `subjectId`, `any`, and `not`. `metadata` can compare a value directly or evaluate a predicate, and `data` can evaluate synchronous or asynchronous predicates over event data. See [`extensions/standard`](extensions/standard) for more examples.
 
 An event can match multiple routes. Routes and listeners execute sequentially in configuration order. If no route matches, optional fallback listeners execute instead.
 
