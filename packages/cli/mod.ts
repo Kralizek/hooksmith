@@ -64,6 +64,9 @@ export function parseArgs(args: string[]): CliOptions {
       }
       case "--format": {
         const value = args[++index];
+        if (value === undefined) {
+          throw new Error("--format requires a value.");
+        }
         if (value !== "table" && value !== "json" && value !== "tsv") {
           throw new Error("--format must be one of: table, json, tsv.");
         }

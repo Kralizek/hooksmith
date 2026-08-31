@@ -30,6 +30,14 @@ Deno.test("rejects more than one event file", () => {
   );
 });
 
+Deno.test("reports a missing --format value", () => {
+  assertThrows(
+    () => parseArgs(["run", "event.yaml", "--format"]),
+    Error,
+    "--format requires a value",
+  );
+});
+
 Deno.test("loads YAML timestamps as strings", async () => {
   const path = await Deno.makeTempFile({ suffix: ".yaml" });
 

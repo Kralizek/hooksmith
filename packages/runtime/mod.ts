@@ -78,13 +78,20 @@ export async function runEvent<TEvent extends Event>(
     const routeName = identifyRoute(route, routeIndex);
 
     if (route.when !== undefined) {
-      const matches = await route.when.evaluate(event, context);
-      if (typeof matches !== "boolean") {
+      const conditionName = route.when.name ?? `${routeName}/condition`;
+      let matches: boolean;
+
+      try {
+        matches = await route.when.evaluate(event, context);
+      } catch (error) {
         throw new Error(
-          `Condition ${
-            route.when.name ?? `${routeName}/condition`
-          } must return a boolean.`,
+          `Condition ${conditionName} failed: ${errorMessage(error)}`,
+          { cause: error },
         );
+      }
+
+      if (typeof matches !== "boolean") {
+        throw new Error(`Condition ${conditionName} must return a boolean.`);
       }
       if (!matches) {
         continue;

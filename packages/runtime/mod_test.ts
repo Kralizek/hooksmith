@@ -91,14 +91,17 @@ Deno.test("runs fallback only when no route matches", async () => {
   assertEquals(report.results[0].route, "fallback");
 });
 
-Deno.test("condition errors abort execution", async () => {
+Deno.test("condition errors identify the condition and abort execution", async () => {
   let listenerRan = false;
+  const cause = new Error("routing failed");
   const config: Config = {
     routes: [
       {
+        name: "publication",
         when: {
+          name: "is-published",
           evaluate() {
-            throw new Error("routing failed");
+            throw cause;
           },
         },
         listeners: [],
@@ -114,12 +117,34 @@ Deno.test("condition errors abort execution", async () => {
     ],
   };
 
-  await assertRejects(
+  const error = await assertRejects(
     () => runEvent(event(), config, context),
     Error,
-    "routing failed",
+    "Condition is-published failed: routing failed",
   );
+  assertEquals(error.cause, cause);
   assertEquals(listenerRan, false);
+});
+
+Deno.test("condition errors use positional identity when unnamed", async () => {
+  const cause = new Error("routing failed");
+  const config: Config = {
+    routes: [{
+      when: {
+        evaluate() {
+          throw cause;
+        },
+      },
+      listeners: [],
+    }],
+  };
+
+  const error = await assertRejects(
+    () => runEvent(event(), config, context),
+    Error,
+    "Condition route-1/condition failed: routing failed",
+  );
+  assertEquals(error.cause, cause);
 });
 
 Deno.test("listener failures do not prevent later listeners", async () => {
