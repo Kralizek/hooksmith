@@ -67,7 +67,6 @@ jobs:
         with:
           event: ./examples/basic/event.yaml
           config: ./examples/basic/hooksmith.config.ts
-          report-path: ${{ runner.temp }}/hooksmith/custom-report.json
 
       - name: Validate action outputs and report file
         shell: bash
