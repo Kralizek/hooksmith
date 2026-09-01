@@ -2,6 +2,11 @@ import type { Config } from "@hooksmith/core";
 import { httpPost, jsonBody } from "@hooksmith/http";
 import { eventType } from "@hooksmith/standard";
 
+interface HttpBinResponse {
+  json: unknown;
+  url: string;
+}
+
 export default {
   routes: [
     {
@@ -17,7 +22,14 @@ export default {
             data: event.data,
           })),
           expectStatus: 200,
-          response: "json",
+          response: {
+            body: "json",
+            map: ({ status, body }) => ({
+              status,
+              url: (body as HttpBinResponse).url,
+              echoed: (body as HttpBinResponse).json,
+            }),
+          },
         }),
       ],
     },
