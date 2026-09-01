@@ -71,7 +71,7 @@ jobs:
         run: |
           test "$HOOKSMITH_SUCCESS" = "true"
           test "$HOOKSMITH_MODE" = "run"
-          test "$HOOKSMITH_REPORT_PATH" = "$GITHUB_WORKSPACE/.hooksmith/report.json"
+          test "$HOOKSMITH_REPORT_PATH" = "$RUNNER_TEMP/hooksmith/report.json"
           test -f "$HOOKSMITH_REPORT_PATH"
 
           jq -e '
