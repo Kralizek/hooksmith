@@ -22,6 +22,15 @@ The Hooksmith packages are versioned and released together.
 
 For extension authors, `@hooksmith/core` is the primary dependency. Applications invoking Hooksmith from the command line normally use `@hooksmith/cli`. `@hooksmith/standard` provides reusable configuration building blocks without depending on the runtime engine, while `@hooksmith/http` provides protocol-level HTTP listeners that provider-specific extensions can build on.
 
+## External extensions
+
+Provider-specific extensions can live in separate repositories and follow their own release cadence.
+
+| Package | Latest | Downloads | Repository | Purpose |
+| --- | --- | --- | --- | --- |
+| [`@hooksmith/bluesky`](https://jsr.io/@hooksmith/bluesky) | [![latest](https://jsr.io/badges/@hooksmith/bluesky)](https://jsr.io/@hooksmith/bluesky) | [![downloads](https://jsr.io/badges/@hooksmith/bluesky/total-downloads)](https://jsr.io/@hooksmith/bluesky) | [`hooksmith-social`](https://github.com/Kralizek/hooksmith-social) | Publish posts to Bluesky using an account identifier and app password. |
+| [`@hooksmith/mastodon`](https://jsr.io/@hooksmith/mastodon) | [![latest](https://jsr.io/badges/@hooksmith/mastodon)](https://jsr.io/@hooksmith/mastodon) | [![downloads](https://jsr.io/badges/@hooksmith/mastodon/total-downloads)](https://jsr.io/@hooksmith/mastodon) | [`hooksmith-social`](https://github.com/Kralizek/hooksmith-social) | Publish statuses to Mastodon-compatible instances using a user access token. |
+
 ## Repository
 
 ```text
