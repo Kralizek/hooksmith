@@ -102,6 +102,10 @@ type ValidParallel<TTransformers extends readonly unknown[]> =
 export function pipe<const TItems extends readonly unknown[]>(
   ...items: TItems & ValidPipe<TItems>
 ): Listener<Event<PipeInput<TItems>>> {
+  if (items.length === 0) {
+    throw new Error("pipe requires a final listener.");
+  }
+
   const listener = items.at(-1) as Listener<Event<unknown>>;
   const transformations = items.slice(0, -1) as readonly (
     | Transformer<unknown, unknown>
@@ -174,6 +178,10 @@ export function parallel<const TTransformers extends readonly unknown[]>(
   ParallelInput<TTransformers>,
   ParallelOutputs<TTransformers>
 > {
+  if (transformers.length === 0) {
+    throw new Error("parallel requires at least one transformer.");
+  }
+
   return {
     async transform(input, context) {
       const results = transformers.map(async (transformer, index) => {
