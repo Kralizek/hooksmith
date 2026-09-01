@@ -1,6 +1,7 @@
 {
   "workspace": [
     "./packages/core",
+    "./packages/pipeline",
     "./packages/runtime",
     "./packages/cli",
     "./extensions/standard",

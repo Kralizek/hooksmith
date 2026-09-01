@@ -1,0 +1,17 @@
+type: page.published
+timestamp: 2026-09-01T18:00:00Z
+source:
+  kind: website
+  id: example.com
+subject:
+  kind: page
+  id: /pipeline-example
+metadata:
+  url: https://example.com/pipeline-example
+data:
+  title: "  Composing Hooksmith pipelines  "
+  content: |
+    Hooksmith pipelines transform event data before a listener runs.
+
+    parallel can derive several values from the same input while split and each handle collections.
+  draft: false
