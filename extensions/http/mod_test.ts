@@ -154,7 +154,8 @@ Deno.test("response mapper projects successful responses", async () => {
 
 Deno.test("response error mapper projects failed responses", async () => {
   await withFetch(
-    () => Promise.resolve(Response.json({ error: "duplicate" }, { status: 409 })),
+    () =>
+      Promise.resolve(Response.json({ error: "duplicate" }, { status: 409 })),
     async () => {
       const result = await httpPost({
         url: "https://example.test/resource",
