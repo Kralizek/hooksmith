@@ -16,10 +16,6 @@ interface PageData {
   draft: boolean;
 }
 
-interface PreparedPage extends PageData {
-  title: string;
-}
-
 interface Announcement {
   text: string;
   imagePrompt: string;
