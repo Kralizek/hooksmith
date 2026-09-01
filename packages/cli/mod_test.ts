@@ -82,7 +82,7 @@ Deno.test("help describes supported shorthand and stdin", () => {
 });
 
 Deno.test("version comes from CLI package metadata", () => {
-  assertEquals(VERSION, "0.1.0");
+  assertEquals(VERSION, "0.2.0");
 });
 
 Deno.test("loads YAML timestamps as strings", async () => {
