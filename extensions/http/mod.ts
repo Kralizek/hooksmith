@@ -124,6 +124,9 @@ export function textBody<TEvent extends Event = Event>(
 export function expectStatus<TEvent extends Event = Event>(
   ...expected: number[]
 ): HttpResponseSuccess<TEvent> {
+  if (expected.length === 0) {
+    throw new TypeError("expectStatus requires at least one status code");
+  }
   return ({ status }) => expected.includes(status);
 }
 
@@ -231,7 +234,10 @@ function normalizeResponse<TEvent extends Event>(
 function isHttpBody<TEvent extends Event>(
   value: unknown,
 ): value is HttpBody<TEvent> {
-  return typeof value === "object" && value !== null && "resolve" in value;
+  return typeof value === "object" &&
+    value !== null &&
+    "resolve" in value &&
+    typeof (value as { resolve?: unknown }).resolve === "function";
 }
 
 async function toReport(
