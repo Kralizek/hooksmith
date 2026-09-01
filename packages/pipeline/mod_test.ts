@@ -1,10 +1,5 @@
 import { assertEquals } from "@std/assert";
-import type {
-  Context,
-  Event,
-  Listener,
-  Logger,
-} from "@hooksmith/core";
+import type { Context, Event, Listener, Logger } from "@hooksmith/core";
 import {
   each,
   merge,
@@ -191,8 +186,10 @@ Deno.test("parallel identifies a failing branch", async () => {
     listener,
   ).run({ ...event, data: "hooksmith" }, context);
 
-  assertEquals(result.message,
-    'Transformation #1 failed: Parallel transformation "generate-image" failed: no image');
+  assertEquals(
+    result.message,
+    'Transformation #1 failed: Parallel transformation "generate-image" failed: no image',
+  );
 });
 
 Deno.test("when applies a same-type transformation conditionally", async () => {
@@ -210,8 +207,14 @@ Deno.test("when applies a same-type transformation conditionally", async () => {
   );
   const transformContext = { ...context, originalData: "original" };
 
-  assertEquals(await transformation.transform(" hooksmith ", transformContext), "hooksmith");
-  assertEquals(await transformation.transform("hooksmith", transformContext), "hooksmith");
+  assertEquals(
+    await transformation.transform(" hooksmith ", transformContext),
+    "hooksmith",
+  );
+  assertEquals(
+    await transformation.transform("hooksmith", transformContext),
+    "hooksmith",
+  );
   assertEquals(invocations, 1);
 });
 
