@@ -50,6 +50,7 @@ action.yml    Primary Hooksmith GitHub Action
 actions/      Reserved for future specialized actions
 examples/
   basic/      Minimal event and configuration example
+  pipeline/   Listener-side transformation composition example
   http/       HTTP listener and response-mapping example
 ```
 
@@ -190,6 +191,8 @@ The default report format is `table`.
 Hooksmith configuration can consume extension modules from JSR, local files, remote repositories, or import-map aliases. See [`docs/extensions.md`](docs/extensions.md) for the supported patterns and the CI-backed unpublished-extension example.
 
 The `examples/http` sample shows `@hooksmith/http` posting a `page.published` event to an HTTP endpoint and projecting the HTTP response before it is stored in the run report.
+
+The `examples/pipeline` sample shows listener-side composition with `when`, `parallel`, `project`, `split`, `each`, and `merge` before ordinary Hooksmith listeners run.
 
 ## Development
 
