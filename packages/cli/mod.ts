@@ -1,10 +1,11 @@
 #!/usr/bin/env -S deno run --allow-read --allow-env --allow-net
 
-import type { Config, Context, Logger } from "@hooksmith/core";
+import type { Config, Context, Event, Logger } from "@hooksmith/core";
 import {
   assertEventDocument,
   createRuntime,
   hydrateEvent,
+  type RunOptions,
   type RunReport,
 } from "@hooksmith/runtime";
 import { extname, resolve, toFileUrl } from "@std/path";
@@ -40,8 +41,7 @@ export async function main(args: string[]): Promise<number> {
     const event = hydrateEvent(eventDocument);
     const config = await loadConfig(options.configFile);
     const context: Context = { log: stderrLogger };
-    const runtime = createRuntime(config, context);
-    const report = await runtime.process(event, {
+    const report = await runEvent(event, config, context, {
       plan: options.plan,
     });
 
@@ -51,6 +51,16 @@ export async function main(args: string[]): Promise<number> {
     stderrLogger.error(error instanceof Error ? error.message : String(error));
     return 1;
   }
+}
+
+async function runEvent<TEvent extends Event>(
+  event: TEvent,
+  config: Config<TEvent>,
+  context: Context,
+  options: RunOptions = {},
+): Promise<RunReport> {
+  const runtime = createRuntime(config, context);
+  return await runtime.process(event, options);
 }
 
 export function parseArgs(args: string[]): CliOptions {
