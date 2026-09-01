@@ -32,8 +32,8 @@ extensions/
   standard/   Generic conditions, composition, and basic listeners
   web/        Reserved for first-party web extensions
   aws/        Reserved for first-party AWS extensions
-actions/
-  hooksmith/  Documentation for the first-party GitHub Action
+action.yml    Primary Hooksmith GitHub Action
+actions/      Reserved for future specialized actions
 examples/
   basic/      Minimal event and configuration example
 ```
