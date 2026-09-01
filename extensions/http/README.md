@@ -33,6 +33,40 @@ The listener always returns the response status, status text, and headers in
 `ListenerResult.data`, making them available in Hooksmith reports. Set
 `response` to `"text"` or `"json"` to include the response body as well.
 
+For more control, use the object form of `response`:
+
+```ts
+const listener = httpPost({
+  url: "https://example.com/posts",
+  body: jsonBody((event) => event.data),
+  expectStatus: 201,
+  response: {
+    body: "json",
+    isSuccess: ({ status, body }) =>
+      status === 201 ||
+      (status === 409 &&
+        (body as { result?: string }).result === "already-done"),
+    map: ({ status, body }) => ({
+      status,
+      id: (body as { id?: string }).id,
+    }),
+    mapError: ({ status, body }) => ({
+      status,
+      error: (body as { error?: string }).error,
+    }),
+  },
+});
+```
+
+`isSuccess` overrides the normal status-based success decision. If it is not
+provided, `expectStatus` is used; if neither is provided, any `2xx` response is
+successful.
+
+`map` projects successful responses before they are written to
+`ListenerResult.data`. `mapError` does the same for failed responses. If the
+relevant mapper is omitted, the complete HTTP response report is returned.
+Mapping never changes the success decision; only `isSuccess` can override it.
+
 ## Helpers
 
 - `headers(...)` combines static and event-derived header sources.
