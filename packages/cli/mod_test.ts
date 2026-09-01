@@ -42,6 +42,16 @@ Deno.test("preserves - as stdin input", () => {
   assertEquals(options.eventFile, "-");
 });
 
+Deno.test("loads event document from stdin input", async () => {
+  const document = await loadEventDocument(
+    "-",
+    async () =>
+      '{"type":"page.published","source":{"kind":"website"},"data":{}}',
+  ) as Record<string, unknown>;
+
+  assertEquals(document.type, "page.published");
+});
+
 Deno.test("rejects more than one event file", () => {
   assertThrows(
     () => parseArgs(["run", "one.yaml", "two.yaml"]),
@@ -69,10 +79,12 @@ Deno.test("reports a missing -c value", () => {
 Deno.test("help describes supported shorthand and stdin", () => {
   const help = usage();
 
-  assertStringIncludes(help, "hooksmith --help | -h");
-  assertStringIncludes(help, "hooksmith --version | -v");
+  assertStringIncludes(help, "hooksmith --help");
+  assertStringIncludes(help, "hooksmith -h");
+  assertStringIncludes(help, "hooksmith --version");
+  assertStringIncludes(help, "hooksmith -v");
   assertStringIncludes(help, "-c, --config <path>");
-  assertStringIncludes(help, "read one event from stdin");
+  assertStringIncludes(help, "read exactly one event from stdin");
 });
 
 Deno.test("loads YAML timestamps as strings", async () => {
