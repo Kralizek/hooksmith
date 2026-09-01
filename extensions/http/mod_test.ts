@@ -3,6 +3,7 @@ import type { Context, Event } from "@hooksmith/core";
 import {
   basicAuth,
   bearerAuth,
+  expectStatus,
   formBody,
   headers,
   httpGet,
@@ -63,8 +64,10 @@ Deno.test("httpPost resolves auth, headers and JSON body", async () => {
         (current) => ({ "X-Event-Type": current.type }),
       ),
       body: jsonBody((current: Event) => ({ type: current.type })),
-      expectStatus: 201,
-      response: "json",
+      response: {
+        parse: "json",
+        success: expectStatus(201),
+      },
     }).run(event, context);
 
     assertEquals(result.success, true);
@@ -108,7 +111,7 @@ Deno.test("basicAuth creates a basic authorization header", async () => {
   });
 });
 
-Deno.test("status expectations can fail a listener without throwing", async () => {
+Deno.test("response shorthand can require an exact status", async () => {
   await withFetch(
     () =>
       Promise.resolve(
@@ -117,29 +120,27 @@ Deno.test("status expectations can fail a listener without throwing", async () =
     async () => {
       const result = await httpPost({
         url: "https://example.test/resource",
-        expectStatus: [200, 201],
-        response: "text",
+        response: expectStatus(200, 201),
       }).run(event, context);
 
       assertFalse(result.success);
-      assertEquals(result.message, "Unexpected HTTP status 409 Conflict");
-      assertObjectMatch(result.data as Record<string, unknown>, {
-        status: 409,
-        body: "nope",
-      });
+      assertEquals(
+        result.message,
+        "HTTP response considered unsuccessful: 409 Conflict",
+      );
     },
   );
 });
 
-Deno.test("response mapper projects successful responses", async () => {
+Deno.test("successMap projects successful responses", async () => {
   await withFetch(
     () => Promise.resolve(Response.json({ id: "post-123", ignored: true })),
     async () => {
       const result = await httpGet({
         url: "https://example.test/resource",
         response: {
-          body: "json",
-          map: ({ status, body }) => ({
+          parse: "json",
+          successMap: ({ status, body }) => ({
             status,
             id: (body as { id: string }).id,
           }),
@@ -152,7 +153,7 @@ Deno.test("response mapper projects successful responses", async () => {
   );
 });
 
-Deno.test("response error mapper projects failed responses", async () => {
+Deno.test("errorMap projects failed responses", async () => {
   await withFetch(
     () =>
       Promise.resolve(Response.json({ error: "duplicate" }, { status: 409 })),
@@ -160,8 +161,8 @@ Deno.test("response error mapper projects failed responses", async () => {
       const result = await httpPost({
         url: "https://example.test/resource",
         response: {
-          body: "json",
-          mapError: ({ status, body }) => ({
+          parse: "json",
+          errorMap: ({ status, body }) => ({
             status,
             error: (body as { error: string }).error,
           }),
@@ -174,7 +175,7 @@ Deno.test("response error mapper projects failed responses", async () => {
   );
 });
 
-Deno.test("response success predicate can override HTTP status semantics", async () => {
+Deno.test("custom response success can override HTTP status semantics", async () => {
   await withFetch(
     () =>
       Promise.resolve(
@@ -183,12 +184,13 @@ Deno.test("response success predicate can override HTTP status semantics", async
     async () => {
       const result = await httpPost({
         url: "https://example.test/resource",
-        expectStatus: 201,
         response: {
-          body: "json",
-          isSuccess: ({ body }) =>
+          parse: "json",
+          success: ({ body }) =>
             (body as { result: string }).result === "already-done",
-          map: ({ body }) => ({ result: (body as { result: string }).result }),
+          successMap: ({ body }) => ({
+            result: (body as { result: string }).result,
+          }),
         },
       }).run(event, context);
 
