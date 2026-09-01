@@ -31,13 +31,32 @@ export interface HttpResponseReport<TBody = unknown> {
   body?: TBody;
 }
 
+export interface HttpResponseOptions<TEvent extends Event = Event> {
+  body?: ResponseMode;
+  isSuccess?: (
+    response: HttpResponseReport,
+    event: TEvent,
+    context: Context,
+  ) => boolean | Promise<boolean>;
+  map?: (
+    response: HttpResponseReport,
+    event: TEvent,
+    context: Context,
+  ) => unknown | Promise<unknown>;
+  mapError?: (
+    response: HttpResponseReport,
+    event: TEvent,
+    context: Context,
+  ) => unknown | Promise<unknown>;
+}
+
 export interface HttpRequestOptions<TEvent extends Event = Event> {
   method?: string;
   url: ValueOrFactory<string | URL, TEvent>;
   headers?: HeaderSource<TEvent> | readonly HeaderSource<TEvent>[];
   body?: ValueOrFactory<BodyInit | null, TEvent> | HttpBody<TEvent>;
   expectStatus?: StatusExpectation;
-  response?: ResponseMode;
+  response?: ResponseMode | HttpResponseOptions<TEvent>;
 }
 
 export function headers<TEvent extends Event = Event>(
@@ -131,8 +150,13 @@ export function httpRequest<TEvent extends Event = Event>(
         body,
       });
 
-      const success = matchesStatus(response.status, options.expectStatus);
-      const data = await toReport(response, options.response ?? "none");
+      const responseOptions = normalizeResponseOptions(options.response);
+      const report = await toReport(response, responseOptions.body ?? "none");
+      const success = responseOptions.isSuccess
+        ? await responseOptions.isSuccess(report, event, context)
+        : matchesStatus(response.status, options.expectStatus);
+      const mapper = success ? responseOptions.map : responseOptions.mapError;
+      const data = mapper ? await mapper(report, event, context) : report;
 
       return {
         success,
@@ -187,6 +211,13 @@ async function resolveHeaders<TEvent extends Event>(
     );
   }
   return result;
+}
+
+function normalizeResponseOptions<TEvent extends Event>(
+  response: HttpRequestOptions<TEvent>["response"],
+): HttpResponseOptions<TEvent> {
+  if (response === undefined) return {};
+  return typeof response === "string" ? { body: response } : response;
 }
 
 function isHttpBody<TEvent extends Event>(
