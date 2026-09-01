@@ -4,12 +4,17 @@ export type ValueOrFactory<T, TEvent extends Event = Event> =
   | T
   | ((event: TEvent, context: Context) => T | Promise<T>);
 
-export type HeaderSource<TEvent extends Event = Event> =
-  ValueOrFactory<HeadersInit, TEvent>;
+export type HeaderSource<TEvent extends Event = Event> = ValueOrFactory<
+  HeadersInit,
+  TEvent
+>;
 
 export interface HttpBody<TEvent extends Event = Event> {
   contentType?: string;
-  resolve(event: TEvent, context: Context): BodyInit | null | Promise<BodyInit | null>;
+  resolve(
+    event: TEvent,
+    context: Context,
+  ): BodyInit | null | Promise<BodyInit | null>;
 }
 
 export type StatusExpectation =
@@ -71,6 +76,20 @@ export function jsonBody<TEvent extends Event = Event>(
   };
 }
 
+export function formBody<TEvent extends Event = Event>(
+  value: ValueOrFactory<URLSearchParams | Record<string, string>, TEvent>,
+): HttpBody<TEvent> {
+  return {
+    contentType: "application/x-www-form-urlencoded",
+    async resolve(event, context) {
+      const resolved = await resolve(value, event, context);
+      return resolved instanceof URLSearchParams
+        ? resolved.toString()
+        : new URLSearchParams(resolved).toString();
+    },
+  };
+}
+
 export function textBody<TEvent extends Event = Event>(
   value: ValueOrFactory<string, TEvent>,
   contentType = "text/plain; charset=utf-8",
@@ -90,7 +109,11 @@ export function httpRequest<TEvent extends Event = Event>(
     name: `http-${(options.method ?? "GET").toLowerCase()}`,
     async run(event, context): Promise<ListenerResult> {
       const url = await resolve(options.url, event, context);
-      const requestHeaders = await resolveHeaders(options.headers, event, context);
+      const requestHeaders = await resolveHeaders(
+        options.headers,
+        event,
+        context,
+      );
       let body: BodyInit | null | undefined;
 
       if (options.body && isHttpBody(options.body)) {
@@ -115,7 +138,8 @@ export function httpRequest<TEvent extends Event = Event>(
         success,
         message: success
           ? `${response.status} ${response.statusText}`.trim()
-          : `Unexpected HTTP status ${response.status} ${response.statusText}`.trim(),
+          : `Unexpected HTTP status ${response.status} ${response.statusText}`
+            .trim(),
         data,
       };
     },
@@ -140,7 +164,10 @@ async function resolve<T, TEvent extends Event>(
   context: Context,
 ): Promise<T> {
   return typeof value === "function"
-    ? await (value as (event: TEvent, context: Context) => T | Promise<T>)(event, context)
+    ? await (value as (event: TEvent, context: Context) => T | Promise<T>)(
+      event,
+      context,
+    )
     : value;
 }
 
@@ -155,23 +182,33 @@ async function resolveHeaders<TEvent extends Event>(
   const sources = Array.isArray(value) ? value : [value];
   for (const source of sources) {
     const resolved = await resolve(source, event, context);
-    new Headers(resolved).forEach((headerValue, key) => result.set(key, headerValue));
+    new Headers(resolved).forEach((headerValue, key) =>
+      result.set(key, headerValue)
+    );
   }
   return result;
 }
 
-function isHttpBody<TEvent extends Event>(value: unknown): value is HttpBody<TEvent> {
+function isHttpBody<TEvent extends Event>(
+  value: unknown,
+): value is HttpBody<TEvent> {
   return typeof value === "object" && value !== null && "resolve" in value;
 }
 
-function matchesStatus(status: number, expectation?: StatusExpectation): boolean {
+function matchesStatus(
+  status: number,
+  expectation?: StatusExpectation,
+): boolean {
   if (expectation === undefined) return status >= 200 && status < 300;
   if (typeof expectation === "number") return status === expectation;
   if (typeof expectation === "function") return expectation(status);
   return expectation.includes(status);
 }
 
-async function toReport(response: Response, mode: ResponseMode): Promise<HttpResponseReport> {
+async function toReport(
+  response: Response,
+  mode: ResponseMode,
+): Promise<HttpResponseReport> {
   const report: HttpResponseReport = {
     status: response.status,
     statusText: response.statusText,
