@@ -155,6 +155,23 @@ Deno.test("pipe reports named transformation failures by name", async () => {
   });
 });
 
+Deno.test("project creates a named transformation and passes context", async () => {
+  const transformContext = { ...context, originalData: "original" };
+  const transformation = project<string, number>(
+    async (value, currentContext) => {
+      assertEquals(currentContext, transformContext);
+      return value.length;
+    },
+    "length",
+  );
+
+  assertEquals(transformation.name, "length");
+  assertEquals(
+    await transformation.transform("hooksmith", transformContext),
+    9,
+  );
+});
+
 Deno.test("parallel runs transformations against the same input", async () => {
   const transformation = parallel(
     project((value: string) => value.length),
@@ -195,6 +212,7 @@ Deno.test("parallel identifies a failing branch", async () => {
 Deno.test("when applies a same-type transformation conditionally", async () => {
   let invocations = 0;
   const trim: Transformer<string, string> = {
+    name: "trim",
     transform(value) {
       invocations++;
       return value.trim();
@@ -202,11 +220,15 @@ Deno.test("when applies a same-type transformation conditionally", async () => {
   };
 
   const transformation = when(
-    (value: string) => value.includes(" "),
+    (value: string, transformContext) => {
+      assertEquals(transformContext.originalData, "original");
+      return value.includes(" ");
+    },
     trim,
   );
   const transformContext = { ...context, originalData: "original" };
 
+  assertEquals(transformation.name, "trim");
   assertEquals(
     await transformation.transform(" hooksmith ", transformContext),
     "hooksmith",
@@ -216,6 +238,68 @@ Deno.test("when applies a same-type transformation conditionally", async () => {
     "hooksmith",
   );
   assertEquals(invocations, 1);
+});
+
+Deno.test("split projects to a collection and passes context", async () => {
+  const transformContext = { ...context, originalData: "original" };
+  const transformation = split<string, string>(
+    async (value, currentContext) => {
+      assertEquals(currentContext, transformContext);
+      return value.split(",");
+    },
+    "sections",
+  );
+
+  assertEquals(transformation.name, "sections");
+  assertEquals(
+    await transformation.transform("one,two,three", transformContext),
+    ["one", "two", "three"],
+  );
+});
+
+Deno.test("each transforms every item and passes the shared context", async () => {
+  const transformContext = { ...context, originalData: "original" };
+  const seenContexts: unknown[] = [];
+  const transformation = each(project(async (value: string, currentContext) => {
+    seenContexts.push(currentContext);
+    return value.length;
+  }, "length"));
+
+  assertEquals(transformation.name, "length");
+  assertEquals(
+    await transformation.transform(["one", "three"], transformContext),
+    [3, 5],
+  );
+  assertEquals(seenContexts, [transformContext, transformContext]);
+});
+
+Deno.test("each identifies a failing item", async () => {
+  const transformation = each(project<string, number>((value) => {
+    if (value === "bad") {
+      throw new Error("invalid");
+    }
+    return value.length;
+  }, "length"));
+
+  try {
+    await transformation.transform(["good", "bad"], {
+      ...context,
+      originalData: "original",
+    });
+    throw new Error("Expected transformation to fail");
+  } catch (error) {
+    assertEquals(
+      error instanceof Error ? error.message : String(error),
+      'Item transformation "length" at item #2 failed: invalid',
+    );
+  }
+});
+
+Deno.test("merge wraps homogeneous collections without changing them", () => {
+  const transformContext = { ...context, originalData: "original" };
+  const items = [1, 2, 3] as const;
+
+  assertEquals(merge().transform(items, transformContext), { items });
 });
 
 Deno.test("split, each, and merge compose collection pipelines", async () => {
