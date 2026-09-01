@@ -62,7 +62,7 @@ Deno.test("httpPost resolves auth, headers and JSON body", async () => {
         bearerAuth("secret"),
         (current) => ({ "X-Event-Type": current.type }),
       ),
-      body: jsonBody((current) => ({ type: current.type })),
+      body: jsonBody((current: Event) => ({ type: current.type })),
       expectStatus: 201,
       response: "json",
     }).run(event, context);
