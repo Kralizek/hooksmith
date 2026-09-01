@@ -256,22 +256,26 @@ Deno.test("merge preserves tuple types produced by parallel", async () => {
   assertEquals(result, { success: true, data: [9, "HOOKSMITH"] });
 });
 
-if (false) {
-  const stringToNumber: Transformer<string, number> = {
-    transform: (value) => value.length,
-  };
-  const numberToBoolean: Transformer<number, boolean> = {
-    transform: (value) => value > 0,
-  };
-  const booleanListener: Listener<Event<boolean>> = {
-    run: () => ({ success: true }),
-  };
+Deno.test({
+  name: "pipeline type constraints",
+  ignore: true,
+  fn() {
+    const stringToNumber: Transformer<string, number> = {
+      transform: (value) => value.length,
+    };
+    const numberToBoolean: Transformer<number, boolean> = {
+      transform: (value) => value > 0,
+    };
+    const booleanListener: Listener<Event<boolean>> = {
+      run: () => ({ success: true }),
+    };
 
-  pipe(stringToNumber, numberToBoolean, booleanListener);
+    pipe(stringToNumber, numberToBoolean, booleanListener);
 
-  // @ts-expect-error pipeline stages must form a valid type sequence
-  pipe(numberToBoolean, stringToNumber, booleanListener);
+    // @ts-expect-error pipeline stages must form a valid type sequence
+    pipe(numberToBoolean, stringToNumber, booleanListener);
 
-  // @ts-expect-error parallel branches must accept the same input
-  parallel(stringToNumber, numberToBoolean);
-}
+    // @ts-expect-error parallel branches must accept the same input
+    parallel(stringToNumber, numberToBoolean);
+  },
+});
