@@ -17,12 +17,7 @@ export interface HttpBody<TEvent extends Event = Event> {
   ): BodyInit | null | Promise<BodyInit | null>;
 }
 
-export type StatusExpectation =
-  | number
-  | readonly number[]
-  | ((status: number) => boolean);
-
-export type ResponseMode = "none" | "text" | "json";
+export type ResponseParser = "none" | "text" | "json";
 
 export interface HttpResponseReport<TBody = unknown> {
   status: number;
@@ -31,32 +26,37 @@ export interface HttpResponseReport<TBody = unknown> {
   body?: TBody;
 }
 
+export type HttpResponseSuccess<TEvent extends Event = Event> = (
+  response: HttpResponseReport,
+  event: TEvent,
+  context: Context,
+) => boolean | Promise<boolean>;
+
 export interface HttpResponseOptions<TEvent extends Event = Event> {
-  body?: ResponseMode;
-  isSuccess?: (
-    response: HttpResponseReport,
-    event: TEvent,
-    context: Context,
-  ) => boolean | Promise<boolean>;
-  map?: (
+  parse?: ResponseParser;
+  success?: HttpResponseSuccess<TEvent>;
+  successMap?: (
     response: HttpResponseReport,
     event: TEvent,
     context: Context,
   ) => unknown | Promise<unknown>;
-  mapError?: (
+  errorMap?: (
     response: HttpResponseReport,
     event: TEvent,
     context: Context,
   ) => unknown | Promise<unknown>;
 }
 
+export type HttpResponse<TEvent extends Event = Event> =
+  | HttpResponseSuccess<TEvent>
+  | HttpResponseOptions<TEvent>;
+
 export interface HttpRequestOptions<TEvent extends Event = Event> {
   method?: string;
   url: ValueOrFactory<string | URL, TEvent>;
   headers?: HeaderSource<TEvent> | readonly HeaderSource<TEvent>[];
   body?: ValueOrFactory<BodyInit | null, TEvent> | HttpBody<TEvent>;
-  expectStatus?: StatusExpectation;
-  response?: ResponseMode | HttpResponseOptions<TEvent>;
+  response?: HttpResponse<TEvent>;
 }
 
 export function headers<TEvent extends Event = Event>(
@@ -121,6 +121,12 @@ export function textBody<TEvent extends Event = Event>(
   };
 }
 
+export function expectStatus<TEvent extends Event = Event>(
+  ...expected: number[]
+): HttpResponseSuccess<TEvent> {
+  return ({ status }) => expected.includes(status);
+}
+
 export function httpRequest<TEvent extends Event = Event>(
   options: HttpRequestOptions<TEvent>,
 ): Listener<TEvent> {
@@ -150,19 +156,21 @@ export function httpRequest<TEvent extends Event = Event>(
         body,
       });
 
-      const responseOptions = normalizeResponseOptions(options.response);
-      const report = await toReport(response, responseOptions.body ?? "none");
-      const success = responseOptions.isSuccess
-        ? await responseOptions.isSuccess(report, event, context)
-        : matchesStatus(response.status, options.expectStatus);
-      const mapper = success ? responseOptions.map : responseOptions.mapError;
+      const responseOptions = normalizeResponse(options.response);
+      const report = await toReport(response, responseOptions.parse ?? "none");
+      const success = responseOptions.success
+        ? await responseOptions.success(report, event, context)
+        : response.ok;
+      const mapper = success
+        ? responseOptions.successMap
+        : responseOptions.errorMap;
       const data = mapper ? await mapper(report, event, context) : report;
 
       return {
         success,
         message: success
           ? `${response.status} ${response.statusText}`.trim()
-          : `Unexpected HTTP status ${response.status} ${response.statusText}`
+          : `HTTP response considered unsuccessful: ${response.status} ${response.statusText}`
             .trim(),
         data,
       };
@@ -213,11 +221,11 @@ async function resolveHeaders<TEvent extends Event>(
   return result;
 }
 
-function normalizeResponseOptions<TEvent extends Event>(
-  response: HttpRequestOptions<TEvent>["response"],
+function normalizeResponse<TEvent extends Event>(
+  response: HttpResponse<TEvent> | undefined,
 ): HttpResponseOptions<TEvent> {
   if (response === undefined) return {};
-  return typeof response === "string" ? { body: response } : response;
+  return typeof response === "function" ? { success: response } : response;
 }
 
 function isHttpBody<TEvent extends Event>(
@@ -226,19 +234,9 @@ function isHttpBody<TEvent extends Event>(
   return typeof value === "object" && value !== null && "resolve" in value;
 }
 
-function matchesStatus(
-  status: number,
-  expectation?: StatusExpectation,
-): boolean {
-  if (expectation === undefined) return status >= 200 && status < 300;
-  if (typeof expectation === "number") return status === expectation;
-  if (typeof expectation === "function") return expectation(status);
-  return expectation.includes(status);
-}
-
 async function toReport(
   response: Response,
-  mode: ResponseMode,
+  parser: ResponseParser,
 ): Promise<HttpResponseReport> {
   const report: HttpResponseReport = {
     status: response.status,
@@ -246,7 +244,7 @@ async function toReport(
     headers: Object.fromEntries(response.headers.entries()),
   };
 
-  if (mode === "text") report.body = await response.text();
-  if (mode === "json") report.body = await response.json();
+  if (parser === "text") report.body = await response.text();
+  if (parser === "json") report.body = await response.json();
   return report;
 }
