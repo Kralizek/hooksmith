@@ -51,7 +51,12 @@ jobs:
           ' /tmp/hooksmith-remote-extension-report.json
 
   action:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v7
@@ -62,8 +67,10 @@ jobs:
         with:
           event: ./examples/basic/event.yaml
           config: ./examples/basic/hooksmith.config.ts
+          report-path: ${{ runner.temp }}/hooksmith/custom-report.json
 
       - name: Validate action outputs and report file
+        shell: bash
         env:
           HOOKSMITH_SUCCESS: ${{ steps.hooksmith.outputs.success }}
           HOOKSMITH_MODE: ${{ steps.hooksmith.outputs.mode }}
@@ -71,7 +78,6 @@ jobs:
         run: |
           test "$HOOKSMITH_SUCCESS" = "true"
           test "$HOOKSMITH_MODE" = "run"
-          test "$HOOKSMITH_REPORT_PATH" = "$RUNNER_TEMP/hooksmith/report.json"
           test -f "$HOOKSMITH_REPORT_PATH"
 
           jq -e '
@@ -85,3 +91,25 @@ jobs:
               "message": "Logged page.published"
             }]
           ' "$HOOKSMITH_REPORT_PATH"
+
+      - name: Run Hooksmith with invalid input
+        id: failed-hooksmith
+        continue-on-error: true
+        uses: ./
+        with:
+          event: ./examples/basic/does-not-exist.yaml
+          config: ./examples/basic/hooksmith.config.ts
+
+      - name: Validate failure outputs
+        if: always()
+        shell: bash
+        env:
+          HOOKSMITH_OUTCOME: ${{ steps.failed-hooksmith.outcome }}
+          HOOKSMITH_SUCCESS: ${{ steps.failed-hooksmith.outputs.success }}
+          HOOKSMITH_MODE: ${{ steps.failed-hooksmith.outputs.mode }}
+          HOOKSMITH_REPORT_PATH: ${{ steps.failed-hooksmith.outputs.report-path }}
+        run: |
+          test "$HOOKSMITH_OUTCOME" = "failure"
+          test "$HOOKSMITH_SUCCESS" = "false"
+          test "$HOOKSMITH_MODE" = "run"
+          test -n "$HOOKSMITH_REPORT_PATH"
