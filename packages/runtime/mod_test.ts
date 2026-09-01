@@ -1,6 +1,6 @@
-import { assertEquals, assertRejects } from "@std/assert";
+import { assertEquals, assertRejects, assertThrows } from "@std/assert";
 import type { Config, Context, Event, Listener, Logger } from "@hooksmith/core";
-import { hydrateEvent, runEvent } from "./mod.ts";
+import { createRuntime, hydrateEvent, runEvent } from "./mod.ts";
 
 const logger: Logger = {
   debug() {},
@@ -31,6 +31,43 @@ Deno.test("hydrates an event document", () => {
   });
 
   assertEquals(value.timestamp.toString(), "2026-08-31T20:00:00Z");
+});
+
+Deno.test("validates config when creating a runtime", () => {
+  assertThrows(
+    () => createRuntime({ routes: "invalid" } as unknown as Config, context),
+    Error,
+    "Config.routes must be an array.",
+  );
+});
+
+Deno.test("processes multiple events with one runtime", async () => {
+  const calls: string[] = [];
+  const config: Config = {
+    routes: [{
+      listeners: [{
+        run(currentEvent, currentContext) {
+          assertEquals(currentContext, context);
+          calls.push(currentEvent.subject?.id ?? "");
+          return { success: true };
+        },
+      }],
+    }],
+  };
+
+  const runtime = createRuntime(config, context);
+  const first = event();
+  const second = {
+    ...event(),
+    subject: { kind: "page", id: "/second" },
+  };
+
+  const firstReport = await runtime.process(first);
+  const secondReport = await runtime.process(second);
+
+  assertEquals(calls, ["/hello", "/second"]);
+  assertEquals(firstReport.success, true);
+  assertEquals(secondReport.success, true);
 });
 
 Deno.test("runs all matching routes and listeners in config order", async () => {
