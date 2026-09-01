@@ -14,11 +14,21 @@ inputs:
     description: Evaluate routing without invoking listeners.
     required: false
     default: "false"
+  report-path:
+    description: Path where the JSON run report is written, relative to the workspace unless absolute.
+    required: false
+    default: .hooksmith/report.json
 
 outputs:
-  report:
-    description: Hooksmith run report as JSON.
-    value: ${{ steps.run.outputs.report }}
+  success:
+    description: Whether the Hooksmith run succeeded.
+    value: ${{ steps.run.outputs.success }}
+  mode:
+    description: Hooksmith execution mode (run or plan).
+    value: ${{ steps.run.outputs.mode }}
+  report-path:
+    description: Absolute path to the JSON run report.
+    value: ${{ steps.run.outputs.report-path }}
 
 runs:
   using: composite
@@ -37,6 +47,7 @@ runs:
         HOOKSMITH_EVENT: ${{ inputs.event }}
         HOOKSMITH_CONFIG: ${{ inputs.config }}
         HOOKSMITH_PLAN: ${{ inputs.plan }}
+        HOOKSMITH_REPORT_PATH: ${{ inputs.report-path }}
       run: |
         set -euo pipefail
 
@@ -64,19 +75,32 @@ runs:
             ;;
         esac
 
+        if [[ "$HOOKSMITH_REPORT_PATH" = /* ]]; then
+          report_path="$HOOKSMITH_REPORT_PATH"
+        else
+          report_path="$GITHUB_WORKSPACE/$HOOKSMITH_REPORT_PATH"
+        fi
+
+        mkdir -p "$(dirname "$report_path")"
+
         set +e
-        report="$(deno run -A "jsr:@hooksmith/cli@${version}" "${args[@]}")"
+        deno run -A "jsr:@hooksmith/cli@${version}" "${args[@]}" > "$report_path"
         status=$?
         set -e
 
-        delimiter="HOOKSMITH_REPORT_$(date +%s%N)"
-        {
-          echo "report<<${delimiter}"
-          echo "$report"
-          echo "$delimiter"
-        } >> "$GITHUB_OUTPUT"
+        echo "report-path=$report_path" >> "$GITHUB_OUTPUT"
 
-        echo "$report"
+        if [[ -s "$report_path" ]]; then
+          values="$(
+            deno eval --allow-read \
+              'const report = JSON.parse(await Deno.readTextFile(Deno.args[0])); console.log(`${report.success}\t${report.mode}`);' \
+              "$report_path"
+          )"
+          IFS=$'\t' read -r success mode <<< "$values"
+          echo "success=$success" >> "$GITHUB_OUTPUT"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+        fi
+
         exit "$status"
 
 branding:
