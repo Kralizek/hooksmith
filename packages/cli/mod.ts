@@ -116,13 +116,15 @@ export function parseArgs(args: string[]): CliOptions {
   };
 }
 
-export async function loadEventDocument(path: string): Promise<unknown> {
+export async function loadEventDocument(
+  path: string,
+  readContent: (path: string) => Promise<string> = readEventContent,
+): Promise<unknown> {
+  const content = await readContent(path);
+
   if (path === "-") {
-    const content = await new Response(Deno.stdin.readable).text();
     return parseYaml(content, { schema: "core" });
   }
-
-  const content = await Deno.readTextFile(path);
 
   switch (extname(path).toLowerCase()) {
     case ".yaml":
@@ -133,6 +135,14 @@ export async function loadEventDocument(path: string): Promise<unknown> {
     default:
       throw new Error("Event file must use .yaml, .yml, or .json.");
   }
+}
+
+async function readEventContent(path: string): Promise<string> {
+  if (path === "-") {
+    return await new Response(Deno.stdin.readable).text();
+  }
+
+  return await Deno.readTextFile(path);
 }
 
 export async function loadConfig(path: string): Promise<Config> {
@@ -208,8 +218,10 @@ export function usage(): string {
     "Hooksmith CLI",
     "",
     "Usage:",
-    "  hooksmith --help | -h",
-    "  hooksmith --version | -v",
+    "  hooksmith --help",
+    "  hooksmith -h",
+    "  hooksmith --version",
+    "  hooksmith -v",
     "  hooksmith run <event-file|-> [options]",
     "",
     "Run options:",
@@ -217,7 +229,7 @@ export function usage(): string {
     "      --format table|json|tsv  Report format (default: table)",
     "      --plan                   Plan the event without invoking listeners",
     "",
-    "Use - as the event input to read one event from stdin.",
+    "Use - as the event input to read exactly one event from stdin.",
   ].join("\n");
 }
 
