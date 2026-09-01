@@ -115,23 +115,30 @@ A condition that throws is an unrecoverable routing error and aborts the run. Li
 GitHub Actions workflows can run Hooksmith without installing Deno explicitly:
 
 ```yaml
-- uses: Kralizek/hooksmith@v0
+- id: hooksmith
+  uses: Kralizek/hooksmith@v0
   with:
     event: .hooksmith/event.yaml
 ```
 
-The Action accepts the same core execution options as the CLI:
+The Action exposes the execution options that are meaningful to a workflow:
 
 ```yaml
-- uses: Kralizek/hooksmith@v0
+- id: hooksmith
+  uses: Kralizek/hooksmith@v0
   with:
     event: .hooksmith/event.yaml
     config: hooksmith.config.ts
-    format: json
     plan: false
 ```
 
-`event` is required. `config` defaults to `hooksmith.config.ts`, `format` defaults to `table`, and `plan` defaults to `false`.
+`event` is required. `config` defaults to `hooksmith.config.ts`, and `plan` defaults to `false`.
+
+The Action always renders the Hooksmith run report as JSON and exposes it through the `report` output:
+
+```yaml
+- run: echo '${{ steps.hooksmith.outputs.report }}' | jq .
+```
 
 The Action installs Deno and invokes the exact `@hooksmith/cli` version corresponding to the Action release. Paths are resolved from the caller's workspace, so the same event documents, configuration modules, and Deno import mappings used by direct CLI execution continue to work.
 
