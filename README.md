@@ -123,7 +123,7 @@ GitHub Actions workflows can run Hooksmith without installing Deno explicitly:
 
 `event` is required. `config` defaults to `hooksmith.config.ts`, `plan` defaults to `false`, and `report-path` is optional.
 
-The Action always writes the complete JSON run report to a file. When `report-path` is omitted, the report is written under the runner temporary directory at `${{ runner.temp }}/hooksmith/report.json`. When provided, relative report paths are resolved from the caller workspace; absolute paths are used as-is. Parent directories are created automatically.
+The Action always writes the complete JSON run report to a file. When `report-path` is omitted, the report is written under the runner temporary directory at `${{ runner.temp }}/hooksmith/report.json`. Relative custom report paths are resolved from the caller workspace, absolute paths are preserved, and parent directories are created automatically.
 
 The Action exposes three small outputs instead of embedding the full report in GitHub output data:
 
