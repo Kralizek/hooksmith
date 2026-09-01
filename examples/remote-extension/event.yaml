@@ -1,0 +1,10 @@
+type: integration.test
+
+timestamp: 2026-09-01T08:50:00Z
+source:
+  kind: hooksmith
+  id: remote-extension-example
+metadata:
+  integration: remote
+data:
+  message: Hello from Hooksmith
