@@ -171,10 +171,28 @@ The Action installs Deno and invokes the exact `@hooksmith/cli` version correspo
 ## CLI
 
 ```text
-hooksmith run <event-file> [--config <path>] [--format table|json|tsv] [--plan]
+hooksmith --help
+hooksmith -h
+hooksmith --version
+hooksmith -v
+hooksmith run <event-file|-> [options]
+```
+
+Run options:
+
+```text
+-c, --config <path>          Config file (default: hooksmith.config.ts)
+    --format table|json|tsv  Report format (default: table)
+    --plan                   Plan the event without invoking listeners
 ```
 
 Only one event document is processed per invocation. `.yaml`, `.yml`, and `.json` are supported.
+
+Use `-` as the event input to read exactly one event from stdin:
+
+```sh
+cat event.json | hooksmith run - -c hooksmith.config.ts
+```
 
 `--plan` evaluates routing and reports the listeners that would run without invoking them.
 
@@ -183,8 +201,6 @@ The report is written to stdout. All logs and diagnostics are written to stderr,
 ```sh
 deno run -A jsr:@hooksmith/cli run event.yaml --format json > report.json
 ```
-
-The default report format is `table`.
 
 ## Extensions
 
