@@ -91,6 +91,27 @@ jobs:
             }]
           ' "$HOOKSMITH_REPORT_PATH"
 
+      - name: Plan Hooksmith with custom report path
+        id: hooksmith-plan
+        uses: ./
+        with:
+          event: ./examples/basic/event.yaml
+          config: ./examples/basic/hooksmith.config.ts
+          plan: true
+          report-path: ${{ runner.temp }}/hooksmith/custom-plan-report.json
+
+      - name: Validate plan outputs and custom report path
+        shell: bash
+        env:
+          HOOKSMITH_SUCCESS: ${{ steps.hooksmith-plan.outputs.success }}
+          HOOKSMITH_MODE: ${{ steps.hooksmith-plan.outputs.mode }}
+          HOOKSMITH_REPORT_PATH: ${{ steps.hooksmith-plan.outputs.report-path }}
+        run: |
+          test "$HOOKSMITH_SUCCESS" = "true"
+          test "$HOOKSMITH_MODE" = "plan"
+          test -f "$HOOKSMITH_REPORT_PATH"
+          jq -e '.success == true and .mode == "plan"' "$HOOKSMITH_REPORT_PATH"
+
       - name: Run Hooksmith with invalid input
         id: failed-hooksmith
         continue-on-error: true
