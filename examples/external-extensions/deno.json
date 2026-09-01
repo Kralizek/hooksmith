@@ -5,5 +5,6 @@
     "@hooksmith/bluesky": "jsr:@hooksmith/bluesky@^0.1.0",
     "@hooksmith/slack": "jsr:@hooksmith/slack@^0.1.0"
   },
+  "minimumDependencyAge": 0,
   "lock": false
 }
