@@ -1,6 +1,6 @@
 import { assertEquals, assertRejects, assertThrows } from "@std/assert";
 import type { Config, Context, Event, Listener, Logger } from "@hooksmith/core";
-import { createRuntime, hydrateEvent, runEvent } from "./mod.ts";
+import { createRuntime, hydrateEvent } from "./mod.ts";
 
 const logger: Logger = {
   debug() {},
@@ -95,7 +95,7 @@ Deno.test("runs all matching routes and listeners in config order", async () => 
     ],
   };
 
-  const report = await runEvent(event(), config, context);
+  const report = await createRuntime(config, context).process(event());
 
   assertEquals(calls, ["a", "b", "c"]);
   assertEquals(report.results.map((result) => result.route), [
@@ -122,7 +122,7 @@ Deno.test("runs fallback only when no route matches", async () => {
     }],
   };
 
-  const report = await runEvent(event(), config, context);
+  const report = await createRuntime(config, context).process(event());
 
   assertEquals(calls, ["fallback"]);
   assertEquals(report.results[0].route, "fallback");
@@ -154,8 +154,9 @@ Deno.test("condition errors identify the condition and abort execution", async (
     ],
   };
 
+  const runtime = createRuntime(config, context);
   const error = await assertRejects(
-    () => runEvent(event(), config, context),
+    () => runtime.process(event()),
     Error,
     "Condition is-published failed: routing failed",
   );
@@ -176,8 +177,9 @@ Deno.test("condition errors use positional identity when unnamed", async () => {
     }],
   };
 
+  const runtime = createRuntime(config, context);
   const error = await assertRejects(
-    () => runEvent(event(), config, context),
+    () => runtime.process(event()),
     Error,
     "Condition route-1/condition failed: routing failed",
   );
@@ -214,7 +216,7 @@ Deno.test("listener failures do not prevent later listeners", async () => {
     }],
   };
 
-  const report = await runEvent(event(), config, context);
+  const report = await createRuntime(config, context).process(event());
 
   assertEquals(calls, ["throws", "reports-failure", "succeeds"]);
   assertEquals(report.results.map((result) => result.status), [
@@ -241,7 +243,9 @@ Deno.test("plan evaluates routing but does not invoke listeners", async () => {
     }],
   };
 
-  const report = await runEvent(event(), config, context, { plan: true });
+  const report = await createRuntime(config, context).process(event(), {
+    plan: true,
+  });
 
   assertEquals(listenerRan, false);
   assertEquals(report.mode, "plan");
