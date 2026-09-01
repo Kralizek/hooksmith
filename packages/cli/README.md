@@ -6,8 +6,10 @@ running or planning an event, and rendering reports.
 ## Usage
 
 ```text
-hooksmith --help | -h
-hooksmith --version | -v
+hooksmith --help
+hooksmith -h
+hooksmith --version
+hooksmith -v
 hooksmith run <event-file|-> [options]
 ```
 
