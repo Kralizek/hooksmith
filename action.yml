@@ -81,7 +81,7 @@ runs:
         else
           report_path="$(
             deno eval \
-              'import { isAbsolute, resolve } from "node:path"; const [path, workspace] = Deno.args; console.log(isAbsolute(path) ? path : resolve(workspace, path));' \
+              'import { isAbsolute, resolve } from "node:path"; const [path, workspace] = Deno.args; const resolved = isAbsolute(path) ? path : resolve(workspace, path); console.log(Deno.build.os === "windows" ? resolved.replaceAll("\\", "/") : resolved);' \
               "$HOOKSMITH_REPORT_PATH" \
               "$GITHUB_WORKSPACE"
           )"
