@@ -41,7 +41,7 @@ type ApplyStep<TInput, TStep> = TStep extends MergeOperator
   ? TInput extends readonly unknown[] ? { items: TInput } : never
   : TStep extends Transformer<infer TStepInput, infer TOutput>
     ? TInput extends TStepInput ? TOutput : never
-    : never;
+  : never;
 
 type IsValidPipeTail<TInput, TItems extends readonly unknown[]> = TItems extends
   readonly [infer TNext, ...infer TRest]
