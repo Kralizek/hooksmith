@@ -78,15 +78,6 @@ export function createRuntime<TEvent extends Event>(
   };
 }
 
-export async function runEvent<TEvent extends Event>(
-  event: TEvent,
-  config: Config<TEvent>,
-  context: Context,
-  options: RunOptions = {},
-): Promise<RunReport> {
-  return await createRuntime(config, context).process(event, options);
-}
-
 async function executeEvent<TEvent extends Event>(
   event: TEvent,
   config: Config<TEvent>,
