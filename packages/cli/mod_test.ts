@@ -45,8 +45,10 @@ Deno.test("preserves - as stdin input", () => {
 Deno.test("loads event document from stdin input", async () => {
   const document = await loadEventDocument(
     "-",
-    async () =>
-      '{"type":"page.published","source":{"kind":"website"},"data":{}}',
+    () =>
+      Promise.resolve(
+        '{"type":"page.published","source":{"kind":"website"},"data":{}}',
+      ),
   ) as Record<string, unknown>;
 
   assertEquals(document.type, "page.published");
