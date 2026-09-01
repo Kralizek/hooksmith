@@ -24,14 +24,25 @@ No publication step is required.
 
 ## Remote modules
 
-Extensions can also be consumed directly from another repository without being
+Modern Deno projects map remote URLs in `deno.json` and import them through a
+bare specifier. This lets an extension live in another repository without being
 published to JSR:
+
+```json
+{
+  "imports": {
+    "my-hooksmith-extension": "https://raw.githubusercontent.com/example/my-hooksmith-extension/<commit>/mod.ts"
+  }
+}
+```
+
+The Hooksmith configuration then imports the extension normally:
 
 ```ts
 import {
   logFromExternalExtension,
   metadataEquals,
-} from "https://raw.githubusercontent.com/Kralizek/hooksmith-test-extension/ceae29a9e8fdb7507e32eed1b87171a4c602c2b2/mod.ts";
+} from "my-hooksmith-extension";
 ```
 
 The `hooksmith-test-extension` repository is intentionally unpublished and
@@ -42,9 +53,9 @@ rather than a moving branch such as `master`.
 
 ## Import-map aliases
 
-Because module loading belongs to Deno rather than Hooksmith, consumers can also
-map a friendly name to any of these sources through their Deno configuration and
-import that alias from `hooksmith.config.ts`.
+The remote-module example above is also an import-map alias. The same mechanism
+can provide friendly names for local modules or other Deno-supported module
+sources.
 
 The important boundary is that Hooksmith only receives objects implementing its
 `Condition`, `Listener`, and `Route` contracts. It does not need to know how
