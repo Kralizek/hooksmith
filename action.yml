@@ -11,7 +11,7 @@ inputs:
     required: false
     default: hooksmith.config.ts
   format:
-    description: Report format: table, json, or tsv.
+    description: Report format (table, json, or tsv).
     required: false
     default: table
   plan:
