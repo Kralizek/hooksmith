@@ -32,8 +32,6 @@ packages/
 extensions/
   standard/   Generic conditions, composition, and basic listeners
   http/       HTTP request listeners and request/response helpers
-  web/        Reserved for first-party web extensions
-  aws/        Reserved for first-party AWS extensions
 action.yml    Primary Hooksmith GitHub Action
 actions/      Reserved for future specialized actions
 examples/
