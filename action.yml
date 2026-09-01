@@ -1,0 +1,70 @@
+name: Hooksmith
+description: Run a Hooksmith event using the CLI version that matches this action release.
+author: Renato Golia
+
+inputs:
+  event:
+    description: Path to the YAML or JSON event document, relative to the workspace.
+    required: true
+  config:
+    description: Path to the Hooksmith configuration module, relative to the workspace.
+    required: false
+    default: hooksmith.config.ts
+  format:
+    description: Report format: table, json, or tsv.
+    required: false
+    default: table
+  plan:
+    description: Evaluate routing without invoking listeners.
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Deno
+      uses: denoland/setup-deno@v2
+      with:
+        deno-version: v2.x
+        cache: true
+
+    - name: Run Hooksmith
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        HOOKSMITH_EVENT: ${{ inputs.event }}
+        HOOKSMITH_CONFIG: ${{ inputs.config }}
+        HOOKSMITH_FORMAT: ${{ inputs.format }}
+        HOOKSMITH_PLAN: ${{ inputs.plan }}
+      run: |
+        set -euo pipefail
+
+        version="$(
+          deno eval --allow-read \
+            'const manifest = JSON.parse(await Deno.readTextFile(Deno.args[0])); console.log(manifest.version);' \
+            "$GITHUB_ACTION_PATH/packages/cli/deno.json"
+        )"
+
+        args=(
+          run "$HOOKSMITH_EVENT"
+          --config "$HOOKSMITH_CONFIG"
+          --format "$HOOKSMITH_FORMAT"
+        )
+
+        case "$HOOKSMITH_PLAN" in
+          true)
+            args+=(--plan)
+            ;;
+          false)
+            ;;
+          *)
+            echo "::error::plan must be either 'true' or 'false'."
+            exit 1
+            ;;
+        esac
+
+        deno run -A "jsr:@hooksmith/cli@${version}" "${args[@]}"
+
+branding:
+  icon: tool
+  color: gray-dark

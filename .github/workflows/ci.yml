@@ -49,3 +49,16 @@ jobs:
               }
             }]
           ' /tmp/hooksmith-remote-extension-report.json
+
+  action:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Run Hooksmith through the action
+        uses: ./
+        with:
+          event: ./examples/basic/event.yaml
+          config: ./examples/basic/hooksmith.config.ts
+          format: json

@@ -33,7 +33,7 @@ extensions/
   web/        Reserved for first-party web extensions
   aws/        Reserved for first-party AWS extensions
 actions/
-  hooksmith/  Reserved for the first-party GitHub Action
+  hooksmith/  Documentation for the first-party GitHub Action
 examples/
   basic/      Minimal event and configuration example
 ```
@@ -110,6 +110,31 @@ An event can match multiple routes. Routes and listeners execute sequentially in
 
 A condition that throws is an unrecoverable routing error and aborts the run. Listener failures are collected while later listeners continue to run; the process still exits with code `1` if any listener fails.
 
+## GitHub Action
+
+GitHub Actions workflows can run Hooksmith without installing Deno explicitly:
+
+```yaml
+- uses: Kralizek/hooksmith@v0
+  with:
+    event: .hooksmith/event.yaml
+```
+
+The Action accepts the same core execution options as the CLI:
+
+```yaml
+- uses: Kralizek/hooksmith@v0
+  with:
+    event: .hooksmith/event.yaml
+    config: hooksmith.config.ts
+    format: json
+    plan: false
+```
+
+`event` is required. `config` defaults to `hooksmith.config.ts`, `format` defaults to `table`, and `plan` defaults to `false`.
+
+The Action installs Deno and invokes the exact `@hooksmith/cli` version corresponding to the Action release. Paths are resolved from the caller's workspace, so the same event documents, configuration modules, and Deno import mappings used by direct CLI execution continue to work.
+
 ## CLI
 
 ```text
@@ -127,6 +152,10 @@ deno run -A jsr:@hooksmith/cli run event.yaml --format json > report.json
 ```
 
 The default report format is `table`.
+
+## Extensions
+
+Hooksmith configuration can consume extension modules from JSR, local files, remote repositories, or import-map aliases. See [`docs/extensions.md`](docs/extensions.md) for the supported patterns and the CI-backed unpublished-extension example.
 
 ## Development
 
