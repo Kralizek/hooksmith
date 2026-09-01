@@ -27,10 +27,12 @@ const context: Context = {
 };
 
 Deno.test("httpGet sends a GET request and reports status", async () => {
-  await withFetch(async (input, init) => {
+  await withFetch((input, init) => {
     assertEquals(String(input), "https://example.test/resource");
     assertEquals(init?.method, "GET");
-    return new Response(null, { status: 204, statusText: "No Content" });
+    return Promise.resolve(
+      new Response(null, { status: 204, statusText: "No Content" }),
+    );
   }, async () => {
     const result = await httpGet({ url: "https://example.test/resource" }).run(
       event,
@@ -46,13 +48,13 @@ Deno.test("httpGet sends a GET request and reports status", async () => {
 });
 
 Deno.test("httpPost resolves auth, headers and JSON body", async () => {
-  await withFetch(async (_input, init) => {
+  await withFetch((_input, init) => {
     const requestHeaders = new Headers(init?.headers);
     assertEquals(requestHeaders.get("authorization"), "Bearer secret");
     assertEquals(requestHeaders.get("x-event-type"), "test.event");
     assertEquals(requestHeaders.get("content-type"), "application/json");
     assertEquals(init?.body, JSON.stringify({ type: "test.event" }));
-    return Response.json({ id: "posted" }, { status: 201 });
+    return Promise.resolve(Response.json({ id: "posted" }, { status: 201 }));
   }, async () => {
     const result = await httpPost({
       url: "https://example.test/resource",
@@ -74,14 +76,14 @@ Deno.test("httpPost resolves auth, headers and JSON body", async () => {
 });
 
 Deno.test("formBody encodes URL form data", async () => {
-  await withFetch(async (_input, init) => {
+  await withFetch((_input, init) => {
     const requestHeaders = new Headers(init?.headers);
     assertEquals(
       requestHeaders.get("content-type"),
       "application/x-www-form-urlencoded",
     );
     assertEquals(init?.body, "grant_type=client_credentials&scope=write");
-    return new Response(null, { status: 200 });
+    return Promise.resolve(new Response(null, { status: 200 }));
   }, async () => {
     await httpPost({
       url: "https://example.test/token",
@@ -91,13 +93,13 @@ Deno.test("formBody encodes URL form data", async () => {
 });
 
 Deno.test("basicAuth creates a basic authorization header", async () => {
-  await withFetch(async (_input, init) => {
+  await withFetch((_input, init) => {
     const requestHeaders = new Headers(init?.headers);
     assertEquals(
       requestHeaders.get("authorization"),
       `Basic ${btoa("user:pass")}`,
     );
-    return new Response(null, { status: 200 });
+    return Promise.resolve(new Response(null, { status: 200 }));
   }, async () => {
     await httpGet({
       url: "https://example.test/resource",
