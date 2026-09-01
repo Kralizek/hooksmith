@@ -5,7 +5,6 @@ import {
   assertEventDocument,
   createRuntime,
   hydrateEvent,
-  type RunOptions,
   type RunReport,
 } from "@hooksmith/runtime";
 import { extname, resolve, toFileUrl } from "@std/path";
@@ -41,9 +40,7 @@ export async function main(args: string[]): Promise<number> {
     const event = hydrateEvent(eventDocument);
     const config = await loadConfig(options.configFile);
     const context: Context = { log: stderrLogger };
-    const report = await runEvent(event, config, context, {
-      plan: options.plan,
-    });
+    const report = await runEvent(event, config, context, options.plan);
 
     await writeStdout(`${formatReport(report, options.format)}\n`);
     return report.success ? 0 : 1;
@@ -57,10 +54,10 @@ async function runEvent<TEvent extends Event>(
   event: TEvent,
   config: Config<TEvent>,
   context: Context,
-  options: RunOptions = {},
+  plan: boolean,
 ): Promise<RunReport> {
   const runtime = createRuntime(config, context);
-  return await runtime.process(event, options);
+  return plan ? await runtime.plan(event) : await runtime.process(event);
 }
 
 export function parseArgs(args: string[]): CliOptions {
