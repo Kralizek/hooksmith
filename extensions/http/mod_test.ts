@@ -1,4 +1,9 @@
-import { assertEquals, assertFalse, assertObjectMatch } from "@std/assert";
+import {
+  assertEquals,
+  assertFalse,
+  assertObjectMatch,
+  assertThrows,
+} from "@std/assert";
 import type { Context, Event } from "@hooksmith/core";
 import {
   basicAuth,
@@ -109,6 +114,14 @@ Deno.test("basicAuth creates a basic authorization header", async () => {
       headers: basicAuth("user", "pass"),
     }).run(event, context);
   });
+});
+
+Deno.test("expectStatus requires at least one status", () => {
+  assertThrows(
+    () => expectStatus(),
+    TypeError,
+    "expectStatus requires at least one status code",
+  );
 });
 
 Deno.test("response shorthand can require an exact status", async () => {
