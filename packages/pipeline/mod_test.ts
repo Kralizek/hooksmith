@@ -158,7 +158,7 @@ Deno.test("pipe reports named transformation failures by name", async () => {
 Deno.test("project creates a named transformation and passes context", async () => {
   const transformContext = { ...context, originalData: "original" };
   const transformation = project<string, number>(
-    async (value, currentContext) => {
+    (value, currentContext) => {
       assertEquals(currentContext, transformContext);
       return value.length;
     },
@@ -243,7 +243,7 @@ Deno.test("when applies a same-type transformation conditionally", async () => {
 Deno.test("split projects to a collection and passes context", async () => {
   const transformContext = { ...context, originalData: "original" };
   const transformation = split<string, string>(
-    async (value, currentContext) => {
+    (value, currentContext) => {
       assertEquals(currentContext, transformContext);
       return value.split(",");
     },
@@ -260,7 +260,7 @@ Deno.test("split projects to a collection and passes context", async () => {
 Deno.test("each transforms every item and passes the shared context", async () => {
   const transformContext = { ...context, originalData: "original" };
   const seenContexts: unknown[] = [];
-  const transformation = each(project(async (value: string, currentContext) => {
+  const transformation = each(project((value: string, currentContext) => {
     seenContexts.push(currentContext);
     return value.length;
   }, "length"));
