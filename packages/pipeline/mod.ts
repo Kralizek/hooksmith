@@ -30,13 +30,12 @@ type TransformerOutput<T> = T extends Transformer<infer _TInput, infer TOutput>
   ? TOutput
   : never;
 
-type PipeInput<TItems extends readonly unknown[]> =
-  TItems extends readonly [
-    Transformer<infer TInput, infer _TOutput>,
-    ...readonly unknown[],
-  ] ? TInput
-    : TItems extends readonly [Listener<Event<infer TData>>] ? TData
-    : never;
+type PipeInput<TItems extends readonly unknown[]> = TItems extends readonly [
+  Transformer<infer TInput, infer _TOutput>,
+  ...readonly unknown[],
+] ? TInput
+  : TItems extends readonly [Listener<Event<infer TData>>] ? TData
+  : never;
 
 type ApplyStep<TInput, TStep> = TStep extends MergeOperator
   ? TInput extends readonly unknown[] ? { items: TInput } : never
@@ -44,26 +43,24 @@ type ApplyStep<TInput, TStep> = TStep extends MergeOperator
     ? TInput extends TStepInput ? TOutput : never
     : never;
 
-type IsValidPipeTail<TInput, TItems extends readonly unknown[]> =
-  TItems extends readonly [infer TNext, ...infer TRest]
-    ? TNext extends Listener<Event<infer TListenerData>>
-      ? TRest extends readonly []
-        ? TInput extends TListenerData ? true : false
-        : false
-      : [ApplyStep<TInput, TNext>] extends [never] ? false
-      : IsValidPipeTail<ApplyStep<TInput, TNext>, TRest>
-    : false;
+type IsValidPipeTail<TInput, TItems extends readonly unknown[]> = TItems extends
+  readonly [infer TNext, ...infer TRest]
+  ? TNext extends Listener<Event<infer TListenerData>>
+    ? TRest extends readonly [] ? TInput extends TListenerData ? true : false
+    : false
+  : [ApplyStep<TInput, TNext>] extends [never] ? false
+  : IsValidPipeTail<ApplyStep<TInput, TNext>, TRest>
+  : false;
 
-type IsValidPipe<TItems extends readonly unknown[]> =
-  TItems extends readonly [
-    Transformer<infer _TInput, infer TOutput>,
-    ...infer TRest,
-  ] ? IsValidPipeTail<TOutput, TRest>
-    : TItems extends readonly [Listener<Event<unknown>>] ? true
-    : false;
+type IsValidPipe<TItems extends readonly unknown[]> = TItems extends readonly [
+  Transformer<infer _TInput, infer TOutput>,
+  ...infer TRest,
+] ? IsValidPipeTail<TOutput, TRest>
+  : TItems extends readonly [Listener<Event<unknown>>] ? true
+  : false;
 
-type ValidPipe<TItems extends readonly unknown[]> = IsValidPipe<TItems> extends true
-  ? TItems
+type ValidPipe<TItems extends readonly unknown[]> = IsValidPipe<TItems> extends
+  true ? TItems
   : never;
 
 type ParallelInput<TTransformers extends readonly unknown[]> =
