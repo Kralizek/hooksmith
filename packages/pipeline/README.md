@@ -2,7 +2,10 @@
 
 Typed listener-side data transformation pipelines for Hooksmith.
 
-A pipeline transforms only `Event.data`. The original event envelope is preserved for the final listener, and every transformation receives a `TransformContext` whose `originalData` points to the data that entered the pipeline.
+A pipeline transforms only `Event.data`. The original event envelope is
+preserved for the final listener, and every transformation receives a
+`TransformContext` whose `originalData` points to the data that entered the
+pipeline.
 
 ```ts
 import type { Event, Listener } from "@hooksmith/core";
@@ -34,17 +37,22 @@ const listener = pipe(
 );
 ```
 
-`pipe` validates the full type sequence at compile time and returns an ordinary Hooksmith listener, so the runtime does not need to know that transformations exist.
+`pipe` validates the full type sequence at compile time and returns an ordinary
+Hooksmith listener, so the runtime does not need to know that transformations
+exist.
 
 ## Operators
 
 - `project` creates an arbitrary inline `Transformer<A, B>`.
-- `parallel` runs multiple transformations concurrently against the same input and returns their outputs as a typed tuple.
+- `parallel` runs multiple transformations concurrently against the same input
+  and returns their outputs as a typed tuple.
 - `when` conditionally applies a same-type `Transformer<T, T>`.
 - `split` projects one value into a homogeneous collection.
 - `each` applies one transformation concurrently to every item in a collection.
-- `merge()` wraps a tuple or collection as `{ items: ... }` while preserving its exact type.
-- `pipe` composes transformations and a final listener into a listener for the pipeline's original input type.
+- `merge()` wraps a tuple or collection as `{ items: ... }` while preserving its
+  exact type.
+- `pipe` composes transformations and a final listener into a listener for the
+  pipeline's original input type.
 
 For example, a collection pipeline can be written as:
 
@@ -57,4 +65,7 @@ pipe(
 );
 ```
 
-Named transformers are reported by name when they fail. Unnamed transformers are reported by their one-based position in the pipeline. Transformation failures become failed `ListenerResult` values; exceptions from the final listener retain the normal Hooksmith listener behavior.
+Named transformers are reported by name when they fail. Unnamed transformers are
+reported by their one-based position in the pipeline. Transformation failures
+become failed `ListenerResult` values; exceptions from the final listener retain
+the normal Hooksmith listener behavior.
