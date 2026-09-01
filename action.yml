@@ -1,4 +1,4 @@
-name: Hooksmith
+name: Run Hooksmith
 description: Run a Hooksmith event using the CLI version that matches this action release.
 author: Renato Golia
 
@@ -114,5 +114,5 @@ runs:
         exit "$status"
 
 branding:
-  icon: tool
+  icon: zap
   color: gray-dark
