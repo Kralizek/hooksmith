@@ -1,0 +1,11 @@
+{
+  "imports": {
+    "@hooksmith/core": "../../packages/core/mod.ts",
+    "@hooksmith/http": "../../extensions/http/mod.ts",
+    "@hooksmith/standard": "../../extensions/standard/mod.ts"
+  },
+  "tasks": {
+    "check": "deno check hooksmith.config.ts"
+  },
+  "lock": false
+}

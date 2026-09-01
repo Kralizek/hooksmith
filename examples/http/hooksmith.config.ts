@@ -1,4 +1,4 @@
-import type { Config } from "@hooksmith/core";
+import type { Config, Event } from "@hooksmith/core";
 import { expectStatus, httpPost, jsonBody } from "@hooksmith/http";
 import { eventType } from "@hooksmith/standard";
 
@@ -15,7 +15,7 @@ export default {
       listeners: [
         httpPost({
           url: "https://httpbin.org/anything/hooksmith",
-          body: jsonBody((event) => ({
+          body: jsonBody((event: Event) => ({
             type: event.type,
             subject: event.subject,
             metadata: event.metadata,

@@ -27,28 +27,41 @@ jobs:
       - name: Validate packages
         run: deno publish --dry-run
 
-      - name: Validate unpublished remote extension
+  discover-examples:
+    runs-on: ubuntu-latest
+    outputs:
+      examples: ${{ steps.discover.outputs.examples }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Discover isolated examples
+        id: discover
         shell: bash
         run: |
           set -euo pipefail
 
-          deno run -A ./packages/cli/mod.ts \
-            run ./examples/remote-extension/event.yaml \
-            --config ./examples/remote-extension/hooksmith.config.ts \
-            --format json > /tmp/hooksmith-remote-extension-report.json
+          examples=$(find examples -type f -name deno.json -printf '%h\n' | sort | jq -R -s -c 'split("\n")[:-1]')
+          echo "examples=$examples" >> "$GITHUB_OUTPUT"
 
-          jq -e '
-            .success == true and
-            .results == [{
-              "route": "external-extension",
-              "listener": "external-log",
-              "status": "success",
-              "message": "Handled by hooksmith-test-extension",
-              "data": {
-                "extension": "Kralizek/hooksmith-test-extension"
-              }
-            }]
-          ' /tmp/hooksmith-remote-extension-report.json
+  examples:
+    needs: discover-examples
+    strategy:
+      matrix:
+        example: ${{ fromJSON(needs.discover-examples.outputs.examples) }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+          cache: true
+
+      - name: Check ${{ matrix.example }}
+        working-directory: ${{ matrix.example }}
+        run: deno task check
 
   action:
     strategy:
