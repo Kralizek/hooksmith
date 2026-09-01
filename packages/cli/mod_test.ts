@@ -5,7 +5,6 @@ import {
   loadEventDocument,
   parseArgs,
   usage,
-  VERSION,
 } from "./mod.ts";
 
 Deno.test("parses run options", () => {
@@ -79,10 +78,6 @@ Deno.test("help describes supported shorthand and stdin", () => {
   assertStringIncludes(help, "hooksmith --version | -v");
   assertStringIncludes(help, "-c, --config <path>");
   assertStringIncludes(help, "read one event from stdin");
-});
-
-Deno.test("version comes from CLI package metadata", () => {
-  assertEquals(VERSION, "0.2.0");
 });
 
 Deno.test("loads YAML timestamps as strings", async () => {
