@@ -1,6 +1,12 @@
-import { assertEquals, assertThrows } from "@std/assert";
+import { assertEquals, assertStringIncludes, assertThrows } from "@std/assert";
 import type { RunReport } from "@hooksmith/runtime";
-import { formatReport, loadEventDocument, parseArgs } from "./mod.ts";
+import {
+  formatReport,
+  loadEventDocument,
+  parseArgs,
+  usage,
+  VERSION,
+} from "./mod.ts";
 
 Deno.test("parses run options", () => {
   const options = parseArgs([
@@ -22,6 +28,26 @@ Deno.test("parses run options", () => {
   );
 });
 
+Deno.test("parses -c as config shorthand", () => {
+  const options = parseArgs([
+    "run",
+    "event.json",
+    "-c",
+    "automation/hooksmith.config.ts",
+  ]);
+
+  assertEquals(
+    options.configFile.endsWith("automation/hooksmith.config.ts"),
+    true,
+  );
+});
+
+Deno.test("preserves - as stdin input", () => {
+  const options = parseArgs(["run", "-"]);
+
+  assertEquals(options.eventFile, "-");
+});
+
 Deno.test("rejects more than one event file", () => {
   assertThrows(
     () => parseArgs(["run", "one.yaml", "two.yaml"]),
@@ -36,6 +62,27 @@ Deno.test("reports a missing --format value", () => {
     Error,
     "--format requires a value",
   );
+});
+
+Deno.test("reports a missing -c value", () => {
+  assertThrows(
+    () => parseArgs(["run", "event.yaml", "-c"]),
+    Error,
+    "-c requires a path",
+  );
+});
+
+Deno.test("help describes supported shorthand and stdin", () => {
+  const help = usage();
+
+  assertStringIncludes(help, "hooksmith --help | -h");
+  assertStringIncludes(help, "hooksmith --version | -v");
+  assertStringIncludes(help, "-c, --config <path>");
+  assertStringIncludes(help, "read one event from stdin");
+});
+
+Deno.test("version comes from CLI package metadata", () => {
+  assertEquals(VERSION, "0.1.0");
 });
 
 Deno.test("loads YAML timestamps as strings", async () => {
