@@ -3,6 +3,7 @@ import type { Context, Event } from "@hooksmith/core";
 import {
   basicAuth,
   bearerAuth,
+  formBody,
   headers,
   httpGet,
   httpPost,
@@ -31,7 +32,10 @@ Deno.test("httpGet sends a GET request and reports status", async () => {
     assertEquals(init?.method, "GET");
     return new Response(null, { status: 204, statusText: "No Content" });
   }, async () => {
-    const result = await httpGet({ url: "https://example.test/resource" }).run(event, context);
+    const result = await httpGet({ url: "https://example.test/resource" }).run(
+      event,
+      context,
+    );
 
     assertEquals(result.success, true);
     assertObjectMatch(result.data as Record<string, unknown>, {
@@ -69,10 +73,30 @@ Deno.test("httpPost resolves auth, headers and JSON body", async () => {
   });
 });
 
+Deno.test("formBody encodes URL form data", async () => {
+  await withFetch(async (_input, init) => {
+    const requestHeaders = new Headers(init?.headers);
+    assertEquals(
+      requestHeaders.get("content-type"),
+      "application/x-www-form-urlencoded",
+    );
+    assertEquals(init?.body, "grant_type=client_credentials&scope=write");
+    return new Response(null, { status: 200 });
+  }, async () => {
+    await httpPost({
+      url: "https://example.test/token",
+      body: formBody({ grant_type: "client_credentials", scope: "write" }),
+    }).run(event, context);
+  });
+});
+
 Deno.test("basicAuth creates a basic authorization header", async () => {
   await withFetch(async (_input, init) => {
     const requestHeaders = new Headers(init?.headers);
-    assertEquals(requestHeaders.get("authorization"), `Basic ${btoa("user:pass")}`);
+    assertEquals(
+      requestHeaders.get("authorization"),
+      `Basic ${btoa("user:pass")}`,
+    );
     return new Response(null, { status: 200 });
   }, async () => {
     await httpGet({
@@ -84,7 +108,10 @@ Deno.test("basicAuth creates a basic authorization header", async () => {
 
 Deno.test("status expectations can fail a listener without throwing", async () => {
   await withFetch(
-    () => Promise.resolve(new Response("nope", { status: 409, statusText: "Conflict" })),
+    () =>
+      Promise.resolve(
+        new Response("nope", { status: 409, statusText: "Conflict" }),
+      ),
     async () => {
       const result = await httpPost({
         url: "https://example.test/resource",
