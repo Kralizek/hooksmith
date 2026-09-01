@@ -12,7 +12,13 @@ All request values that commonly depend on the current event can be provided as
 either constants or factories.
 
 ```ts
-import { bearerAuth, headers, httpPost, jsonBody } from "@hooksmith/http";
+import {
+  bearerAuth,
+  expectStatus,
+  headers,
+  httpPost,
+  jsonBody,
+} from "@hooksmith/http";
 
 const listener = httpPost({
   url: "https://example.com/webhook",
@@ -21,36 +27,42 @@ const listener = httpPost({
     (event) => ({ "X-Event-Type": event.type }),
   ),
   body: jsonBody((event) => event.data),
-  expectStatus: 202,
-  response: "json",
+  response: expectStatus(202),
 });
 ```
 
-By default, any `2xx` response is considered successful. `expectStatus` can be a
-status code, a list of allowed codes, or a predicate.
+By default, any `2xx` response is considered successful. For a different success
+condition, set `response` directly to a predicate such as `expectStatus(...)`.
+
+```ts
+httpPost({
+  url: "https://example.com/posts",
+  body: jsonBody({ title: "Hello" }),
+  response: expectStatus(201),
+});
+```
 
 The listener always returns the response status, status text, and headers in
-`ListenerResult.data`, making them available in Hooksmith reports. Set
-`response` to `"text"` or `"json"` to include the response body as well.
+`ListenerResult.data`, making them available in Hooksmith reports.
 
-For more control, use the object form of `response`:
+For response parsing, custom success semantics, or report projection, use the
+object form:
 
 ```ts
 const listener = httpPost({
   url: "https://example.com/posts",
   body: jsonBody((event) => event.data),
-  expectStatus: 201,
   response: {
-    body: "json",
-    isSuccess: ({ status, body }) =>
+    parse: "json",
+    success: ({ status, body }) =>
       status === 201 ||
       (status === 409 &&
         (body as { result?: string }).result === "already-done"),
-    map: ({ status, body }) => ({
+    successMap: ({ status, body }) => ({
       status,
       id: (body as { id?: string }).id,
     }),
-    mapError: ({ status, body }) => ({
+    errorMap: ({ status, body }) => ({
       status,
       error: (body as { error?: string }).error,
     }),
@@ -58,14 +70,17 @@ const listener = httpPost({
 });
 ```
 
-`isSuccess` overrides the normal status-based success decision. If it is not
-provided, `expectStatus` is used; if neither is provided, any `2xx` response is
-successful.
+`parse` controls whether the response body is read as `"text"`, `"json"`, or
+not parsed at all. If omitted, the body is not read.
 
-`map` projects successful responses before they are written to
-`ListenerResult.data`. `mapError` does the same for failed responses. If the
+`success` defines whether the response should be treated as successful. If it
+is omitted, the normal HTTP `2xx` rule applies. `expectStatus(...)` is a helper
+for the common exact-status case and can be used either directly as `response`
+or as `response.success`.
+
+`successMap` projects successful responses before they are written to
+`ListenerResult.data`. `errorMap` does the same for failed responses. If the
 relevant mapper is omitted, the complete HTTP response report is returned.
-Mapping never changes the success decision; only `isSuccess` can override it.
 
 ## Helpers
 
@@ -77,3 +92,5 @@ Mapping never changes the success decision; only `isSuccess` can override it.
 - `formBody(...)` URL-encodes form values and sets
   `Content-Type: application/x-www-form-urlencoded` unless already specified.
 - `textBody(...)` creates a text body with a configurable content type.
+- `expectStatus(...)` creates a response-success predicate for one or more
+  accepted HTTP status codes.
