@@ -37,6 +37,7 @@ action.yml    Primary Hooksmith GitHub Action
 actions/      Reserved for future specialized actions
 examples/
   basic/      Minimal event and configuration example
+  http/       POST an event over HTTP and include the response in the report
 ```
 
 The main runtime dependency direction is intentionally one-way: `core <- runtime <- cli`. The standard and HTTP extensions depend only on `core`.
@@ -174,6 +175,8 @@ The default report format is `table`.
 ## Extensions
 
 Hooksmith configuration can consume extension modules from JSR, local files, remote repositories, or import-map aliases. See [`docs/extensions.md`](docs/extensions.md) for the supported patterns and the CI-backed unpublished-extension example.
+
+The [`examples/http`](examples/http) sample uses `@hooksmith/http` to POST a `page.published` event to an HTTP endpoint, assert the response status, and include the JSON response in the Hooksmith report.
 
 ## Development
 
