@@ -1,0 +1,12 @@
+type: page.published
+timestamp: 2026-09-01T12:00:00Z
+source:
+  kind: website
+  id: example.com
+subject:
+  kind: page
+  id: /external-extensions
+metadata:
+  url: https://example.com/external-extensions
+data:
+  title: External extensions with Hooksmith
