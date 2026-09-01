@@ -1,4 +1,4 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertThrows } from "@std/assert";
 import type { Context, Event, Listener, Logger } from "@hooksmith/core";
 import {
   each,
@@ -103,6 +103,16 @@ Deno.test("pipe can wrap a listener without transformations", async () => {
   assertEquals(result, { success: true, data: "Hello, Hooksmith" });
 });
 
+Deno.test("pipe rejects a missing final listener at runtime", () => {
+  const unsafePipe = pipe as unknown as (...items: unknown[]) => unknown;
+
+  assertThrows(
+    () => unsafePipe(),
+    Error,
+    "pipe requires a final listener.",
+  );
+});
+
 Deno.test("pipe reports unnamed transformation failures by ordinal", async () => {
   const listener: Listener<Event<boolean>> = {
     run() {
@@ -184,6 +194,18 @@ Deno.test("parallel runs transformations against the same input", async () => {
   });
 
   assertEquals(result, [9, "HOOKSMITH"]);
+});
+
+Deno.test("parallel rejects an empty branch list at runtime", () => {
+  const unsafeParallel = parallel as unknown as (
+    ...transformers: unknown[]
+  ) => unknown;
+
+  assertThrows(
+    () => unsafeParallel(),
+    Error,
+    "parallel requires at least one transformer.",
+  );
 });
 
 Deno.test("parallel identifies a failing branch", async () => {
