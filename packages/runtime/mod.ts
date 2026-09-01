@@ -34,9 +34,9 @@ export interface RunReport {
   success: boolean;
 }
 
-export interface ProcessOptions {}
+export type ProcessOptions = Readonly<Record<string, never>>;
 
-export interface PlanOptions {}
+export type PlanOptions = Readonly<Record<string, never>>;
 
 export interface Runtime<TEvent extends Event = Event> {
   process(event: TEvent, options?: ProcessOptions): Promise<RunReport>;
