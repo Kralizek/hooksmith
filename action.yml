@@ -77,15 +77,17 @@ runs:
         esac
 
         if [[ -z "$HOOKSMITH_REPORT_PATH" ]]; then
-          report_path="$RUNNER_TEMP/hooksmith/report.json"
+          raw_report_path="$RUNNER_TEMP/hooksmith/report.json"
         else
-          report_path="$(
-            deno eval \
-              'import { isAbsolute, resolve } from "node:path"; const [path, workspace] = Deno.args; const resolved = isAbsolute(path) ? path : resolve(workspace, path); console.log(Deno.build.os === "windows" ? resolved.replaceAll("\\", "/") : resolved);' \
-              "$HOOKSMITH_REPORT_PATH" \
-              "$GITHUB_WORKSPACE"
-          )"
+          raw_report_path="$HOOKSMITH_REPORT_PATH"
         fi
+
+        report_path="$(
+          deno eval \
+            'import { isAbsolute, resolve } from "node:path"; const [path, workspace] = Deno.args; const resolved = isAbsolute(path) ? path : resolve(workspace, path); console.log(Deno.build.os === "windows" ? resolved.replaceAll("\\", "/") : resolved);' \
+            "$raw_report_path" \
+            "$GITHUB_WORKSPACE"
+        )"
 
         mkdir -p "$(dirname "$report_path")"
 
