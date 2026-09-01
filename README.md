@@ -121,7 +121,24 @@ GitHub Actions workflows can run Hooksmith without installing Deno explicitly:
     event: .hooksmith/event.yaml
 ```
 
-The Action exposes the execution options that are meaningful to a workflow:
+`event` is required. `config` defaults to `hooksmith.config.ts`, `plan` defaults to `false`, and `report-path` defaults to `.hooksmith/report.json`.
+
+The Action always writes the complete JSON run report to `report-path`. Relative report paths are resolved from the caller workspace and parent directories are created automatically.
+
+The Action exposes three small outputs instead of embedding the full report in GitHub output data:
+
+- `success` — whether the Hooksmith run succeeded.
+- `mode` — `run` or `plan`.
+- `report-path` — absolute path to the JSON report file.
+
+For example:
+
+```yaml
+- name: Inspect Hooksmith report
+  run: jq . "${{ steps.hooksmith.outputs.report-path }}"
+```
+
+A custom report location can be supplied when needed:
 
 ```yaml
 - id: hooksmith
@@ -129,15 +146,8 @@ The Action exposes the execution options that are meaningful to a workflow:
   with:
     event: .hooksmith/event.yaml
     config: hooksmith.config.ts
+    report-path: artifacts/hooksmith-report.json
     plan: false
-```
-
-`event` is required. `config` defaults to `hooksmith.config.ts`, and `plan` defaults to `false`.
-
-The Action always renders the Hooksmith run report as JSON and exposes it through the `report` output:
-
-```yaml
-- run: echo '${{ steps.hooksmith.outputs.report }}' | jq .
 ```
 
 The Action installs Deno and invokes the exact `@hooksmith/cli` version corresponding to the Action release. Paths are resolved from the caller's workspace, so the same event documents, configuration modules, and Deno import mappings used by direct CLI execution continue to work.
