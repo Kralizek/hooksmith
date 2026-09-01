@@ -74,6 +74,7 @@ jobs:
 
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          echo "previous_tag=$latest_tag" >> "$GITHUB_OUTPUT"
           echo "Releasing v$version"
 
       - name: Set package versions
@@ -133,11 +134,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
-        run: >-
-          gh release create "$TAG"
-          --verify-tag
-          --generate-notes
-          --title "$TAG"
+          PREVIOUS_TAG: ${{ steps.version.outputs.previous_tag }}
+        run: |
+          set -euo pipefail
+
+          args=(
+            "$TAG"
+            --verify-tag
+            --generate-notes
+            --title "$TAG"
+          )
+
+          if [[ -n "$PREVIOUS_TAG" ]]; then
+            args+=(--notes-start-tag "$PREVIOUS_TAG")
+          fi
+
+          gh release create "${args[@]}"
 
   publish:
     needs: create-release
