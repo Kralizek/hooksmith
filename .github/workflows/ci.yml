@@ -63,10 +63,17 @@ jobs:
           event: ./examples/basic/event.yaml
           config: ./examples/basic/hooksmith.config.ts
 
-      - name: Validate action report output
+      - name: Validate action outputs and report file
         env:
-          HOOKSMITH_REPORT: ${{ steps.hooksmith.outputs.report }}
+          HOOKSMITH_SUCCESS: ${{ steps.hooksmith.outputs.success }}
+          HOOKSMITH_MODE: ${{ steps.hooksmith.outputs.mode }}
+          HOOKSMITH_REPORT_PATH: ${{ steps.hooksmith.outputs.report-path }}
         run: |
+          test "$HOOKSMITH_SUCCESS" = "true"
+          test "$HOOKSMITH_MODE" = "run"
+          test "$HOOKSMITH_REPORT_PATH" = "$GITHUB_WORKSPACE/.hooksmith/report.json"
+          test -f "$HOOKSMITH_REPORT_PATH"
+
           jq -e '
             .success == true and
             .mode == "run" and
@@ -77,4 +84,4 @@ jobs:
               "status": "success",
               "message": "Logged page.published"
             }]
-          ' <<< "$HOOKSMITH_REPORT"
+          ' "$HOOKSMITH_REPORT_PATH"
