@@ -1,11 +1,6 @@
 import { assertEquals, assertStringIncludes, assertThrows } from "@std/assert";
 import type { RunReport } from "@hooksmith/runtime";
-import {
-  formatReport,
-  loadEventDocument,
-  parseArgs,
-  usage,
-} from "./mod.ts";
+import { formatReport, loadEventDocument, parseArgs, usage } from "./mod.ts";
 
 Deno.test("parses run options", () => {
   const options = parseArgs([
