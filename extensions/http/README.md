@@ -70,13 +70,13 @@ const listener = httpPost({
 });
 ```
 
-`parse` controls whether the response body is read as `"text"`, `"json"`, or
-not parsed at all. If omitted, the body is not read.
+`parse` controls whether the response body is read as `"text"`, `"json"`, or not
+parsed at all. If omitted, the body is not read.
 
-`success` defines whether the response should be treated as successful. If it
-is omitted, the normal HTTP `2xx` rule applies. `expectStatus(...)` is a helper
-for the common exact-status case and can be used either directly as `response`
-or as `response.success`.
+`success` defines whether the response should be treated as successful. If it is
+omitted, the normal HTTP `2xx` rule applies. `expectStatus(...)` is a helper for
+the common exact-status case and can be used either directly as `response` or as
+`response.success`.
 
 `successMap` projects successful responses before they are written to
 `ListenerResult.data`. `errorMap` does the same for failed responses. If the
