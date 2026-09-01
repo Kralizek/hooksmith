@@ -3,7 +3,8 @@
     "./packages/core",
     "./packages/runtime",
     "./packages/cli",
-    "./extensions/standard"
+    "./extensions/standard",
+    "./extensions/http"
   ],
   "imports": {
     "@std/assert": "jsr:@std/assert@^1",
