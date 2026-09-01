@@ -243,9 +243,7 @@ Deno.test("plan evaluates routing but does not invoke listeners", async () => {
     }],
   };
 
-  const report = await createRuntime(config, context).process(event(), {
-    plan: true,
-  });
+  const report = await createRuntime(config, context).plan(event());
 
   assertEquals(listenerRan, false);
   assertEquals(report.mode, "plan");
