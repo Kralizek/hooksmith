@@ -57,8 +57,24 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Run Hooksmith through the action
+        id: hooksmith
         uses: ./
         with:
           event: ./examples/basic/event.yaml
           config: ./examples/basic/hooksmith.config.ts
-          format: json
+
+      - name: Validate action report output
+        env:
+          HOOKSMITH_REPORT: ${{ steps.hooksmith.outputs.report }}
+        run: |
+          jq -e '
+            .success == true and
+            .mode == "run" and
+            .event.type == "page.published" and
+            .results == [{
+              "route": "published-pages",
+              "listener": "log-event",
+              "status": "success",
+              "message": "Logged page.published"
+            }]
+          ' <<< "$HOOKSMITH_REPORT"
