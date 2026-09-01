@@ -139,3 +139,66 @@ GitHub Actions workflows can run Hooksmith without installing Deno explicitly:
 `event` is required. `config` defaults to `hooksmith.config.ts`, `plan` defaults to `false`, and `report-path` is optional.
 
 The Action always writes the complete JSON run report to a file. When `report-path` is omitted, the report is written under the runner temporary directory at `${{ runner.temp }}/hooksmith/report.json`. Relative custom report paths are resolved from the caller workspace, absolute paths are preserved, and parent directories are created automatically.
+
+The Action exposes three small outputs instead of embedding the full report in GitHub output data:
+
+- `success` — whether the Hooksmith run succeeded.
+- `mode` — `run` or `plan`.
+- `report-path` — absolute path to the JSON report file.
+
+For example:
+
+```yaml
+- name: Inspect Hooksmith report
+  run: jq . "${{ steps.hooksmith.outputs.report-path }}"
+```
+
+A custom report location can be supplied when needed:
+
+```yaml
+- id: hooksmith
+  uses: Kralizek/hooksmith@v0
+  with:
+    event: .hooksmith/event.yaml
+    config: hooksmith.config.ts
+    report-path: artifacts/hooksmith-report.json
+    plan: false
+```
+
+The Action installs Deno and invokes the exact `@hooksmith/cli` version corresponding to the Action release. Paths are resolved from the caller's workspace, so the same event documents, configuration modules, and Deno import mappings used by direct CLI execution continue to work.
+
+## CLI
+
+```text
+hooksmith run <event-file> [--config <path>] [--format table|json|tsv] [--plan]
+```
+
+Only one event document is processed per invocation. `.yaml`, `.yml`, and `.json` are supported.
+
+`--plan` evaluates routing and reports the listeners that would run without invoking them.
+
+The report is written to stdout. All logs and diagnostics are written to stderr, so machine-readable output can be redirected safely:
+
+```sh
+deno run -A jsr:@hooksmith/cli run event.yaml --format json > report.json
+```
+
+The default report format is `table`.
+
+## Extensions
+
+Hooksmith configuration can consume extension modules from JSR, local files, remote repositories, or import-map aliases. See [`docs/extensions.md`](docs/extensions.md) for the supported patterns and the CI-backed unpublished-extension example.
+
+The `examples/http` sample shows `@hooksmith/http` posting a `page.published` event to an HTTP endpoint and projecting the HTTP response before it is stored in the run report.
+
+## Development
+
+Hooksmith tracks the latest stable Deno 2.x release in CI.
+
+```sh
+deno task check
+```
+
+## License
+
+MIT
