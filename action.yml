@@ -15,9 +15,8 @@ inputs:
     required: false
     default: "false"
   report-path:
-    description: Path where the JSON run report is written, relative to the workspace unless absolute.
+    description: Optional path where the JSON run report is written, relative to the workspace unless absolute.
     required: false
-    default: .hooksmith/report.json
 
 outputs:
   success:
@@ -75,7 +74,9 @@ runs:
             ;;
         esac
 
-        if [[ "$HOOKSMITH_REPORT_PATH" = /* ]]; then
+        if [[ -z "$HOOKSMITH_REPORT_PATH" ]]; then
+          report_path="$RUNNER_TEMP/hooksmith/report.json"
+        elif [[ "$HOOKSMITH_REPORT_PATH" = /* ]]; then
           report_path="$HOOKSMITH_REPORT_PATH"
         else
           report_path="$GITHUB_WORKSPACE/$HOOKSMITH_REPORT_PATH"
