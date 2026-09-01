@@ -23,5 +23,7 @@ From this directory, run the local Hooksmith CLI against the sample event:
 deno run -A ../../packages/cli/mod.ts run event.yaml --config hooksmith.config.ts
 ```
 
-Running from this directory lets Deno discover the local `deno.json`. From
-elsewhere, pass it explicitly with Deno's `--config` option.
+Running from this directory lets Deno discover the local `deno.json`. If you
+invoke Deno from elsewhere, use Deno's own `--config` flag to point to this
+`deno.json`; that is separate from Hooksmith's `--config hooksmith.config.ts`
+argument shown above.
