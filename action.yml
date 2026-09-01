@@ -10,14 +10,15 @@ inputs:
     description: Path to the Hooksmith configuration module, relative to the workspace.
     required: false
     default: hooksmith.config.ts
-  format:
-    description: Report format (table, json, or tsv).
-    required: false
-    default: table
   plan:
     description: Evaluate routing without invoking listeners.
     required: false
     default: "false"
+
+outputs:
+  report:
+    description: Hooksmith run report as JSON.
+    value: ${{ steps.run.outputs.report }}
 
 runs:
   using: composite
@@ -29,12 +30,12 @@ runs:
         cache: true
 
     - name: Run Hooksmith
+      id: run
       shell: bash
       working-directory: ${{ github.workspace }}
       env:
         HOOKSMITH_EVENT: ${{ inputs.event }}
         HOOKSMITH_CONFIG: ${{ inputs.config }}
-        HOOKSMITH_FORMAT: ${{ inputs.format }}
         HOOKSMITH_PLAN: ${{ inputs.plan }}
       run: |
         set -euo pipefail
@@ -48,7 +49,7 @@ runs:
         args=(
           run "$HOOKSMITH_EVENT"
           --config "$HOOKSMITH_CONFIG"
-          --format "$HOOKSMITH_FORMAT"
+          --format json
         )
 
         case "$HOOKSMITH_PLAN" in
@@ -63,7 +64,20 @@ runs:
             ;;
         esac
 
-        deno run -A "jsr:@hooksmith/cli@${version}" "${args[@]}"
+        set +e
+        report="$(deno run -A "jsr:@hooksmith/cli@${version}" "${args[@]}")"
+        status=$?
+        set -e
+
+        delimiter="HOOKSMITH_REPORT_$(date +%s%N)"
+        {
+          echo "report<<${delimiter}"
+          echo "$report"
+          echo "$delimiter"
+        } >> "$GITHUB_OUTPUT"
+
+        echo "$report"
+        exit "$status"
 
 branding:
   icon: tool
