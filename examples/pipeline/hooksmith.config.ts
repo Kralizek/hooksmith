@@ -43,7 +43,9 @@ const announcementPipeline = pipe(
     project((page: PageData) => `${page.title}: ${page.content.slice(0, 120)}`),
     project((page: PageData) => `Illustration for ${page.title}`),
   ),
-  project(([text, imagePrompt]) => ({ text, imagePrompt })),
+  project<readonly [string, string], Announcement>(
+    ([text, imagePrompt]) => ({ text, imagePrompt }),
+  ),
   announcementListener,
 );
 
