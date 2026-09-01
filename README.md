@@ -18,8 +18,9 @@ The Hooksmith packages are versioned and released together.
 | [`@hooksmith/runtime`](https://jsr.io/@hooksmith/runtime) | [![latest](https://jsr.io/badges/@hooksmith/runtime)](https://jsr.io/@hooksmith/runtime) | [![downloads](https://jsr.io/badges/@hooksmith/runtime/total-downloads)](https://jsr.io/@hooksmith/runtime) | Event hydration, validation, routing, planning, listener execution, fallback handling, and run reports. |
 | [`@hooksmith/cli`](https://jsr.io/@hooksmith/cli) | [![latest](https://jsr.io/badges/@hooksmith/cli)](https://jsr.io/@hooksmith/cli) | [![downloads](https://jsr.io/badges/@hooksmith/cli/total-downloads)](https://jsr.io/@hooksmith/cli) | Command-line interface for loading events and configuration, running or planning events, and rendering reports. |
 | [`@hooksmith/standard`](https://jsr.io/@hooksmith/standard) | [![latest](https://jsr.io/badges/@hooksmith/standard)](https://jsr.io/@hooksmith/standard) | [![downloads](https://jsr.io/badges/@hooksmith/standard/total-downloads)](https://jsr.io/@hooksmith/standard) | Standard generic conditions, condition composition, and basic listeners for authoring Hooksmith configuration. |
+| [`@hooksmith/http`](https://jsr.io/@hooksmith/http) | [![latest](https://jsr.io/badges/@hooksmith/http)](https://jsr.io/@hooksmith/http) | [![downloads](https://jsr.io/badges/@hooksmith/http/total-downloads)](https://jsr.io/@hooksmith/http) | HTTP request listeners plus helpers for headers, authentication, request bodies, status assertions, and response reporting. |
 
-For extension authors, `@hooksmith/core` is the primary dependency. Applications invoking Hooksmith from the command line normally use `@hooksmith/cli`. `@hooksmith/standard` provides reusable configuration building blocks without depending on the runtime engine.
+For extension authors, `@hooksmith/core` is the primary dependency. Applications invoking Hooksmith from the command line normally use `@hooksmith/cli`. `@hooksmith/standard` provides reusable configuration building blocks without depending on the runtime engine, while `@hooksmith/http` provides protocol-level HTTP listeners that provider-specific extensions can build on.
 
 ## Repository
 
@@ -30,7 +31,7 @@ packages/
   cli/        Event loading, config discovery, formatting, and process behavior
 extensions/
   standard/   Generic conditions, composition, and basic listeners
-  web/        Reserved for first-party web extensions
+  http/       HTTP request listeners and request/response helpers
   aws/        Reserved for first-party AWS extensions
 action.yml    Primary Hooksmith GitHub Action
 actions/      Reserved for future specialized actions
@@ -38,7 +39,7 @@ examples/
   basic/      Minimal event and configuration example
 ```
 
-The main runtime dependency direction is intentionally one-way: `core <- runtime <- cli`. The standard extension depends only on `core`.
+The main runtime dependency direction is intentionally one-way: `core <- runtime <- cli`. The standard and HTTP extensions depend only on `core`.
 
 ## Event model
 
