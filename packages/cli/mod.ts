@@ -10,6 +10,7 @@ import {
 } from "@hooksmith/runtime";
 import { extname, resolve, toFileUrl } from "@std/path";
 import { parse as parseYaml } from "@std/yaml";
+import cliMetadata from "./deno.json" with { type: "json" };
 
 export type ReportFormat = "table" | "json" | "tsv";
 
@@ -20,8 +21,20 @@ export interface CliOptions {
   plan: boolean;
 }
 
+export const VERSION = cliMetadata.version;
+
 export async function main(args: string[]): Promise<number> {
   try {
+    if (args.length === 1 && (args[0] === "--help" || args[0] === "-h")) {
+      await writeStdout(`${usage()}\n`);
+      return 0;
+    }
+
+    if (args.length === 1 && (args[0] === "--version" || args[0] === "-v")) {
+      await writeStdout(`${VERSION}\n`);
+      return 0;
+    }
+
     const options = parseArgs(args);
     const eventDocument = await loadEventDocument(options.eventFile);
     assertEventDocument(eventDocument);
@@ -54,10 +67,11 @@ export function parseArgs(args: string[]): CliOptions {
     const argument = args[index];
 
     switch (argument) {
-      case "--config": {
+      case "--config":
+      case "-c": {
         const value = args[++index];
         if (value === undefined) {
-          throw new Error("--config requires a path.");
+          throw new Error(`${argument} requires a path.`);
         }
         configFile = value;
         break;
@@ -77,8 +91,10 @@ export function parseArgs(args: string[]): CliOptions {
         plan = true;
         break;
       default:
-        if (argument.startsWith("--")) {
-          throw new Error(`Unknown option: ${argument}`);
+        if (argument.startsWith("-")) {
+          if (argument !== "-") {
+            throw new Error(`Unknown option: ${argument}`);
+          }
         }
         if (eventFile !== undefined) {
           throw new Error("run accepts exactly one event file.");
@@ -89,11 +105,11 @@ export function parseArgs(args: string[]): CliOptions {
   }
 
   if (eventFile === undefined) {
-    throw new Error("run requires an event file.");
+    throw new Error("run requires an event file or - for stdin.");
   }
 
   return {
-    eventFile: resolve(eventFile),
+    eventFile: eventFile === "-" ? "-" : resolve(eventFile),
     configFile: resolve(configFile),
     format,
     plan,
@@ -101,6 +117,11 @@ export function parseArgs(args: string[]): CliOptions {
 }
 
 export async function loadEventDocument(path: string): Promise<unknown> {
+  if (path === "-") {
+    const content = await new Response(Deno.stdin.readable).text();
+    return parseYaml(content, { schema: "core" });
+  }
+
   const content = await Deno.readTextFile(path);
 
   switch (extname(path).toLowerCase()) {
@@ -182,8 +203,22 @@ function tsvCell(value: string): string {
   return value.replace(/[\t\r\n]+/g, " ");
 }
 
-function usage(): string {
-  return "Usage: hooksmith run <event-file> [--config <path>] [--format table|json|tsv] [--plan]";
+export function usage(): string {
+  return [
+    "Hooksmith CLI",
+    "",
+    "Usage:",
+    "  hooksmith --help | -h",
+    "  hooksmith --version | -v",
+    "  hooksmith run <event-file|-> [options]",
+    "",
+    "Run options:",
+    "  -c, --config <path>          Config file (default: hooksmith.config.ts)",
+    "      --format table|json|tsv  Report format (default: table)",
+    "      --plan                   Plan the event without invoking listeners",
+    "",
+    "Use - as the event input to read one event from stdin.",
+  ].join("\n");
 }
 
 const stderrLogger: Logger = {
