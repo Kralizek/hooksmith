@@ -34,9 +34,13 @@ export interface RunReport {
   success: boolean;
 }
 
+export interface ProcessOptions {}
+
+export interface PlanOptions {}
+
 export interface Runtime<TEvent extends Event = Event> {
-  process(event: TEvent): Promise<RunReport>;
-  plan(event: TEvent): Promise<RunReport>;
+  process(event: TEvent, options?: ProcessOptions): Promise<RunReport>;
+  plan(event: TEvent, options?: PlanOptions): Promise<RunReport>;
 }
 
 export function hydrateEvent<TData>(
@@ -69,10 +73,10 @@ export function createRuntime<TEvent extends Event>(
   assertConfig(config);
 
   return {
-    process(event) {
+    process(event, _options = {}) {
       return executeEvent(event, config, context, false);
     },
-    plan(event) {
+    plan(event, _options = {}) {
       return executeEvent(event, config, context, true);
     },
   };
