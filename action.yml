@@ -65,8 +65,10 @@ runs:
         case "$HOOKSMITH_PLAN" in
           true)
             args+=(--plan)
+            mode=plan
             ;;
           false)
+            mode=run
             ;;
           *)
             echo "::error::plan must be either 'true' or 'false'."
@@ -76,20 +78,23 @@ runs:
 
         if [[ -z "$HOOKSMITH_REPORT_PATH" ]]; then
           report_path="$RUNNER_TEMP/hooksmith/report.json"
-        elif [[ "$HOOKSMITH_REPORT_PATH" = /* ]]; then
-          report_path="$HOOKSMITH_REPORT_PATH"
         else
-          report_path="$GITHUB_WORKSPACE/$HOOKSMITH_REPORT_PATH"
+          report_path="$(
+            deno eval \
+              'import { isAbsolute, resolve } from "node:path"; const [path, workspace] = Deno.args; console.log(isAbsolute(path) ? path : resolve(workspace, path));' \
+              "$HOOKSMITH_REPORT_PATH" \
+              "$GITHUB_WORKSPACE"
+          )"
         fi
 
         mkdir -p "$(dirname "$report_path")"
+
+        success=false
 
         set +e
         deno run -A "jsr:@hooksmith/cli@${version}" "${args[@]}" > "$report_path"
         status=$?
         set -e
-
-        echo "report-path=$report_path" >> "$GITHUB_OUTPUT"
 
         if [[ -s "$report_path" ]]; then
           values="$(
@@ -98,9 +103,11 @@ runs:
               "$report_path"
           )"
           IFS=$'\t' read -r success mode <<< "$values"
-          echo "success=$success" >> "$GITHUB_OUTPUT"
-          echo "mode=$mode" >> "$GITHUB_OUTPUT"
         fi
+
+        echo "success=$success" >> "$GITHUB_OUTPUT"
+        echo "mode=$mode" >> "$GITHUB_OUTPUT"
+        echo "report-path=$report_path" >> "$GITHUB_OUTPUT"
 
         exit "$status"
 
