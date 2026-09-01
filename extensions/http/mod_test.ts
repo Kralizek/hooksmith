@@ -131,6 +131,72 @@ Deno.test("status expectations can fail a listener without throwing", async () =
   );
 });
 
+Deno.test("response mapper projects successful responses", async () => {
+  await withFetch(
+    () => Promise.resolve(Response.json({ id: "post-123", ignored: true })),
+    async () => {
+      const result = await httpGet({
+        url: "https://example.test/resource",
+        response: {
+          body: "json",
+          map: ({ status, body }) => ({
+            status,
+            id: (body as { id: string }).id,
+          }),
+        },
+      }).run(event, context);
+
+      assertEquals(result.success, true);
+      assertEquals(result.data, { status: 200, id: "post-123" });
+    },
+  );
+});
+
+Deno.test("response error mapper projects failed responses", async () => {
+  await withFetch(
+    () => Promise.resolve(Response.json({ error: "duplicate" }, { status: 409 })),
+    async () => {
+      const result = await httpPost({
+        url: "https://example.test/resource",
+        response: {
+          body: "json",
+          mapError: ({ status, body }) => ({
+            status,
+            error: (body as { error: string }).error,
+          }),
+        },
+      }).run(event, context);
+
+      assertFalse(result.success);
+      assertEquals(result.data, { status: 409, error: "duplicate" });
+    },
+  );
+});
+
+Deno.test("response success predicate can override HTTP status semantics", async () => {
+  await withFetch(
+    () =>
+      Promise.resolve(
+        Response.json({ result: "already-done" }, { status: 409 }),
+      ),
+    async () => {
+      const result = await httpPost({
+        url: "https://example.test/resource",
+        expectStatus: 201,
+        response: {
+          body: "json",
+          isSuccess: ({ body }) =>
+            (body as { result: string }).result === "already-done",
+          map: ({ body }) => ({ result: (body as { result: string }).result }),
+        },
+      }).run(event, context);
+
+      assertEquals(result.success, true);
+      assertEquals(result.data, { result: "already-done" });
+    },
+  );
+});
+
 async function withFetch(
   implementation: typeof fetch,
   test: () => Promise<void>,
