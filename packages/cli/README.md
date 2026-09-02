@@ -9,8 +9,10 @@ rendering reports.
 ```text
 hooksmith --help
 hooksmith -h
+hooksmith help
 hooksmith --version
 hooksmith -v
+hooksmith version
 hooksmith run <event-file|glob|-> [event-file|glob...] [options]
 hooksmith stream [options]
 ```
