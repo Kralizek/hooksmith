@@ -34,6 +34,7 @@ const reportFormatType = new EnumType(["table", "json", "tsv"] as const);
 
 const runCommand = new Command()
   .description("Process one or more bounded event inputs.")
+  .helpOption(false)
   .type("report-format", reportFormatType)
   .arguments("<eventFile:string> [...eventFiles:string]")
   .option(
@@ -71,6 +72,7 @@ const runCommand = new Command()
 
 const streamCommand = new Command()
   .description("Read NDJSON events from stdin and emit NDJSON reports.")
+  .helpOption(false)
   .option(
     "-c, --config <path:string>",
     "Config file.",
@@ -82,6 +84,9 @@ const streamCommand = new Command()
     exitCode = await processStream(runtime);
   });
 
+const helpCommand = new HelpCommand()
+  .helpOption(false);
+
 const cli = new Command()
   .name("hooksmith")
   .description("Process events with Hooksmith.")
@@ -91,9 +96,10 @@ const cli = new Command()
   .noExit()
   .command("run", runCommand)
   .command("stream", streamCommand)
-  .command("help", new HelpCommand())
+  .command("help", helpCommand)
   .action(function () {
     this.showHelp();
+    exitCode = 1;
   });
 
 export function usage(): string {
@@ -102,8 +108,14 @@ export function usage(): string {
 
 export async function main(args: string[]): Promise<number> {
   exitCode = 0;
-  await cli.parse(args);
-  return exitCode;
+
+  try {
+    await cli.parse(args);
+    return exitCode;
+  } catch (error) {
+    stderrLogger.error(errorMessage(error));
+    return 1;
+  }
 }
 
 async function processBounded(
