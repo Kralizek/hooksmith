@@ -4,7 +4,9 @@ import { expandInputExpressions } from "./glob.ts";
 
 export { expandInputExpression, expandInputExpressions } from "./glob.ts";
 
-export async function resolveInputPaths(expressions: readonly string[]) {
+export async function resolveInputPaths(
+  expressions: readonly string[],
+): Promise<string[]> {
   return await expandInputExpressions(expressions);
 }
 
