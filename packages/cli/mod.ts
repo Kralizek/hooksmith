@@ -9,17 +9,13 @@ import {
 } from "@hooksmith/runtime";
 import { toFileUrl } from "@std/path";
 import cliMetadata from "./deno.json" with { type: "json" };
-import {
-  type RunCliOptions,
-  parseArgs,
-  usage,
-} from "./args.ts";
+import { parseArgs, type RunCliOptions, usage } from "./args.ts";
 import { loadEventDocuments, resolveInputPaths } from "./input.ts";
 import {
   type CliReport,
+  createReport,
   type EventExecutionReport,
   type EventInput,
-  createReport,
   formatReport,
   inferRoutingOutcome,
   toEventReport,
