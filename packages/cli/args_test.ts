@@ -14,28 +14,32 @@ Deno.test("generated Cliffy help describes the command surface", () => {
 });
 
 Deno.test("Cliffy exposes command-only help and option-only version", async () => {
-  for (const args of [
-    ["help"],
-    ["help", "run"],
-    ["help", "stream"],
-    ["--version"],
-    ["-v"],
-  ]) {
+  for (
+    const args of [
+      ["help"],
+      ["help", "run"],
+      ["help", "stream"],
+      ["--version"],
+      ["-v"],
+    ]
+  ) {
     const output = await runCli(args);
     assertEquals(output.code, 0);
   }
 });
 
 Deno.test("Cliffy rejects unsupported meta-command forms", async () => {
-  for (const args of [
-    [],
-    ["--help"],
-    ["-h"],
-    ["run", "event.json", "--help"],
-    ["stream", "--help"],
-    ["help", "--help"],
-    ["version"],
-  ]) {
+  for (
+    const args of [
+      [],
+      ["--help"],
+      ["-h"],
+      ["run", "event.json", "--help"],
+      ["stream", "--help"],
+      ["help", "--help"],
+      ["version"],
+    ]
+  ) {
     const output = await runCli(args);
     assertEquals(output.code === 0, false);
   }
