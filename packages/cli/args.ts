@@ -54,7 +54,9 @@ const parser = or(
         "table" as const,
       ),
       plan: withDefault(
-        flag("--plan", { description: "Plan events without invoking listeners." }),
+        flag("--plan", {
+          description: "Plan events without invoking listeners.",
+        }),
         false,
       ),
       allowEmpty: withDefault(
