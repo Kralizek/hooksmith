@@ -1,5 +1,7 @@
 import { Command, EnumType } from "@cliffy/command";
+import { HelpCommand } from "@cliffy/command/help";
 import { resolve } from "@std/path";
+import cliMetadata from "./deno.json" with { type: "json" };
 
 export type ReportFormat = "table" | "json" | "tsv";
 
@@ -19,13 +21,11 @@ export interface StreamCliOptions {
 
 export type CliOptions = RunCliOptions | StreamCliOptions;
 
+export const VERSION = cliMetadata.version;
+
 const reportFormatType = new EnumType(["table", "json", "tsv"] as const);
 
-export async function parseArgs(args: string[]): Promise<CliOptions> {
-  if (args.length === 0) {
-    throw new Error(usage());
-  }
-
+export async function parseArgs(args: string[]): Promise<CliOptions | undefined> {
   let options: CliOptions | undefined;
 
   const run = new Command()
@@ -74,47 +74,41 @@ export async function parseArgs(args: string[]): Promise<CliOptions> {
       };
     });
 
-  await new Command()
-    .name("hooksmith")
-    .description("Process events with Hooksmith.")
-    .helpOption(false)
-    .versionOption(false)
-    .throwErrors()
-    .command("run", run)
-    .command("stream", stream)
-    .parse(args);
+  const version = new Command()
+    .description("Print the Hooksmith CLI version.")
+    .action(() => console.log(VERSION));
 
-  if (options === undefined) {
-    throw new Error(usage());
-  }
+  await createCommand(run, stream, version)
+    .action(function () {
+      this.showHelp();
+    })
+    .parse(args);
 
   return options;
 }
 
 export function usage(): string {
-  return [
-    "Hooksmith CLI",
-    "",
-    "Usage:",
-    "  hooksmith --help",
-    "  hooksmith -h",
-    "  hooksmith --version",
-    "  hooksmith -v",
-    "  hooksmith run <event-file|glob|-> [event-file|glob...] [options]",
-    "  hooksmith stream [options]",
-    "",
-    "Run options:",
-    "  -c, --config <path>          Config file (default: hooksmith.config.ts)",
-    "      --format table|json|tsv  Report format (default: table)",
-    "      --plan                   Plan events without invoking listeners",
-    "      --allow-empty            Allow a run that resolves to zero events",
-    "",
-    "Stream options:",
-    "  -c, --config <path>          Config file (default: hooksmith.config.ts)",
-    "",
-    "run accepts YAML/JSON files, glob patterns, and bounded stdin. Each source",
-    "may contain one event, an array of events, or multiple YAML documents.",
-    "Glob matches are processed in deterministic path order.",
-    "stream reads NDJSON from stdin and emits one NDJSON report per event.",
-  ].join("\n");
+  return createCommand(
+    new Command(),
+    new Command(),
+    new Command(),
+  ).getHelp();
+}
+
+function createCommand(
+  run: Command,
+  stream: Command,
+  version: Command,
+): Command {
+  return new Command()
+    .name("hooksmith")
+    .description("Process events with Hooksmith.")
+    .version(VERSION)
+    .helpOption("-h, --help", "Show this help.")
+    .versionOption("-v, --version", "Print the Hooksmith CLI version.")
+    .noExit()
+    .command("run", run)
+    .command("stream", stream)
+    .command("help", new HelpCommand())
+    .command("version", version);
 }
