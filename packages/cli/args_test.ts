@@ -24,7 +24,7 @@ Deno.test("Cliffy exposes command-only help and option-only version", async () =
     ]
   ) {
     const output = await runCli(args);
-    assertEquals(output.code, 0);
+    assertEquals(output.code, 0, `Expected success for: ${args.join(" ")}`);
   }
 });
 
@@ -41,7 +41,8 @@ Deno.test("Cliffy rejects unsupported meta-command forms", async () => {
     ]
   ) {
     const output = await runCli(args);
-    assertEquals(output.code === 0, false);
+    const invocation = args.length === 0 ? "<no args>" : args.join(" ");
+    assertEquals(output.code === 0, false, `Expected failure for: ${invocation}`);
   }
 });
 
