@@ -27,6 +27,70 @@ jobs:
       - name: Validate packages
         run: deno publish --dry-run
 
+  cli-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+          cache: true
+
+      - name: Validate bounded multi-event mode
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          deno run -A ./packages/cli/mod.ts \
+            run \
+              ./.github/workflows/fixtures/cli-run-single.yaml \
+              ./.github/workflows/fixtures/cli-run-multiple.json \
+            --config ./examples/basic/hooksmith.config.ts \
+            --format json \
+            > /tmp/hooksmith-run-report.json
+
+          jq -e '
+            .success == true and
+            .mode == "run" and
+            (.events | length) == 3 and
+            [.events[].input.index] == [1, 2, 3] and
+            [.events[].event.type] == ["page.published", "page.published", "page.published"] and
+            [.events[].success] == [true, true, true]
+          ' /tmp/hooksmith-run-report.json
+
+  cli-stream:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+          cache: true
+
+      - name: Validate NDJSON stream mode
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat ./.github/workflows/fixtures/cli-stream.ndjson \
+            | deno run -A ./packages/cli/mod.ts stream \
+                --config ./examples/basic/hooksmith.config.ts \
+            > /tmp/hooksmith-stream.ndjson
+
+          jq -s -e '
+            length == 3 and
+            .[0].success == true and
+            .[0].events[0].event.type == "page.published" and
+            .[1].success == false and
+            .[1].events[0].outcome == "rejected" and
+            .[2].success == true and
+            .[2].events[0].event.subject.id == "/stream-2"
+          ' /tmp/hooksmith-stream.ndjson
+
   discover-examples:
     runs-on: ubuntu-latest
     outputs:
@@ -95,8 +159,9 @@ jobs:
           jq -e '
             .success == true and
             .mode == "run" and
-            .event.type == "page.published" and
-            .results == [{
+            (.events | length) == 1 and
+            .events[0].event.type == "page.published" and
+            .events[0].results == [{
               "route": "published-pages",
               "listener": "log-event",
               "status": "success",

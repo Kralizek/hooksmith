@@ -41,6 +41,22 @@ const listener = pipe(
 Hooksmith listener, so the runtime does not need to know that transformations
 exist.
 
+Pipelines have their own stable listener identity. By default, `pipe(...)`
+generates `pipe:<terminal-listener-name>` (or `pipe:listener` for an unnamed
+terminal listener). An explicit name can be supplied when a domain-specific
+identity is clearer:
+
+```ts
+pipe(
+  { name: "publish-announcement" },
+  project((page: Page) => createAnnouncement(page)),
+  bluesky,
+);
+```
+
+The pipeline name is the listener identity reported by the runtime regardless of
+whether the terminal listener ultimately runs.
+
 ## Operators
 
 - `project` creates an arbitrary inline `Transformer<A, B>`.

@@ -79,7 +79,7 @@ Deno.test("pipe transforms data and preserves the event envelope", async () => {
   const piped = pipe(loadPage, createAnnouncement, listener);
   const result = await piped.run(event, context);
 
-  assertEquals(piped.name, "capture");
+  assertEquals(piped.name, "pipe:capture");
   assertEquals(result, {
     success: true,
     message: "Hello, Hooksmith: Loaded page content",
@@ -88,6 +88,27 @@ Deno.test("pipe transforms data and preserves the event envelope", async () => {
     ...event,
     data: { text: "Hello, Hooksmith: Loaded page content" },
   });
+});
+
+Deno.test("pipe supports an explicit pipeline name", () => {
+  const listener: Listener<Event<PageData>> = {
+    name: "terminal",
+    run() {
+      return { success: true };
+    },
+  };
+
+  assertEquals(pipe({ name: "announcement" }, listener).name, "announcement");
+});
+
+Deno.test("pipe generates a stable name for an unnamed terminal listener", () => {
+  const listener: Listener<Event<PageData>> = {
+    run() {
+      return { success: true };
+    },
+  };
+
+  assertEquals(pipe(listener).name, "pipe:listener");
 });
 
 Deno.test("pipe can wrap a listener without transformations", async () => {
@@ -377,9 +398,13 @@ Deno.test({
     };
 
     pipe(stringToNumber, numberToBoolean, booleanListener);
+    pipe({ name: "typed" }, stringToNumber, numberToBoolean, booleanListener);
 
     // @ts-expect-error pipeline stages must form a valid type sequence
     pipe(numberToBoolean, stringToNumber, booleanListener);
+
+    // @ts-expect-error pipeline stages must form a valid type sequence with options
+    pipe({ name: "invalid" }, numberToBoolean, stringToNumber, booleanListener);
 
     // @ts-expect-error parallel branches must accept the same input
     parallel(stringToNumber, numberToBoolean);

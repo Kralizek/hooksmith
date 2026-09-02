@@ -1,0 +1,10 @@
+type: page.published
+timestamp: 2026-09-02T12:30:00Z
+source:
+  kind: website
+  id: example.com
+subject:
+  kind: page
+  id: /glob-extra
+data:
+  title: Glob extra
