@@ -4,63 +4,30 @@ import type { Config, Context, Event, Logger } from "@hooksmith/core";
 import {
   assertEventDocument,
   createRuntime,
-  type EventReport,
   hydrateEvent,
-  type ListenerReport,
-  type RoutingOutcome,
-  type RunReport as RuntimeRunReport,
   type Runtime,
 } from "@hooksmith/runtime";
-import { extname, resolve, toFileUrl } from "@std/path";
-import { parseAll as parseAllYaml } from "@std/yaml";
+import { toFileUrl } from "@std/path";
 import cliMetadata from "./deno.json" with { type: "json" };
-import { expandInputExpressions } from "./glob.ts";
+import {
+  type RunCliOptions,
+  parseArgs,
+  usage,
+} from "./args.ts";
+import { loadEventDocuments, resolveInputPaths } from "./input.ts";
+import {
+  type CliReport,
+  type EventExecutionReport,
+  type EventInput,
+  createReport,
+  formatReport,
+  inferRoutingOutcome,
+  toEventReport,
+} from "./report.ts";
 
-export type ReportFormat = "table" | "json" | "tsv";
-
-export interface RunCliOptions {
-  command: "run";
-  eventFiles: string[];
-  configFile: string;
-  format: ReportFormat;
-  plan: boolean;
-  allowEmpty: boolean;
-}
-
-export interface StreamCliOptions {
-  command: "stream";
-  configFile: string;
-}
-
-export type CliOptions = RunCliOptions | StreamCliOptions;
-
-export interface EventInput {
-  source: string;
-  index: number;
-  sourceIndex: number;
-}
-
-export interface EventError {
-  stage: "input" | "runtime";
-  message: string;
-}
-
-export type EventOutcome = RoutingOutcome | "rejected" | "failed";
-
-export interface EventExecutionReport {
-  input: EventInput;
-  event?: EventReport;
-  outcome: EventOutcome;
-  results: ListenerReport[];
-  success: boolean;
-  error?: EventError;
-}
-
-export interface CliReport {
-  mode: "run" | "plan";
-  events: EventExecutionReport[];
-  success: boolean;
-}
+export * from "./args.ts";
+export * from "./input.ts";
+export * from "./report.ts";
 
 export const VERSION = cliMetadata.version;
 
@@ -94,125 +61,13 @@ export async function main(args: string[]): Promise<number> {
   }
 }
 
-export function parseArgs(args: string[]): CliOptions {
-  if (args.length === 0) {
-    throw new Error(usage());
-  }
-
-  switch (args[0]) {
-    case "run":
-      return parseRunArgs(args.slice(1));
-    case "stream":
-      return parseStreamArgs(args.slice(1));
-    default:
-      throw new Error(usage());
-  }
-}
-
-function parseRunArgs(args: string[]): RunCliOptions {
-  const eventFiles: string[] = [];
-  let configFile = "hooksmith.config.ts";
-  let format: ReportFormat = "table";
-  let plan = false;
-  let allowEmpty = false;
-
-  for (let index = 0; index < args.length; index++) {
-    const argument = args[index];
-
-    switch (argument) {
-      case "--config":
-      case "-c": {
-        const value = args[++index];
-        if (value === undefined) {
-          throw new Error(`${argument} requires a path.`);
-        }
-        configFile = value;
-        break;
-      }
-      case "--format": {
-        const value = args[++index];
-        if (value === undefined) {
-          throw new Error("--format requires a value.");
-        }
-        if (value !== "table" && value !== "json" && value !== "tsv") {
-          throw new Error("--format must be one of: table, json, tsv.");
-        }
-        format = value;
-        break;
-      }
-      case "--plan":
-        plan = true;
-        break;
-      case "--allow-empty":
-        allowEmpty = true;
-        break;
-      default:
-        if (argument.startsWith("-") && argument !== "-") {
-          throw new Error(`Unknown option: ${argument}`);
-        }
-        eventFiles.push(argument);
-        break;
-    }
-  }
-
-  if (eventFiles.length === 0) {
-    throw new Error(
-      "run requires at least one event file, glob, or - for stdin.",
-    );
-  }
-  if (eventFiles.filter((path) => path === "-").length > 1) {
-    throw new Error("run accepts stdin at most once.");
-  }
-
-  return {
-    command: "run",
-    eventFiles,
-    configFile: resolve(configFile),
-    format,
-    plan,
-    allowEmpty,
-  };
-}
-
-function parseStreamArgs(args: string[]): StreamCliOptions {
-  let configFile = "hooksmith.config.ts";
-
-  for (let index = 0; index < args.length; index++) {
-    const argument = args[index];
-
-    switch (argument) {
-      case "--config":
-      case "-c": {
-        const value = args[++index];
-        if (value === undefined) {
-          throw new Error(`${argument} requires a path.`);
-        }
-        configFile = value;
-        break;
-      }
-      case "--plan":
-        throw new Error("stream does not support --plan.");
-      case "--format":
-        throw new Error(
-          "stream output is always NDJSON and does not support --format.",
-        );
-      case "--allow-empty":
-        throw new Error("stream does not support --allow-empty.");
-      default:
-        throw new Error(`Unknown stream option: ${argument}`);
-    }
-  }
-
-  return { command: "stream", configFile: resolve(configFile) };
-}
-
 async function processBounded(
   runtime: Runtime,
   options: RunCliOptions,
 ): Promise<CliReport> {
   const events: EventExecutionReport[] = [];
   let eventIndex = 0;
-  const paths = await expandInputExpressions(options.eventFiles);
+  const paths = await resolveInputPaths(options.eventFiles);
 
   for (const path of paths) {
     const source = inputSource(path);
@@ -337,61 +192,6 @@ function inputFailure(input: EventInput, error: unknown): EventExecutionReport {
   };
 }
 
-function createReport(
-  mode: "run" | "plan",
-  events: EventExecutionReport[],
-): CliReport {
-  return {
-    mode,
-    events,
-    success: events.every((event) => event.success),
-  };
-}
-
-export async function loadEventDocuments(
-  path: string,
-  readContent: (path: string) => Promise<string> = readEventContent,
-): Promise<unknown[]> {
-  const content = await readContent(path);
-  let documents: unknown[];
-
-  if (path === "-") {
-    documents = parseAllYaml(content, { schema: "core" });
-  } else {
-    switch (extname(path).toLowerCase()) {
-      case ".yaml":
-      case ".yml":
-        documents = parseAllYaml(content, { schema: "core" });
-        break;
-      case ".json":
-        documents = [JSON.parse(content)];
-        break;
-      default:
-        throw new Error("Event file must use .yaml, .yml, or .json.");
-    }
-  }
-
-  return documents.flatMap((document) =>
-    Array.isArray(document) ? document : [document]
-  );
-}
-
-export async function loadEventDocument(
-  path: string,
-  readContent: (path: string) => Promise<string> = readEventContent,
-): Promise<unknown> {
-  const documents = await loadEventDocuments(path, readContent);
-  return documents.length === 1 ? documents[0] : documents;
-}
-
-async function readEventContent(path: string): Promise<string> {
-  if (path === "-") {
-    return await new Response(Deno.stdin.readable).text();
-  }
-
-  return await Deno.readTextFile(path);
-}
-
 export async function loadConfig(path: string): Promise<Config> {
   const module = await import(toFileUrl(path).href);
   if (!("default" in module)) {
@@ -399,166 +199,6 @@ export async function loadConfig(path: string): Promise<Config> {
   }
 
   return module.default as Config;
-}
-
-export function formatReport(
-  report: CliReport | RuntimeRunReport,
-  format: ReportFormat,
-): string {
-  const normalized = "events" in report ? report : fromRuntimeReport(report);
-
-  switch (format) {
-    case "json":
-      return JSON.stringify(normalized, undefined, 2);
-    case "tsv":
-      return formatTsv(normalized);
-    case "table":
-      return formatTable(normalized);
-  }
-}
-
-function formatTable(report: CliReport): string {
-  const output = [
-    `Mode: ${report.mode}`,
-    `Success: ${report.success}`,
-  ];
-
-  for (const event of report.events) {
-    output.push(
-      "",
-      `Event #${event.input.index}: ${event.event?.type ?? "invalid"}`,
-      `Input: ${event.input.source} #${event.input.sourceIndex}`,
-      `Outcome: ${event.outcome}`,
-      `Success: ${event.success}`,
-      "",
-    );
-
-    const rows = resultRows(event);
-    const headers = ["Route", "Listener", "Status", "Outcome", "Message"];
-    const widths = headers.map((header, index) =>
-      Math.max(header.length, ...rows.map((row) => row[index].length))
-    );
-    const line = (row: string[]) =>
-      row.map((cell, index) => cell.padEnd(widths[index])).join("  ")
-        .trimEnd();
-
-    output.push(
-      line(headers),
-      line(widths.map((width) => "-".repeat(width))),
-      ...rows.map(line),
-    );
-  }
-
-  return output.join("\n");
-}
-
-function formatTsv(report: CliReport): string {
-  const header = [
-    "event",
-    "input",
-    "source_index",
-    "event_type",
-    "outcome",
-    "route",
-    "listener",
-    "status",
-    "message",
-  ].join("\t");
-  const rows: string[] = [];
-
-  for (const event of report.events) {
-    for (const row of resultRows(event)) {
-      rows.push(
-        [
-          String(event.input.index),
-          event.input.source,
-          String(event.input.sourceIndex),
-          event.event?.type ?? "",
-          row[3],
-          row[0],
-          row[1],
-          row[2],
-          row[4],
-        ].map(tsvCell).join("\t"),
-      );
-    }
-  }
-
-  return [header, ...rows].join("\n");
-}
-
-function resultRows(event: EventExecutionReport): string[][] {
-  if (event.results.length === 0) {
-    return [[
-      event.outcome === "unmatched"
-        ? "unmatched"
-        : event.outcome === "fallback"
-        ? "fallback"
-        : "",
-      "",
-      event.success ? "success" : "failure",
-      event.outcome,
-      event.error?.message ?? "",
-    ]];
-  }
-
-  return event.results.map((result) => [
-    result.route,
-    result.listener,
-    result.status,
-    listenerOutcome(event, result),
-    result.message ?? "",
-  ]);
-}
-
-function listenerOutcome(
-  event: EventExecutionReport,
-  result: ListenerReport,
-): string {
-  if (result.status === "planned") {
-    return "planned";
-  }
-  if (event.outcome === "fallback") {
-    return "fallback";
-  }
-  if (isRecord(result.data)) {
-    const pipeline = result.data.pipeline;
-    if (isRecord(pipeline) && typeof pipeline.outcome === "string") {
-      return pipeline.outcome;
-    }
-    if (result.data.stage === "transform") {
-      return "transform-failed";
-    }
-  }
-  return "executed";
-}
-
-function fromRuntimeReport(report: RuntimeRunReport): CliReport {
-  const event: EventExecutionReport = {
-    input: { source: "event", index: 1, sourceIndex: 1 },
-    event: report.event,
-    outcome: report.outcome ?? inferRoutingOutcome(report),
-    results: report.results,
-    success: report.success,
-  };
-  return createReport(report.mode, [event]);
-}
-
-function inferRoutingOutcome(report: RuntimeRunReport): RoutingOutcome {
-  if (report.results.some((result) => result.route === "fallback")) {
-    return "fallback";
-  }
-  return report.results.length === 0 ? "unmatched" : "matched";
-}
-
-function toEventReport(event: Event): EventReport {
-  return {
-    type: event.type,
-    timestamp: event.timestamp.toString(),
-    source: event.source,
-    subject: event.subject,
-    metadata: event.metadata,
-  };
 }
 
 function inputSource(path: string): string {
@@ -593,38 +233,6 @@ async function* readLines(
   }
 }
 
-function tsvCell(value: string): string {
-  return value.replace(/[\t\r\n]+/g, " ");
-}
-
-export function usage(): string {
-  return [
-    "Hooksmith CLI",
-    "",
-    "Usage:",
-    "  hooksmith --help",
-    "  hooksmith -h",
-    "  hooksmith --version",
-    "  hooksmith -v",
-    "  hooksmith run <event-file|glob|-> [event-file|glob...] [options]",
-    "  hooksmith stream [options]",
-    "",
-    "Run options:",
-    "  -c, --config <path>          Config file (default: hooksmith.config.ts)",
-    "      --format table|json|tsv  Report format (default: table)",
-    "      --plan                   Plan events without invoking listeners",
-    "      --allow-empty            Allow a run that resolves to zero events",
-    "",
-    "Stream options:",
-    "  -c, --config <path>          Config file (default: hooksmith.config.ts)",
-    "",
-    "run accepts YAML/JSON files, glob patterns, and bounded stdin. Each source",
-    "may contain one event, an array of events, or multiple YAML documents.",
-    "Glob matches are processed in deterministic path order.",
-    "stream reads NDJSON from stdin and emits one NDJSON report per event.",
-  ].join("\n");
-}
-
 const stderrLogger: Logger = {
   debug: (message, ...args) => logToStderr("DEBUG", message, args),
   info: (message, ...args) => logToStderr("INFO", message, args),
@@ -649,10 +257,6 @@ function renderLogValue(value: unknown): string {
   } catch {
     return String(value);
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function errorMessage(error: unknown): string {
