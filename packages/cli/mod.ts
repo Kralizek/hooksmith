@@ -99,7 +99,6 @@ const cli = new Command()
   .command("help", helpCommand)
   .action(function () {
     this.showHelp();
-    exitCode = 1;
   });
 
 export function usage(): string {
@@ -107,7 +106,7 @@ export function usage(): string {
 }
 
 export async function main(args: string[]): Promise<number> {
-  exitCode = 0;
+  exitCode = args.length === 0 ? 1 : 0;
 
   try {
     await cli.parse(args);
