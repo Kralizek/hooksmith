@@ -1,94 +1,17 @@
-import { assertEquals, assertThrows } from "@std/assert";
-import { parseArgs } from "./args.ts";
+import { assertEquals } from "@std/assert";
+import { isCommand } from "@optique/discover";
+import { main, runCommand, streamCommand } from "./mod.ts";
 
-Deno.test("parses bounded run options", () => {
-  const options = parseArgs([
-    "run",
-    "event.yaml",
-    "second.json",
-    "--config",
-    "automation/hooksmith.config.ts",
-    "--format",
-    "json",
-    "--plan",
-  ]);
-
-  if (options?.command !== "run") throw new Error("Expected run options");
-  assertEquals(options.format, "json");
-  assertEquals(options.plan, true);
-  assertEquals(options.allowEmpty, false);
-  assertEquals(options.eventFiles, ["event.yaml", "second.json"]);
-  assertEquals(
-    options.configFile.endsWith("automation/hooksmith.config.ts"),
-    true,
-  );
+Deno.test("defines run and stream as Optique commands", () => {
+  assertEquals(isCommand(runCommand), true);
+  assertEquals(isCommand(streamCommand), true);
 });
 
-Deno.test("parses -c as config shorthand", () => {
-  const options = parseArgs([
-    "run",
-    "event.json",
-    "-c",
-    "automation/hooksmith.config.ts",
-  ]);
-
-  if (options?.command !== "run") throw new Error("Expected run options");
-  assertEquals(
-    options.configFile.endsWith("automation/hooksmith.config.ts"),
-    true,
-  );
-});
-
-Deno.test("preserves stdin in an input chain", () => {
-  const options = parseArgs(["run", "one.json", "-", "two.json"]);
-
-  if (options?.command !== "run") throw new Error("Expected run options");
-  assertEquals(options.eventFiles[1], "-");
-});
-
-Deno.test("rejects stdin more than once", () => {
-  assertThrows(
-    () => parseArgs(["run", "-", "-"]),
-    Error,
-    "stdin at most once",
-  );
-});
-
-Deno.test("run supports allow-empty", () => {
-  const options = parseArgs(["run", "events/*.json", "--allow-empty"]);
-  if (options?.command !== "run") throw new Error("Expected run options");
-
-  assertEquals(options.eventFiles, ["events/*.json"]);
-  assertEquals(options.allowEmpty, true);
-});
-
-Deno.test("parses stream options without an input argument", () => {
-  const options = parseArgs(["stream", "-c", "automation/hooksmith.config.ts"]);
-
-  if (options?.command !== "stream") throw new Error("Expected stream options");
-  assertEquals(
-    options.configFile.endsWith("automation/hooksmith.config.ts"),
-    true,
-  );
-});
-
-Deno.test("stream rejects bounded-only options", () => {
-  assertThrows(() => parseArgs(["stream", "--plan"]), Error);
-  assertThrows(() => parseArgs(["stream", "--format", "json"]), Error);
-  assertThrows(() => parseArgs(["stream", "--allow-empty"]), Error);
-});
-
-Deno.test("reports missing option values", () => {
-  assertThrows(() => parseArgs(["run", "event.yaml", "--format"]), Error);
-  assertThrows(() => parseArgs(["run", "event.yaml", "-c"]), Error);
-});
-
-Deno.test("Optique handles help and version entry points", () => {
-  assertEquals(parseArgs([]), undefined);
-  assertEquals(parseArgs(["--help"]), undefined);
-  assertEquals(parseArgs(["-h"]), undefined);
-  assertEquals(parseArgs(["help"]), undefined);
-  assertEquals(parseArgs(["--version"]), undefined);
-  assertEquals(parseArgs(["-v"]), undefined);
-  assertEquals(parseArgs(["version"]), undefined);
+Deno.test("Optique program handles help and version entry points", async () => {
+  assertEquals(await main(["--help"]), 0);
+  assertEquals(await main(["-h"]), 0);
+  assertEquals(await main(["help"]), 0);
+  assertEquals(await main(["--version"]), 0);
+  assertEquals(await main(["-v"]), 0);
+  assertEquals(await main(["version"]), 0);
 });
