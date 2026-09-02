@@ -24,6 +24,26 @@ jobs:
       - name: Check
         run: deno task check
 
+      - name: Validate stream mode
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          printf '%s\n%s\n' \
+            '{"type":"page.published","timestamp":"2026-08-31T20:00:00Z","source":{"kind":"website","id":"example.com"},"subject":{"kind":"page","id":"/hello"},"data":{"title":"Hello"}}' \
+            '{"type":42}' \
+            | deno run -A ./packages/cli/mod.ts stream \
+                --config ./examples/basic/hooksmith.config.ts \
+            > /tmp/hooksmith-stream.ndjson
+
+          jq -s -e '
+            length == 2 and
+            .[0].success == true and
+            .[0].events[0].event.type == "page.published" and
+            .[1].success == false and
+            .[1].events[0].outcome == "rejected"
+          ' /tmp/hooksmith-stream.ndjson
+
       - name: Validate packages
         run: deno publish --dry-run
 
@@ -95,8 +115,9 @@ jobs:
           jq -e '
             .success == true and
             .mode == "run" and
-            .event.type == "page.published" and
-            .results == [{
+            (.events | length) == 1 and
+            .events[0].event.type == "page.published" and
+            .events[0].results == [{
               "route": "published-pages",
               "listener": "log-event",
               "status": "success",

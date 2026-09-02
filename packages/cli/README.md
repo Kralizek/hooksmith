@@ -1,7 +1,8 @@
 # @hooksmith/cli
 
 Command-line interface for loading Hooksmith event documents and configuration,
-running or planning an event, and rendering reports.
+running or planning bounded event sets, streaming events from stdin, and
+rendering reports.
 
 ## Usage
 
@@ -10,19 +11,46 @@ hooksmith --help
 hooksmith -h
 hooksmith --version
 hooksmith -v
-hooksmith run <event-file|-> [options]
+hooksmith run <event-file|-> [event-file...] [options]
+hooksmith stream [options]
 ```
 
-Run options:
+### Bounded runs
 
 ```text
 -c, --config <path>          Config file (default: hooksmith.config.ts)
     --format table|json|tsv  Report format (default: table)
-    --plan                   Plan the event without invoking listeners
+    --plan                   Plan events without invoking listeners
 ```
 
-Use `-` as the event input to read exactly one event from stdin:
+`run` accepts one or more YAML/JSON files plus `-` for bounded stdin. Each
+source may contain a single event, an array of events, or multiple YAML
+documents. Inputs are flattened and processed sequentially in source order by a
+single runtime instance.
+
+The report shape is the same for one or many events: JSON reports contain an
+`events` array, while table and TSV output retain the event input and index for
+each result.
 
 ```sh
-cat event.json | hooksmith run - -c hooksmith.config.ts
+hooksmith run first.yaml second.json -c hooksmith.config.ts
+cat events.yaml | hooksmith run - --format json
 ```
+
+### Streaming
+
+```text
+-c, --config <path>          Config file (default: hooksmith.config.ts)
+```
+
+`stream` reads NDJSON from stdin and emits one compact NDJSON report for every
+non-empty input line. It has no `--plan` or `--format` option: streaming input
+and output are both part of the command contract.
+
+```sh
+producer | hooksmith stream -c hooksmith.config.ts
+```
+
+Event-level failures are emitted as unsuccessful reports and processing
+continues. Normal EOF exits successfully; process-level failures such as
+configuration, stdin, or stdout failures remain fatal.

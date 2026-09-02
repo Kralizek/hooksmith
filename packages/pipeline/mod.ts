@@ -12,6 +12,10 @@ export interface Transformer<TInput, TOutput> {
   ): TOutput | Promise<TOutput>;
 }
 
+export interface PipeOptions {
+  name: string;
+}
+
 /**
  * Polymorphic aggregate wrapper returned by {@link merge}.
  *
@@ -101,7 +105,17 @@ type ValidParallel<TTransformers extends readonly unknown[]> =
  */
 export function pipe<const TItems extends readonly unknown[]>(
   ...items: TItems & ValidPipe<TItems>
-): Listener<Event<PipeInput<TItems>>> {
+): Listener<Event<PipeInput<TItems>>>;
+export function pipe<const TItems extends readonly unknown[]>(
+  options: PipeOptions,
+  ...items: TItems & ValidPipe<TItems>
+): Listener<Event<PipeInput<TItems>>>;
+export function pipe(
+  ...args: readonly unknown[]
+): Listener<Event<unknown>> {
+  const options = isPipeOptions(args[0]) ? args[0] : undefined;
+  const items = options === undefined ? args : args.slice(1);
+
   if (items.length === 0) {
     throw new Error("pipe requires a final listener.");
   }
@@ -111,9 +125,10 @@ export function pipe<const TItems extends readonly unknown[]>(
     | Transformer<unknown, unknown>
     | MergeOperator
   )[];
+  const name = options?.name ?? `pipe:${listener.name ?? "listener"}`;
 
   return {
-    name: listener.name,
+    name,
     async run(event, context): Promise<ListenerResult> {
       const transformContext: TransformContext = {
         ...context,
@@ -131,12 +146,12 @@ export function pipe<const TItems extends readonly unknown[]>(
           );
         } catch (error) {
           const ordinal = index + 1;
-          const name = "name" in transformation
+          const transformationName = "name" in transformation
             ? transformation.name
             : undefined;
-          const identity = name === undefined
+          const identity = transformationName === undefined
             ? `Transformation #${ordinal}`
-            : `Transformation "${name}"`;
+            : `Transformation "${transformationName}"`;
           const message = errorMessage(error);
 
           return {
@@ -145,7 +160,9 @@ export function pipe<const TItems extends readonly unknown[]>(
             data: {
               stage: "transform",
               index: ordinal,
-              ...(name === undefined ? {} : { name }),
+              ...(transformationName === undefined
+                ? {}
+                : { name: transformationName }),
               error: message,
             },
           };
@@ -268,6 +285,12 @@ export function merge(): MergeOperator {
       return { items: input };
     },
   };
+}
+
+function isPipeOptions(value: unknown): value is PipeOptions {
+  return typeof value === "object" && value !== null &&
+    "name" in value && typeof value.name === "string" &&
+    !("transform" in value) && !("run" in value);
 }
 
 function errorMessage(error: unknown): string {

@@ -10,6 +10,7 @@ import type {
 } from "@hooksmith/core";
 
 export type ExecutionStatus = "planned" | "success" | "failure";
+export type RoutingOutcome = "matched" | "fallback" | "unmatched";
 
 export interface ListenerReport {
   route: string;
@@ -32,6 +33,7 @@ export interface RunReport {
   event: EventReport;
   results: ListenerReport[];
   success: boolean;
+  outcome?: RoutingOutcome;
 }
 
 export type ProcessOptions = Readonly<Record<string, never>>;
@@ -149,6 +151,11 @@ async function executeEvent<TEvent extends Event>(
     },
     results,
     success: plan || results.every((result) => result.status === "success"),
+    outcome: matched
+      ? "matched"
+      : config.fallback === undefined
+      ? "unmatched"
+      : "fallback",
   };
 }
 
