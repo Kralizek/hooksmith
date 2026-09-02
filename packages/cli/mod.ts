@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run --allow-read --allow-env --allow-net
 
-import type { Config, Context, Event, Logger } from "@hooksmith/core";
+import type { Config, Event, Logger } from "@hooksmith/core";
 import {
   assertEventDocument,
   createRuntime,
@@ -54,11 +54,12 @@ const runCommand = new Command()
       throw new Error("run accepts stdin at most once.");
     }
 
-    const config = await loadConfig(resolve(options.config));
+    const configFile = resolve(options.config);
+    const config = await loadConfig(configFile);
     const runtime = createRuntime(config, { log: stderrLogger });
     const report = await processBounded(runtime, {
       eventFiles: inputs,
-      configFile: resolve(options.config),
+      configFile,
       format: options.format,
       plan: options.plan ?? false,
       allowEmpty: options.allowEmpty ?? false,
@@ -85,7 +86,7 @@ const versionCommand = new Command()
   .description("Print the Hooksmith CLI version.")
   .action(() => console.log(VERSION));
 
-export const cli = new Command()
+const cli = new Command()
   .name("hooksmith")
   .description("Process events with Hooksmith.")
   .version(VERSION)
