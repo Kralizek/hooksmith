@@ -42,42 +42,26 @@ const parser = or(
       command: constant("run" as const),
       eventFiles: multiple(argument(string()), { min: 1 }),
       configFile: withDefault(
-        option("-c", "--config", string(), { description: "Config file." }),
+        option("-c", "--config", string()),
         "hooksmith.config.ts",
       ),
       format: withDefault(
-        option(
-          "--format",
-          choice(["table", "json", "tsv"] as const),
-          { description: "Report format." },
-        ),
+        option("--format", choice(["table", "json", "tsv"] as const)),
         "table" as const,
       ),
-      plan: withDefault(
-        flag("--plan", {
-          description: "Plan events without invoking listeners.",
-        }),
-        false,
-      ),
-      allowEmpty: withDefault(
-        flag("--allow-empty", {
-          description: "Allow a run that resolves to zero events.",
-        }),
-        false,
-      ),
+      plan: withDefault(flag("--plan"), false),
+      allowEmpty: withDefault(flag("--allow-empty"), false),
     }),
-    { brief: "Process one or more bounded event inputs." },
   ),
   command(
     "stream",
     object({
       command: constant("stream" as const),
       configFile: withDefault(
-        option("-c", "--config", string(), { description: "Config file." }),
+        option("-c", "--config", string()),
         "hooksmith.config.ts",
       ),
     }),
-    { brief: "Read NDJSON events from stdin and emit NDJSON reports." },
   ),
 );
 
@@ -87,7 +71,6 @@ export function parseArgs(args: string[]): CliOptions | undefined {
     "hooksmith",
     args.length === 0 ? ["--help"] : args,
     {
-      brief: "Process events with Hooksmith.",
       help: {
         command: { names: ["help"] },
         option: { names: ["-h", "--help"] },
@@ -104,7 +87,7 @@ export function parseArgs(args: string[]): CliOptions | undefined {
     },
   );
 
-  if (parsed === undefined) {
+  if (parsed == null) {
     return undefined;
   }
 
