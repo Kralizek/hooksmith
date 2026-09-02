@@ -40,7 +40,7 @@ export const VERSION = cliMetadata.version;
 
 let exitCode = 0;
 
-export const runCommand = defineCommand({
+const runCommand = defineCommand({
   path: ["run"],
   parser: object({
     eventFiles: multiple(argument(string()), { min: 1 }),
@@ -77,7 +77,7 @@ export const runCommand = defineCommand({
   },
 });
 
-export const streamCommand = defineCommand({
+const streamCommand = defineCommand({
   path: ["stream"],
   parser: object({
     configFile: withDefault(
@@ -103,6 +103,7 @@ export async function main(args: string[]): Promise<number> {
       option: { names: ["-h", "--help"] },
     },
     version: {
+      value: VERSION,
       command: { names: ["version"] },
       option: { names: ["-v", "--version"] },
     },
