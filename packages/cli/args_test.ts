@@ -19,12 +19,16 @@ Deno.test("Cliffy exposes command-only help and option-only version", async () =
       ["help"],
       ["help", "run"],
       ["help", "stream"],
-      ["--version"],
-      ["-v"],
     ]
   ) {
     const output = await runCli(args);
     assertEquals(output.code, 0, `Expected success for: ${args.join(" ")}`);
+  }
+
+  for (const args of [["--version"], ["-v"]]) {
+    const output = await runCli(args);
+    assertEquals(output.code, 0, `Expected success for: ${args.join(" ")}`);
+    assertStringIncludes(output.stdout, VERSION);
   }
 });
 
@@ -56,16 +60,18 @@ Deno.test("Cliffy reports parse errors without uncaught stack traces", async () 
 
 async function runCli(args: string[]): Promise<{
   code: number;
+  stdout: string;
   stderr: string;
 }> {
   const output = await new Deno.Command(Deno.execPath(), {
     args: ["run", "-A", "packages/cli/mod.ts", ...args],
-    stdout: "null",
+    stdout: "piped",
     stderr: "piped",
   }).output();
 
   return {
     code: output.code,
+    stdout: new TextDecoder().decode(output.stdout),
     stderr: new TextDecoder().decode(output.stderr),
   };
 }
