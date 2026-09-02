@@ -39,7 +39,7 @@ export async function main(args: string[]): Promise<number> {
       return 0;
     }
 
-    const options = parseArgs(args);
+    const options = await parseArgs(args);
     const config = await loadConfig(options.configFile);
     const context: Context = { log: stderrLogger };
     const runtime = createRuntime(config, context);
