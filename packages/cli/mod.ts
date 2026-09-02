@@ -2,10 +2,9 @@
 
 import type { Config, Context, Logger } from "@hooksmith/core";
 import {
-  assertConfig,
   assertEventDocument,
+  createRuntime,
   hydrateEvent,
-  runEvent,
   type RunReport,
 } from "@hooksmith/runtime";
 import { extname, resolve, toFileUrl } from "@std/path";
@@ -36,14 +35,16 @@ export async function main(args: string[]): Promise<number> {
     }
 
     const options = parseArgs(args);
+    const config = await loadConfig(options.configFile);
+    const context: Context = { log: stderrLogger };
+    const runtime = createRuntime(config, context);
+
     const eventDocument = await loadEventDocument(options.eventFile);
     assertEventDocument(eventDocument);
     const event = hydrateEvent(eventDocument);
-    const config = await loadConfig(options.configFile);
-    const context: Context = { log: stderrLogger };
-    const report = await runEvent(event, config, context, {
-      plan: options.plan,
-    });
+    const report = options.plan
+      ? await runtime.plan(event)
+      : await runtime.process(event);
 
     await writeStdout(`${formatReport(report, options.format)}\n`);
     return report.success ? 0 : 1;
@@ -151,8 +152,7 @@ export async function loadConfig(path: string): Promise<Config> {
     throw new Error("Config module must have a default export.");
   }
 
-  assertConfig(module.default);
-  return module.default;
+  return module.default as Config;
 }
 
 export function formatReport(report: RunReport, format: ReportFormat): string {

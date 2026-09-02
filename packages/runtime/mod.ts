@@ -34,8 +34,13 @@ export interface RunReport {
   success: boolean;
 }
 
-export interface RunOptions {
-  plan?: boolean;
+export type ProcessOptions = Readonly<Record<string, never>>;
+
+export type PlanOptions = Readonly<Record<string, never>>;
+
+export interface Runtime<TEvent extends Event = Event> {
+  process(event: TEvent, options?: ProcessOptions): Promise<RunReport>;
+  plan(event: TEvent, options?: PlanOptions): Promise<RunReport>;
 }
 
 export function hydrateEvent<TData>(
@@ -61,15 +66,28 @@ export function hydrateEvent<TData>(
   };
 }
 
-export async function runEvent<TEvent extends Event>(
+export function createRuntime<TEvent extends Event>(
+  config: Config<TEvent>,
+  context: Context,
+): Runtime<TEvent> {
+  assertConfig(config);
+
+  return {
+    process(event, _options = {}) {
+      return executeEvent(event, config, context, false);
+    },
+    plan(event, _options = {}) {
+      return executeEvent(event, config, context, true);
+    },
+  };
+}
+
+async function executeEvent<TEvent extends Event>(
   event: TEvent,
   config: Config<TEvent>,
   context: Context,
-  options: RunOptions = {},
+  plan: boolean,
 ): Promise<RunReport> {
-  assertConfig(config);
-
-  const plan = options.plan ?? false;
   const results: ListenerReport[] = [];
   let matched = false;
 
