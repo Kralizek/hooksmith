@@ -100,11 +100,9 @@ export async function main(args: string[]): Promise<number> {
     args,
     help: {
       command: { names: ["help"] },
-      option: { names: ["-h", "--help"] },
     },
     version: {
       value: VERSION,
-      command: { names: ["version"] },
       option: { names: ["-v", "--version"] },
     },
     showChoices: true,
