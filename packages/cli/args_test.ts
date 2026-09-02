@@ -1,5 +1,5 @@
-import { assertEquals, assertStringIncludes, assertThrows } from "@std/assert";
-import { parseArgs, usage } from "./args.ts";
+import { assertEquals, assertThrows } from "@std/assert";
+import { parseArgs } from "./args.ts";
 
 Deno.test("parses bounded run options", () => {
   const options = parseArgs([
@@ -13,7 +13,7 @@ Deno.test("parses bounded run options", () => {
     "--plan",
   ]);
 
-  if (options.command !== "run") throw new Error("Expected run options");
+  if (options?.command !== "run") throw new Error("Expected run options");
   assertEquals(options.format, "json");
   assertEquals(options.plan, true);
   assertEquals(options.allowEmpty, false);
@@ -32,6 +32,7 @@ Deno.test("parses -c as config shorthand", () => {
     "automation/hooksmith.config.ts",
   ]);
 
+  if (options?.command !== "run") throw new Error("Expected run options");
   assertEquals(
     options.configFile.endsWith("automation/hooksmith.config.ts"),
     true,
@@ -41,7 +42,7 @@ Deno.test("parses -c as config shorthand", () => {
 Deno.test("preserves stdin in an input chain", () => {
   const options = parseArgs(["run", "one.json", "-", "two.json"]);
 
-  if (options.command !== "run") throw new Error("Expected run options");
+  if (options?.command !== "run") throw new Error("Expected run options");
   assertEquals(options.eventFiles[1], "-");
 });
 
@@ -55,7 +56,7 @@ Deno.test("rejects stdin more than once", () => {
 
 Deno.test("run supports allow-empty", () => {
   const options = parseArgs(["run", "events/*.json", "--allow-empty"]);
-  if (options.command !== "run") throw new Error("Expected run options");
+  if (options?.command !== "run") throw new Error("Expected run options");
 
   assertEquals(options.eventFiles, ["events/*.json"]);
   assertEquals(options.allowEmpty, true);
@@ -64,7 +65,7 @@ Deno.test("run supports allow-empty", () => {
 Deno.test("parses stream options without an input argument", () => {
   const options = parseArgs(["stream", "-c", "automation/hooksmith.config.ts"]);
 
-  assertEquals(options.command, "stream");
+  if (options?.command !== "stream") throw new Error("Expected stream options");
   assertEquals(
     options.configFile.endsWith("automation/hooksmith.config.ts"),
     true,
@@ -82,17 +83,12 @@ Deno.test("reports missing option values", () => {
   assertThrows(() => parseArgs(["run", "event.yaml", "-c"]), Error);
 });
 
-Deno.test("help describes bounded and streaming modes", () => {
-  const help = usage();
-
-  assertStringIncludes(help, "hooksmith --help");
-  assertStringIncludes(help, "hooksmith --version");
-  assertStringIncludes(
-    help,
-    "hooksmith run <event-file|glob|-> [event-file|glob...]",
-  );
-  assertStringIncludes(help, "hooksmith stream [options]");
-  assertStringIncludes(help, "-c, --config <path>");
-  assertStringIncludes(help, "--allow-empty");
-  assertStringIncludes(help, "NDJSON");
+Deno.test("Optique handles help and version entry points", () => {
+  assertEquals(parseArgs([]), undefined);
+  assertEquals(parseArgs(["--help"]), undefined);
+  assertEquals(parseArgs(["-h"]), undefined);
+  assertEquals(parseArgs(["help"]), undefined);
+  assertEquals(parseArgs(["--version"]), undefined);
+  assertEquals(parseArgs(["-v"]), undefined);
+  assertEquals(parseArgs(["version"]), undefined);
 });
