@@ -141,9 +141,13 @@ Deno.test("help describes bounded and streaming modes", () => {
   assertStringIncludes(help, "hooksmith -h");
   assertStringIncludes(help, "hooksmith --version");
   assertStringIncludes(help, "hooksmith -v");
-  assertStringIncludes(help, "hooksmith run <event-file|-> [event-file...]");
+  assertStringIncludes(
+    help,
+    "hooksmith run <event-file|glob|-> [event-file|glob...]",
+  );
   assertStringIncludes(help, "hooksmith stream [options]");
   assertStringIncludes(help, "-c, --config <path>");
+  assertStringIncludes(help, "--allow-empty");
   assertStringIncludes(help, "NDJSON");
 });
 
