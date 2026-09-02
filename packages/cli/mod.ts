@@ -8,7 +8,6 @@ import {
   type Runtime,
 } from "@hooksmith/runtime";
 import { Command, EnumType } from "@cliffy/command";
-import { HelpCommand } from "@cliffy/command/help";
 import { resolve, toFileUrl } from "@std/path";
 import cliMetadata from "./deno.json" with { type: "json" };
 import type { RunCliOptions } from "./args.ts";
@@ -84,8 +83,21 @@ const streamCommand = new Command()
     exitCode = await processStream(runtime);
   });
 
-const helpCommand = new HelpCommand()
-  .helpOption(false);
+const helpCommand = new Command()
+  .description("Show this help or the help of a sub-command.")
+  .helpOption(false)
+  .noGlobals()
+  .arguments("[command:string]")
+  .action(function (_, commandName?: string) {
+    const parent = this.getGlobalParent();
+    const command = commandName ? parent?.getBaseCommand(commandName) : parent;
+
+    if (!command) {
+      throw new Error(`Unknown command: ${commandName}.`);
+    }
+
+    command.showHelp();
+  });
 
 const cli = new Command()
   .name("hooksmith")
