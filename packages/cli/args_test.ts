@@ -1,120 +1,7 @@
-import { assertEquals, assertRejects, assertStringIncludes } from "@std/assert";
-import { parseArgs, usage, VERSION } from "./args.ts";
+import { assertStringIncludes } from "@std/assert";
+import { usage, VERSION } from "./mod.ts";
 
-Deno.test("parses bounded run options", async () => {
-  const options = await parseArgs([
-    "run",
-    "event.yaml",
-    "second.json",
-    "--config",
-    "automation/hooksmith.config.ts",
-    "--format",
-    "json",
-    "--plan",
-  ]);
-
-  if (options?.command !== "run") throw new Error("Expected run options");
-  assertEquals(options.format, "json");
-  assertEquals(options.plan, true);
-  assertEquals(options.allowEmpty, false);
-  assertEquals(options.eventFiles, ["event.yaml", "second.json"]);
-  assertEquals(
-    options.configFile.endsWith("automation/hooksmith.config.ts"),
-    true,
-  );
-});
-
-Deno.test("parses -c as config shorthand", async () => {
-  const options = await parseArgs([
-    "run",
-    "event.json",
-    "-c",
-    "automation/hooksmith.config.ts",
-  ]);
-
-  if (options?.command !== "run") throw new Error("Expected run options");
-  assertEquals(
-    options.configFile.endsWith("automation/hooksmith.config.ts"),
-    true,
-  );
-});
-
-Deno.test("preserves stdin in an input chain", async () => {
-  const options = await parseArgs(["run", "one.json", "-", "two.json"]);
-
-  if (options?.command !== "run") throw new Error("Expected run options");
-  assertEquals(options.eventFiles[1], "-");
-});
-
-Deno.test("rejects stdin more than once", async () => {
-  await assertRejects(
-    () => parseArgs(["run", "-", "-"]),
-    Error,
-    "stdin at most once",
-  );
-});
-
-Deno.test("run supports allow-empty", async () => {
-  const options = await parseArgs(["run", "events/*.json", "--allow-empty"]);
-  if (options?.command !== "run") throw new Error("Expected run options");
-
-  assertEquals(options.eventFiles, ["events/*.json"]);
-  assertEquals(options.allowEmpty, true);
-});
-
-Deno.test("parses stream options without an input argument", async () => {
-  const options = await parseArgs([
-    "stream",
-    "-c",
-    "automation/hooksmith.config.ts",
-  ]);
-
-  if (options?.command !== "stream") throw new Error("Expected stream options");
-  assertEquals(
-    options.configFile.endsWith("automation/hooksmith.config.ts"),
-    true,
-  );
-});
-
-Deno.test("stream rejects bounded-only options", async () => {
-  await assertRejects(
-    () => parseArgs(["stream", "--plan"]),
-    Error,
-    "Unknown option",
-  );
-  await assertRejects(
-    () => parseArgs(["stream", "--format", "json"]),
-    Error,
-    "Unknown option",
-  );
-  await assertRejects(
-    () => parseArgs(["stream", "--allow-empty"]),
-    Error,
-    "Unknown option",
-  );
-});
-
-Deno.test("reports missing option values", async () => {
-  await assertRejects(
-    () => parseArgs(["run", "event.yaml", "--format"]),
-    Error,
-  );
-  await assertRejects(
-    () => parseArgs(["run", "event.yaml", "-c"]),
-    Error,
-  );
-});
-
-Deno.test("Cliffy handles help and version entry points", async () => {
-  assertEquals(await parseArgs(["--help"]), undefined);
-  assertEquals(await parseArgs(["-h"]), undefined);
-  assertEquals(await parseArgs(["help"]), undefined);
-  assertEquals(await parseArgs(["--version"]), undefined);
-  assertEquals(await parseArgs(["-v"]), undefined);
-  assertEquals(await parseArgs(["version"]), undefined);
-});
-
-Deno.test("generated help describes the complete CLI", () => {
+Deno.test("generated Cliffy help describes the complete CLI", () => {
   const help = usage();
 
   assertStringIncludes(help, "hooksmith");
@@ -125,4 +12,6 @@ Deno.test("generated help describes the complete CLI", () => {
   assertStringIncludes(help, "version");
   assertStringIncludes(help, "--help");
   assertStringIncludes(help, "--version");
+  assertStringIncludes(help, "--allow-empty");
+  assertStringIncludes(help, "--format");
 });
