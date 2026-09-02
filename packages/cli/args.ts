@@ -25,7 +25,9 @@ export const VERSION = cliMetadata.version;
 
 const reportFormatType = new EnumType(["table", "json", "tsv"] as const);
 
-export async function parseArgs(args: string[]): Promise<CliOptions | undefined> {
+export async function parseArgs(
+  args: string[],
+): Promise<CliOptions | undefined> {
   let options: CliOptions | undefined;
 
   const run = new Command()
