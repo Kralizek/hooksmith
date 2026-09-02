@@ -8,8 +8,7 @@ import {
   type Runtime,
 } from "@hooksmith/runtime";
 import { toFileUrl } from "@std/path";
-import cliMetadata from "./deno.json" with { type: "json" };
-import { parseArgs, type RunCliOptions, usage } from "./args.ts";
+import { parseArgs, type RunCliOptions } from "./args.ts";
 import { loadEventDocuments, resolveInputPaths } from "./input.ts";
 import {
   type CliReport,
@@ -25,21 +24,13 @@ export * from "./args.ts";
 export * from "./input.ts";
 export * from "./report.ts";
 
-export const VERSION = cliMetadata.version;
-
 export async function main(args: string[]): Promise<number> {
   try {
-    if (args.length === 1 && (args[0] === "--help" || args[0] === "-h")) {
-      await writeStdout(`${usage()}\n`);
-      return 0;
-    }
-
-    if (args.length === 1 && (args[0] === "--version" || args[0] === "-v")) {
-      await writeStdout(`${VERSION}\n`);
-      return 0;
-    }
-
     const options = parseArgs(args);
+    if (options === undefined) {
+      return 0;
+    }
+
     const config = await loadConfig(options.configFile);
     const context: Context = { log: stderrLogger };
     const runtime = createRuntime(config, context);
