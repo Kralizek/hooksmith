@@ -41,8 +41,8 @@ cat events.yaml | hooksmith run - --format json
 ```
 
 By default, a bounded run fails if all supplied inputs resolve to zero events.
-`--allow-empty` changes only that final empty-set check; invalid matched files or
-invalid event documents are still reported as failures.
+`--allow-empty` changes only that final empty-set check; invalid matched files
+or invalid event documents are still reported as failures.
 
 ### Streaming
 
