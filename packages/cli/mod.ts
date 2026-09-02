@@ -156,7 +156,9 @@ function parseRunArgs(args: string[]): RunCliOptions {
   }
 
   if (eventFiles.length === 0) {
-    throw new Error("run requires at least one event file, glob, or - for stdin.");
+    throw new Error(
+      "run requires at least one event file, glob, or - for stdin.",
+    );
   }
   if (eventFiles.filter((path) => path === "-").length > 1) {
     throw new Error("run accepts stdin at most once.");
