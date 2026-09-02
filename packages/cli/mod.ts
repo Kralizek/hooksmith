@@ -4,8 +4,8 @@ import type { Config, Context, Event, Logger } from "@hooksmith/core";
 import {
   assertEventDocument,
   createRuntime,
-  hydrateEvent,
   type EventReport,
+  hydrateEvent,
   type ListenerReport,
   type RoutingOutcome,
   type RunReport as RuntimeRunReport,
@@ -184,7 +184,9 @@ function parseStreamArgs(args: string[]): StreamCliOptions {
       case "--plan":
         throw new Error("stream does not support --plan.");
       case "--format":
-        throw new Error("stream output is always NDJSON and does not support --format.");
+        throw new Error(
+          "stream output is always NDJSON and does not support --format.",
+        );
       default:
         throw new Error(`Unknown stream option: ${argument}`);
     }
@@ -217,12 +219,14 @@ async function processBounded(
 
     for (let sourceIndex = 0; sourceIndex < documents.length; sourceIndex++) {
       eventIndex++;
-      events.push(await processDocument(
-        runtime,
-        documents[sourceIndex],
-        { source, index: eventIndex, sourceIndex: sourceIndex + 1 },
-        options.plan,
-      ));
+      events.push(
+        await processDocument(
+          runtime,
+          documents[sourceIndex],
+          { source, index: eventIndex, sourceIndex: sourceIndex + 1 },
+          options.plan,
+        ),
+      );
     }
   }
 
@@ -445,17 +449,19 @@ function formatTsv(report: CliReport): string {
 
   for (const event of report.events) {
     for (const row of resultRows(event)) {
-      rows.push([
-        String(event.input.index),
-        event.input.source,
-        String(event.input.sourceIndex),
-        event.event?.type ?? "",
-        row[3],
-        row[0],
-        row[1],
-        row[2],
-        row[4],
-      ].map(tsvCell).join("\t"));
+      rows.push(
+        [
+          String(event.input.index),
+          event.input.source,
+          String(event.input.sourceIndex),
+          event.event?.type ?? "",
+          row[3],
+          row[0],
+          row[1],
+          row[2],
+          row[4],
+        ].map(tsvCell).join("\t"),
+      );
     }
   }
 
@@ -465,8 +471,11 @@ function formatTsv(report: CliReport): string {
 function resultRows(event: EventExecutionReport): string[][] {
   if (event.results.length === 0) {
     return [[
-      event.outcome === "unmatched" ? "unmatched" :
-      event.outcome === "fallback" ? "fallback" : "",
+      event.outcome === "unmatched"
+        ? "unmatched"
+        : event.outcome === "fallback"
+        ? "fallback"
+        : "",
       "",
       event.success ? "success" : "failure",
       event.outcome,
