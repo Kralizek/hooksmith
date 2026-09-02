@@ -7,8 +7,11 @@ import {
   hydrateEvent,
   type Runtime,
 } from "@hooksmith/runtime";
-import { toFileUrl } from "@std/path";
-import { parseArgs, type RunCliOptions } from "./args.ts";
+import { Command, EnumType } from "@cliffy/command";
+import { HelpCommand } from "@cliffy/command/help";
+import { resolve, toFileUrl } from "@std/path";
+import cliMetadata from "./deno.json" with { type: "json" };
+import type { RunCliOptions } from "./args.ts";
 import { loadEventDocuments, resolveInputPaths } from "./input.ts";
 import {
   type CliReport,
@@ -24,28 +27,87 @@ export * from "./args.ts";
 export * from "./input.ts";
 export * from "./report.ts";
 
-export async function main(args: string[]): Promise<number> {
-  try {
-    const options = await parseArgs(args);
-    if (options === undefined) {
-      return 0;
+export const VERSION = cliMetadata.version;
+
+let exitCode = 0;
+const reportFormatType = new EnumType(["table", "json", "tsv"] as const);
+
+const runCommand = new Command()
+  .description("Process one or more bounded event inputs.")
+  .type("report-format", reportFormatType)
+  .arguments("<eventFile:string> [...eventFiles:string]")
+  .option(
+    "-c, --config <path:string>",
+    "Config file.",
+    { default: "hooksmith.config.ts" },
+  )
+  .option(
+    "--format <format:report-format>",
+    "Report format.",
+    { default: "table" },
+  )
+  .option("--plan", "Plan events without invoking listeners.")
+  .option("--allow-empty", "Allow a run that resolves to zero events.")
+  .action(async (options, eventFile, ...eventFiles) => {
+    const inputs = [eventFile, ...eventFiles];
+    if (inputs.filter((path) => path === "-").length > 1) {
+      throw new Error("run accepts stdin at most once.");
     }
 
-    const config = await loadConfig(options.configFile);
-    const context: Context = { log: stderrLogger };
-    const runtime = createRuntime(config, context);
+    const config = await loadConfig(resolve(options.config));
+    const runtime = createRuntime(config, { log: stderrLogger });
+    const report = await processBounded(runtime, {
+      eventFiles: inputs,
+      configFile: resolve(options.config),
+      format: options.format,
+      plan: options.plan ?? false,
+      allowEmpty: options.allowEmpty ?? false,
+    });
 
-    if (options.command === "stream") {
-      return await processStream(runtime);
-    }
-
-    const report = await processBounded(runtime, options);
     await writeStdout(`${formatReport(report, options.format)}\n`);
-    return report.success ? 0 : 1;
-  } catch (error) {
-    stderrLogger.error(errorMessage(error));
-    return 1;
-  }
+    exitCode = report.success ? 0 : 1;
+  });
+
+const streamCommand = new Command()
+  .description("Read NDJSON events from stdin and emit NDJSON reports.")
+  .option(
+    "-c, --config <path:string>",
+    "Config file.",
+    { default: "hooksmith.config.ts" },
+  )
+  .action(async (options) => {
+    const config = await loadConfig(resolve(options.config));
+    const runtime = createRuntime(config, { log: stderrLogger });
+    exitCode = await processStream(runtime);
+  });
+
+const versionCommand = new Command()
+  .description("Print the Hooksmith CLI version.")
+  .action(() => console.log(VERSION));
+
+export const cli = new Command()
+  .name("hooksmith")
+  .description("Process events with Hooksmith.")
+  .version(VERSION)
+  .helpOption("-h, --help", "Show this help.")
+  .versionOption("-v, --version", "Print the Hooksmith CLI version.")
+  .noExit()
+  .command("run", runCommand)
+  .command("stream", streamCommand)
+  .command("help", new HelpCommand())
+  .command("version", versionCommand)
+  .action(function () {
+    this.showHelp();
+  });
+
+export function usage(): string {
+  return cli.getHelp();
+}
+
+export async function main(args: string[]): Promise<number> {
+  exitCode = 0;
+  await cli.parse(args);
+  return exitCode;
 }
 
 async function processBounded(
@@ -100,9 +162,7 @@ async function processStream(runtime: Runtime): Promise<number> {
 
   for await (const line of readLines(Deno.stdin.readable)) {
     lineNumber++;
-    if (line.trim().length === 0) {
-      continue;
-    }
+    if (line.trim().length === 0) continue;
 
     eventIndex++;
     const input: EventInput = {
@@ -212,9 +272,7 @@ async function* readLines(
       }
     }
 
-    if (buffer.length > 0) {
-      yield buffer.replace(/\r$/, "");
-    }
+    if (buffer.length > 0) yield buffer.replace(/\r$/, "");
   } finally {
     reader.releaseLock();
   }
@@ -235,9 +293,7 @@ function logToStderr(level: string, message: string, args: unknown[]): void {
 }
 
 function renderLogValue(value: unknown): string {
-  if (typeof value === "string") {
-    return value;
-  }
+  if (typeof value === "string") return value;
 
   try {
     return JSON.stringify(value);
