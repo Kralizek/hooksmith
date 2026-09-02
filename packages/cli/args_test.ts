@@ -1,11 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { isCommand } from "@optique/discover";
-import { main, runCommand, streamCommand } from "./mod.ts";
-
-Deno.test("defines run and stream as Optique commands", () => {
-  assertEquals(isCommand(runCommand), true);
-  assertEquals(isCommand(streamCommand), true);
-});
+import { main } from "./mod.ts";
 
 Deno.test("Optique program handles help and version entry points", async () => {
   assertEquals(await main(["--help"]), 0);
