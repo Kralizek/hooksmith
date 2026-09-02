@@ -82,21 +82,16 @@ const streamCommand = new Command()
     exitCode = await processStream(runtime);
   });
 
-const versionCommand = new Command()
-  .description("Print the Hooksmith CLI version.")
-  .action(() => console.log(VERSION));
-
 const cli = new Command()
   .name("hooksmith")
   .description("Process events with Hooksmith.")
   .version(VERSION)
-  .helpOption("-h, --help", "Show this help.")
+  .helpOption(false)
   .versionOption("-v, --version", "Print the Hooksmith CLI version.")
   .noExit()
   .command("run", runCommand)
   .command("stream", streamCommand)
   .command("help", new HelpCommand())
-  .command("version", versionCommand)
   .action(function () {
     this.showHelp();
   });
