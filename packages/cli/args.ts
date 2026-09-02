@@ -30,6 +30,18 @@ export async function parseArgs(
 ): Promise<CliOptions | undefined> {
   let options: CliOptions | undefined;
 
+  await createCommand((parsed) => {
+    options = parsed;
+  }).parse(args);
+
+  return options;
+}
+
+export function usage(): string {
+  return createCommand(() => undefined).getHelp();
+}
+
+function createCommand(setOptions: (options: CliOptions) => void) {
   const run = new Command()
     .description("Process one or more bounded event inputs.")
     .type("report-format", reportFormatType)
@@ -52,14 +64,14 @@ export async function parseArgs(
         throw new Error("run accepts stdin at most once.");
       }
 
-      options = {
+      setOptions({
         command: "run",
         eventFiles: inputs,
         configFile: resolve(parsed.config),
         format: parsed.format,
         plan: parsed.plan ?? false,
         allowEmpty: parsed.allowEmpty ?? false,
-      };
+      });
     });
 
   const stream = new Command()
@@ -70,38 +82,16 @@ export async function parseArgs(
       { default: "hooksmith.config.ts" },
     )
     .action((parsed) => {
-      options = {
+      setOptions({
         command: "stream",
         configFile: resolve(parsed.config),
-      };
+      });
     });
 
   const version = new Command()
     .description("Print the Hooksmith CLI version.")
     .action(() => console.log(VERSION));
 
-  await createCommand(run, stream, version)
-    .action(function () {
-      this.showHelp();
-    })
-    .parse(args);
-
-  return options;
-}
-
-export function usage(): string {
-  return createCommand(
-    new Command(),
-    new Command(),
-    new Command(),
-  ).getHelp();
-}
-
-function createCommand(
-  run: Command,
-  stream: Command,
-  version: Command,
-): Command {
   return new Command()
     .name("hooksmith")
     .description("Process events with Hooksmith.")
@@ -112,5 +102,8 @@ function createCommand(
     .command("run", run)
     .command("stream", stream)
     .command("help", new HelpCommand())
-    .command("version", version);
+    .command("version", version)
+    .action(function () {
+      this.showHelp();
+    });
 }
