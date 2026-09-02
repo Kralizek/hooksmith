@@ -1,118 +1,81 @@
-import { assertEquals, assertStringIncludes, assertThrows } from "@std/assert";
-import { parseArgs, usage } from "./args.ts";
+import { assertEquals, assertStringIncludes } from "@std/assert";
+import { usage, VERSION } from "./mod.ts";
 
-Deno.test("parses bounded run options", () => {
-  const options = parseArgs([
-    "run",
-    "event.yaml",
-    "second.json",
-    "--config",
-    "automation/hooksmith.config.ts",
-    "--format",
-    "json",
-    "--plan",
-  ]);
-
-  if (options.command !== "run") throw new Error("Expected run options");
-  assertEquals(options.format, "json");
-  assertEquals(options.plan, true);
-  assertEquals(options.allowEmpty, false);
-  assertEquals(options.eventFiles, ["event.yaml", "second.json"]);
-  assertEquals(
-    options.configFile.endsWith("automation/hooksmith.config.ts"),
-    true,
-  );
-});
-
-Deno.test("parses -c as config shorthand", () => {
-  const options = parseArgs([
-    "run",
-    "event.json",
-    "-c",
-    "automation/hooksmith.config.ts",
-  ]);
-
-  assertEquals(
-    options.configFile.endsWith("automation/hooksmith.config.ts"),
-    true,
-  );
-});
-
-Deno.test("preserves stdin in an input chain", () => {
-  const options = parseArgs(["run", "one.json", "-", "two.json"]);
-
-  if (options.command !== "run") throw new Error("Expected run options");
-  assertEquals(options.eventFiles[1], "-");
-});
-
-Deno.test("rejects stdin more than once", () => {
-  assertThrows(
-    () => parseArgs(["run", "-", "-"]),
-    Error,
-    "stdin at most once",
-  );
-});
-
-Deno.test("run supports allow-empty", () => {
-  const options = parseArgs(["run", "events/*.json", "--allow-empty"]);
-  if (options.command !== "run") throw new Error("Expected run options");
-
-  assertEquals(options.eventFiles, ["events/*.json"]);
-  assertEquals(options.allowEmpty, true);
-});
-
-Deno.test("parses stream options without an input argument", () => {
-  const options = parseArgs(["stream", "-c", "automation/hooksmith.config.ts"]);
-
-  assertEquals(options.command, "stream");
-  assertEquals(
-    options.configFile.endsWith("automation/hooksmith.config.ts"),
-    true,
-  );
-});
-
-Deno.test("stream rejects bounded-only options", () => {
-  assertThrows(
-    () => parseArgs(["stream", "--plan"]),
-    Error,
-    "does not support --plan",
-  );
-  assertThrows(
-    () => parseArgs(["stream", "--format", "json"]),
-    Error,
-    "does not support --format",
-  );
-  assertThrows(
-    () => parseArgs(["stream", "--allow-empty"]),
-    Error,
-    "does not support --allow-empty",
-  );
-});
-
-Deno.test("reports missing option values", () => {
-  assertThrows(
-    () => parseArgs(["run", "event.yaml", "--format"]),
-    Error,
-    "--format requires a value",
-  );
-  assertThrows(
-    () => parseArgs(["run", "event.yaml", "-c"]),
-    Error,
-    "-c requires a path",
-  );
-});
-
-Deno.test("help describes bounded and streaming modes", () => {
+Deno.test("generated Cliffy help describes the command surface", () => {
   const help = usage();
 
-  assertStringIncludes(help, "hooksmith --help");
-  assertStringIncludes(help, "hooksmith --version");
-  assertStringIncludes(
-    help,
-    "hooksmith run <event-file|glob|-> [event-file|glob...]",
-  );
-  assertStringIncludes(help, "hooksmith stream [options]");
-  assertStringIncludes(help, "-c, --config <path>");
-  assertStringIncludes(help, "--allow-empty");
-  assertStringIncludes(help, "NDJSON");
+  assertStringIncludes(help, "hooksmith");
+  assertStringIncludes(help, VERSION);
+  assertStringIncludes(help, "run");
+  assertStringIncludes(help, "stream");
+  assertStringIncludes(help, "help");
+  assertStringIncludes(help, "--version");
+  assertEquals(help.includes("--help"), false);
 });
+
+Deno.test("Cliffy exposes command-only help and option-only version", async () => {
+  for (
+    const args of [
+      ["help"],
+      ["help", "run"],
+      ["help", "stream"],
+    ]
+  ) {
+    const output = await runCli(args);
+    assertEquals(output.code, 0, `Expected success for: ${args.join(" ")}`);
+  }
+
+  for (const args of [["--version"], ["-v"]]) {
+    const output = await runCli(args);
+    assertEquals(output.code, 0, `Expected success for: ${args.join(" ")}`);
+    assertStringIncludes(output.stdout, VERSION);
+  }
+});
+
+Deno.test("Cliffy rejects unsupported meta-command forms", async () => {
+  for (
+    const args of [
+      [],
+      ["--help"],
+      ["-h"],
+      ["run", "event.json", "--help"],
+      ["stream", "--help"],
+      ["help", "--help"],
+      ["version"],
+    ]
+  ) {
+    const output = await runCli(args);
+    const invocation = args.length === 0 ? "<no args>" : args.join(" ");
+    assertEquals(
+      output.code === 0,
+      false,
+      `Expected failure for: ${invocation}`,
+    );
+  }
+});
+
+Deno.test("Cliffy reports parse errors without uncaught stack traces", async () => {
+  const output = await runCli(["run", "event.json", "--does-not-exist"]);
+
+  assertEquals(output.code, 1);
+  assertStringIncludes(output.stderr, "ERROR");
+  assertEquals(output.stderr.includes("Uncaught"), false);
+});
+
+async function runCli(args: string[]): Promise<{
+  code: number;
+  stdout: string;
+  stderr: string;
+}> {
+  const output = await new Deno.Command(Deno.execPath(), {
+    args: ["run", "-A", "packages/cli/mod.ts", ...args],
+    stdout: "piped",
+    stderr: "piped",
+  }).output();
+
+  return {
+    code: output.code,
+    stdout: new TextDecoder().decode(output.stdout),
+    stderr: new TextDecoder().decode(output.stderr),
+  };
+}

@@ -1,15 +1,16 @@
 #!/usr/bin/env -S deno run --allow-read --allow-env --allow-net
 
-import type { Config, Context, Event, Logger } from "@hooksmith/core";
+import type { Config, Event, Logger } from "@hooksmith/core";
 import {
   assertEventDocument,
   createRuntime,
   hydrateEvent,
   type Runtime,
 } from "@hooksmith/runtime";
-import { toFileUrl } from "@std/path";
+import { Command, EnumType } from "@cliffy/command";
+import { resolve, toFileUrl } from "@std/path";
 import cliMetadata from "./deno.json" with { type: "json" };
-import { parseArgs, type RunCliOptions, usage } from "./args.ts";
+import type { RunCliOptions } from "./args.ts";
 import { loadEventDocuments, resolveInputPaths } from "./input.ts";
 import {
   type CliReport,
@@ -27,30 +28,107 @@ export * from "./report.ts";
 
 export const VERSION = cliMetadata.version;
 
-export async function main(args: string[]): Promise<number> {
-  try {
-    if (args.length === 1 && (args[0] === "--help" || args[0] === "-h")) {
-      await writeStdout(`${usage()}\n`);
-      return 0;
+let exitCode = 0;
+const reportFormatType = new EnumType(["table", "json", "tsv"] as const);
+
+const runCommand = new Command()
+  .description("Process one or more bounded event inputs.")
+  .helpOption(false)
+  .type("report-format", reportFormatType)
+  .arguments("<eventFile:string> [...eventFiles:string]")
+  .option(
+    "-c, --config <path:string>",
+    "Config file.",
+    { default: "hooksmith.config.ts" },
+  )
+  .option(
+    "--format <format:report-format>",
+    "Report format.",
+    { default: "table" },
+  )
+  .option("--plan", "Plan events without invoking listeners.")
+  .option("--allow-empty", "Allow a run that resolves to zero events.")
+  .action(async (options, eventFile, ...eventFiles) => {
+    const inputs = [eventFile, ...eventFiles];
+    if (inputs.filter((path) => path === "-").length > 1) {
+      throw new Error("run accepts stdin at most once.");
     }
 
-    if (args.length === 1 && (args[0] === "--version" || args[0] === "-v")) {
-      await writeStdout(`${VERSION}\n`);
-      return 0;
-    }
+    const configFile = resolve(options.config);
+    const config = await loadConfig(configFile);
+    const runtime = createRuntime(config, { log: stderrLogger });
+    const report = await processBounded(runtime, {
+      eventFiles: inputs,
+      configFile,
+      format: options.format,
+      plan: options.plan ?? false,
+      allowEmpty: options.allowEmpty ?? false,
+    });
 
-    const options = parseArgs(args);
-    const config = await loadConfig(options.configFile);
-    const context: Context = { log: stderrLogger };
-    const runtime = createRuntime(config, context);
-
-    if (options.command === "stream") {
-      return await processStream(runtime);
-    }
-
-    const report = await processBounded(runtime, options);
     await writeStdout(`${formatReport(report, options.format)}\n`);
-    return report.success ? 0 : 1;
+    exitCode = report.success ? 0 : 1;
+  });
+
+const streamCommand = new Command()
+  .description("Read NDJSON events from stdin and emit NDJSON reports.")
+  .helpOption(false)
+  .option(
+    "-c, --config <path:string>",
+    "Config file.",
+    { default: "hooksmith.config.ts" },
+  )
+  .action(async (options) => {
+    const config = await loadConfig(resolve(options.config));
+    const runtime = createRuntime(config, { log: stderrLogger });
+    exitCode = await processStream(runtime);
+  });
+
+const helpCommand = new Command()
+  .description("Show this help or the help of a sub-command.")
+  .helpOption(false)
+  .noGlobals()
+  .option("-h, --help", "", {
+    hidden: true,
+    action: () => {
+      throw new Error("Unknown option: --help.");
+    },
+  })
+  .arguments("[command:string]")
+  .action(function (_, commandName?: string) {
+    const parent = this.getGlobalParent();
+    const command = commandName ? parent?.getBaseCommand(commandName) : parent;
+
+    if (!command) {
+      throw new Error(`Unknown command: ${commandName}.`);
+    }
+
+    command.showHelp();
+  });
+
+const cli = new Command()
+  .name("hooksmith")
+  .description("Process events with Hooksmith.")
+  .version(VERSION)
+  .helpOption(false)
+  .versionOption("-v, --version", "Print the Hooksmith CLI version.")
+  .noExit()
+  .command("run", runCommand)
+  .command("stream", streamCommand)
+  .command("help", helpCommand)
+  .action(function () {
+    this.showHelp();
+  });
+
+export function usage(): string {
+  return cli.getHelp();
+}
+
+export async function main(args: string[]): Promise<number> {
+  exitCode = args.length === 0 ? 1 : 0;
+
+  try {
+    await cli.parse(args);
+    return exitCode;
   } catch (error) {
     stderrLogger.error(errorMessage(error));
     return 1;
@@ -109,9 +187,7 @@ async function processStream(runtime: Runtime): Promise<number> {
 
   for await (const line of readLines(Deno.stdin.readable)) {
     lineNumber++;
-    if (line.trim().length === 0) {
-      continue;
-    }
+    if (line.trim().length === 0) continue;
 
     eventIndex++;
     const input: EventInput = {
@@ -221,9 +297,7 @@ async function* readLines(
       }
     }
 
-    if (buffer.length > 0) {
-      yield buffer.replace(/\r$/, "");
-    }
+    if (buffer.length > 0) yield buffer.replace(/\r$/, "");
   } finally {
     reader.releaseLock();
   }
@@ -244,9 +318,7 @@ function logToStderr(level: string, message: string, args: unknown[]): void {
 }
 
 function renderLogValue(value: unknown): string {
-  if (typeof value === "string") {
-    return value;
-  }
+  if (typeof value === "string") return value;
 
   try {
     return JSON.stringify(value);

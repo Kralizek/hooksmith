@@ -7,13 +7,14 @@ rendering reports.
 ## Usage
 
 ```text
-hooksmith --help
-hooksmith -h
+hooksmith help [command]
 hooksmith --version
 hooksmith -v
 hooksmith run <event-file|glob|-> [event-file|glob...] [options]
 hooksmith stream [options]
 ```
+
+Use `hooksmith help run` and `hooksmith help stream` for command-specific help.
 
 ### Bounded runs
 
