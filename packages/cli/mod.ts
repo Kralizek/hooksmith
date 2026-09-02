@@ -14,6 +14,7 @@ import {
 import { extname, resolve, toFileUrl } from "@std/path";
 import { parseAll as parseAllYaml } from "@std/yaml";
 import cliMetadata from "./deno.json" with { type: "json" };
+import { expandInputExpressions } from "./glob.ts";
 
 export type ReportFormat = "table" | "json" | "tsv";
 
@@ -23,6 +24,7 @@ export interface RunCliOptions {
   configFile: string;
   format: ReportFormat;
   plan: boolean;
+  allowEmpty: boolean;
 }
 
 export interface StreamCliOptions {
@@ -112,6 +114,7 @@ function parseRunArgs(args: string[]): RunCliOptions {
   let configFile = "hooksmith.config.ts";
   let format: ReportFormat = "table";
   let plan = false;
+  let allowEmpty = false;
 
   for (let index = 0; index < args.length; index++) {
     const argument = args[index];
@@ -140,17 +143,20 @@ function parseRunArgs(args: string[]): RunCliOptions {
       case "--plan":
         plan = true;
         break;
+      case "--allow-empty":
+        allowEmpty = true;
+        break;
       default:
         if (argument.startsWith("-") && argument !== "-") {
           throw new Error(`Unknown option: ${argument}`);
         }
-        eventFiles.push(argument === "-" ? "-" : resolve(argument));
+        eventFiles.push(argument);
         break;
     }
   }
 
   if (eventFiles.length === 0) {
-    throw new Error("run requires at least one event file or - for stdin.");
+    throw new Error("run requires at least one event file, glob, or - for stdin.");
   }
   if (eventFiles.filter((path) => path === "-").length > 1) {
     throw new Error("run accepts stdin at most once.");
@@ -162,6 +168,7 @@ function parseRunArgs(args: string[]): RunCliOptions {
     configFile: resolve(configFile),
     format,
     plan,
+    allowEmpty,
   };
 }
 
@@ -187,6 +194,8 @@ function parseStreamArgs(args: string[]): StreamCliOptions {
         throw new Error(
           "stream output is always NDJSON and does not support --format.",
         );
+      case "--allow-empty":
+        throw new Error("stream does not support --allow-empty.");
       default:
         throw new Error(`Unknown stream option: ${argument}`);
     }
@@ -201,8 +210,9 @@ async function processBounded(
 ): Promise<CliReport> {
   const events: EventExecutionReport[] = [];
   let eventIndex = 0;
+  const paths = await expandInputExpressions(options.eventFiles);
 
-  for (const path of options.eventFiles) {
+  for (const path of paths) {
     const source = inputSource(path);
     let documents: unknown[];
 
@@ -228,6 +238,13 @@ async function processBounded(
         ),
       );
     }
+  }
+
+  if (events.length === 0 && !options.allowEmpty) {
+    events.push(inputFailure(
+      { source: "run", index: 1, sourceIndex: 0 },
+      new Error("No events were resolved from the supplied inputs."),
+    ));
   }
 
   return createReport(options.plan ? "plan" : "run", events);
@@ -587,19 +604,21 @@ export function usage(): string {
     "  hooksmith -h",
     "  hooksmith --version",
     "  hooksmith -v",
-    "  hooksmith run <event-file|-> [event-file...] [options]",
+    "  hooksmith run <event-file|glob|-> [event-file|glob...] [options]",
     "  hooksmith stream [options]",
     "",
     "Run options:",
     "  -c, --config <path>          Config file (default: hooksmith.config.ts)",
     "      --format table|json|tsv  Report format (default: table)",
     "      --plan                   Plan events without invoking listeners",
+    "      --allow-empty            Allow a run that resolves to zero events",
     "",
     "Stream options:",
     "  -c, --config <path>          Config file (default: hooksmith.config.ts)",
     "",
-    "run accepts YAML/JSON files and bounded stdin. Each source may contain one",
-    "event, an array of events, or multiple YAML documents.",
+    "run accepts YAML/JSON files, glob patterns, and bounded stdin. Each source",
+    "may contain one event, an array of events, or multiple YAML documents.",
+    "Glob matches are processed in deterministic path order.",
     "stream reads NDJSON from stdin and emits one NDJSON report per event.",
   ].join("\n");
 }
