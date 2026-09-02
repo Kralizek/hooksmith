@@ -17,7 +17,7 @@ export async function expandInputExpression(
     matches.push(entry.path);
   }
 
-  matches.sort((left, right) => left.localeCompare(right));
+  matches.sort();
   return matches;
 }
 
