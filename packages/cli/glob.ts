@@ -1,7 +1,9 @@
 import { expandGlob } from "@std/fs";
 import { isGlob, resolve } from "@std/path";
 
-export async function expandInputExpression(expression: string): Promise<string[]> {
+export async function expandInputExpression(
+  expression: string,
+): Promise<string[]> {
   if (expression === "-") {
     return [expression];
   }
