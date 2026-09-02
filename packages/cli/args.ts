@@ -1,3 +1,17 @@
+import {
+  argument,
+  choice,
+  command,
+  constant,
+  flag,
+  multiple,
+  object,
+  option,
+  or,
+  runParserSync,
+  string,
+  withDefault,
+} from "@optique/core";
 import { resolve } from "@std/path";
 
 export type ReportFormat = "table" | "json" | "tsv";
@@ -18,116 +32,63 @@ export interface StreamCliOptions {
 
 export type CliOptions = RunCliOptions | StreamCliOptions;
 
+const parser = or(
+  command(
+    "run",
+    object({
+      command: constant("run" as const),
+      eventFiles: multiple(argument(string()), { min: 1 }),
+      configFile: withDefault(
+        option("-c", "--config", string()),
+        "hooksmith.config.ts",
+      ),
+      format: withDefault(
+        option("--format", choice(["table", "json", "tsv"] as const)),
+        "table" as const,
+      ),
+      plan: withDefault(flag("--plan"), false),
+      allowEmpty: withDefault(flag("--allow-empty"), false),
+    }),
+  ),
+  command(
+    "stream",
+    object({
+      command: constant("stream" as const),
+      configFile: withDefault(
+        option("-c", "--config", string()),
+        "hooksmith.config.ts",
+      ),
+    }),
+  ),
+);
+
 export function parseArgs(args: string[]): CliOptions {
   if (args.length === 0) {
     throw new Error(usage());
   }
 
-  switch (args[0]) {
-    case "run":
-      return parseRunArgs(args.slice(1));
-    case "stream":
-      return parseStreamArgs(args.slice(1));
-    default:
-      throw new Error(usage());
-  }
-}
+  const parsed = runParserSync(parser, "hooksmith", args);
 
-function parseRunArgs(args: string[]): RunCliOptions {
-  const eventFiles: string[] = [];
-  let configFile = "hooksmith.config.ts";
-  let format: ReportFormat = "table";
-  let plan = false;
-  let allowEmpty = false;
-
-  for (let index = 0; index < args.length; index++) {
-    const argument = args[index];
-
-    switch (argument) {
-      case "--config":
-      case "-c": {
-        const value = args[++index];
-        if (value === undefined) {
-          throw new Error(`${argument} requires a path.`);
-        }
-        configFile = value;
-        break;
-      }
-      case "--format": {
-        const value = args[++index];
-        if (value === undefined) {
-          throw new Error("--format requires a value.");
-        }
-        if (value !== "table" && value !== "json" && value !== "tsv") {
-          throw new Error("--format must be one of: table, json, tsv.");
-        }
-        format = value;
-        break;
-      }
-      case "--plan":
-        plan = true;
-        break;
-      case "--allow-empty":
-        allowEmpty = true;
-        break;
-      default:
-        if (argument.startsWith("-") && argument !== "-") {
-          throw new Error(`Unknown option: ${argument}`);
-        }
-        eventFiles.push(argument);
-        break;
+  if (parsed.command === "run") {
+    const eventFiles = [...parsed.eventFiles];
+    if (eventFiles.filter((path) => path === "-").length > 1) {
+      throw new Error("run accepts stdin at most once.");
     }
-  }
 
-  if (eventFiles.length === 0) {
-    throw new Error(
-      "run requires at least one event file, glob, or - for stdin.",
-    );
-  }
-  if (eventFiles.filter((path) => path === "-").length > 1) {
-    throw new Error("run accepts stdin at most once.");
+    return {
+      command: "run",
+      eventFiles,
+      configFile: resolve(parsed.configFile),
+      format: parsed.format,
+      plan: parsed.plan,
+      allowEmpty: parsed.allowEmpty,
+    };
   }
 
   return {
-    command: "run",
-    eventFiles,
-    configFile: resolve(configFile),
-    format,
-    plan,
-    allowEmpty,
+    command: "stream",
+    configFile: resolve(parsed.configFile),
   };
-}
-
-function parseStreamArgs(args: string[]): StreamCliOptions {
-  let configFile = "hooksmith.config.ts";
-
-  for (let index = 0; index < args.length; index++) {
-    const argument = args[index];
-
-    switch (argument) {
-      case "--config":
-      case "-c": {
-        const value = args[++index];
-        if (value === undefined) {
-          throw new Error(`${argument} requires a path.`);
-        }
-        configFile = value;
-        break;
-      }
-      case "--plan":
-        throw new Error("stream does not support --plan.");
-      case "--format":
-        throw new Error(
-          "stream output is always NDJSON and does not support --format.",
-        );
-      case "--allow-empty":
-        throw new Error("stream does not support --allow-empty.");
-      default:
-        throw new Error(`Unknown stream option: ${argument}`);
-    }
-  }
-
-  return { command: "stream", configFile: resolve(configFile) };
 }
 
 export function usage(): string {
