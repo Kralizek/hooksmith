@@ -46,7 +46,11 @@ Deno.test("Cliffy rejects unsupported meta-command forms", async () => {
   ) {
     const output = await runCli(args);
     const invocation = args.length === 0 ? "<no args>" : args.join(" ");
-    assertEquals(output.code === 0, false, `Expected failure for: ${invocation}`);
+    assertEquals(
+      output.code === 0,
+      false,
+      `Expected failure for: ${invocation}`,
+    );
   }
 });
 
