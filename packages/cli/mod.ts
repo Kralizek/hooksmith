@@ -87,6 +87,12 @@ const helpCommand = new Command()
   .description("Show this help or the help of a sub-command.")
   .helpOption(false)
   .noGlobals()
+  .option("-h, --help", "", {
+    hidden: true,
+    action: () => {
+      throw new Error("Unknown option: --help.");
+    },
+  })
   .arguments("[command:string]")
   .action(function (_, commandName?: string) {
     const parent = this.getGlobalParent();
