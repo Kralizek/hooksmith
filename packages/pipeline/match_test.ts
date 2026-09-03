@@ -82,7 +82,10 @@ Deno.test("match passes transform context to predicates and transformers", async
     otherwise(project((value: string) => value.length)),
   );
 
-  assertEquals(await transformation.transform("hooksmith", transformContext), 9);
+  assertEquals(
+    await transformation.transform("hooksmith", transformContext),
+    9,
+  );
   assertEquals(seen, [transformContext, transformContext]);
 });
 
