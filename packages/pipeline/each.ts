@@ -16,6 +16,7 @@ export function each<TInput, TOutput>(
   | Listener<Event<readonly TInput[]>> {
   if (
     typeof operation === "object" && operation !== null &&
+    !("transform" in operation) &&
     "run" in operation && typeof operation.run === "function"
   ) {
     const listener = operation as Listener<Event<TInput>>;
