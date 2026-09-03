@@ -1,4 +1,4 @@
-import type { Transformer, TransformContext } from "./mod.ts";
+import type { TransformContext, Transformer } from "./mod.ts";
 
 export interface MatchCase<TInput, TOutput> {
   readonly kind: "case";
