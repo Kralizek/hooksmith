@@ -1,5 +1,7 @@
 import type { TransformContext, Transformer } from "./mod.ts";
 
+type MatchNoInfer<T> = [T][T extends unknown ? 0 : never];
+
 export interface MatchCase<TInput, TOutput> {
   readonly kind: "case";
   readonly predicate: (
@@ -41,17 +43,17 @@ export function otherwise<TInput, TOutput>(
 export function match<TInput, TOutput>(
   first: MatchCase<TInput, TOutput>,
   ...branches: readonly [
-    ...MatchCase<NoInfer<TInput>, NoInfer<TOutput>>[],
-    MatchOtherwise<NoInfer<TInput>, NoInfer<TOutput>>,
+    ...MatchCase<MatchNoInfer<TInput>, MatchNoInfer<TOutput>>[],
+    MatchOtherwise<MatchNoInfer<TInput>, MatchNoInfer<TOutput>>,
   ]
 ): Transformer<TInput, TOutput> {
+  const candidates = [first, ...branches];
+
   return {
     async transform(input, context) {
       if (branches.length === 0 || branches.at(-1)?.kind !== "otherwise") {
         throw new Error("match requires a final otherwise branch.");
       }
-
-      const candidates = [first, ...branches];
 
       for (const branch of candidates) {
         if (branch.kind === "otherwise") {
