@@ -28,9 +28,9 @@ Each SQS message body is expected to contain JSON like:
 }
 ```
 
-`fromSqs` turns the record into a Hooksmith event with type
-`aws.sqs.message`. The runtime routes that event to the Slack listener, which
-uses the message body's `text` property as the Slack message.
+`fromSqs` turns the record into a Hooksmith event with type `aws.sqs.message`.
+The runtime routes that event to the Slack listener, which uses the message
+body's `text` property as the Slack message.
 
 ## Environment
 
@@ -58,9 +58,9 @@ items by `@hooksmith/aws-lambda/sqs`.
 
 ## Packaging
 
-`handler.ts` exports the Lambda handler as `handler`. Package and deploy it using
-your preferred Deno-on-Lambda approach, such as a Lambda container image or a
-compatible custom runtime.
+`handler.ts` exports the Lambda handler as `handler`. Package and deploy it
+using your preferred Deno-on-Lambda approach, such as a Lambda container image
+or a compatible custom runtime.
 
 This example intentionally does not include infrastructure definitions so the
 Hooksmith composition remains the focus.
