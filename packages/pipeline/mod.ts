@@ -266,7 +266,7 @@ export function each<TInput, TOutput>(
 ):
   | Transformer<readonly TInput[], readonly TOutput[]>
   | Listener<Event<readonly TInput[]>> {
-  if ("run" in operation) {
+  if (!("transform" in operation) && "run" in operation) {
     const listener = operation;
 
     return {
@@ -286,7 +286,7 @@ export function each<TInput, TOutput>(
     };
   }
 
-  const transformer = operation;
+  const transformer = operation as Transformer<TInput, TOutput>;
 
   return {
     name: transformer.name,
