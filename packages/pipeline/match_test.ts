@@ -130,7 +130,8 @@ Deno.test("match rejects a missing otherwise branch at runtime", async () => {
   );
 
   await assertRejects(
-    async () => await transformation.transform(1, { ...context, originalData: 1 }),
+    async () =>
+      await transformation.transform(1, { ...context, originalData: 1 }),
     Error,
     "match requires a final otherwise branch.",
   );
