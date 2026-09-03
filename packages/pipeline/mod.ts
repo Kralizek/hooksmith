@@ -1,5 +1,8 @@
 import type { Context, Event, Listener, ListenerResult } from "@hooksmith/core";
 
+export { caseOf, match, otherwise } from "./match.ts";
+export type { MatchCase, MatchOtherwise } from "./match.ts";
+
 export interface TransformContext extends Context {
   readonly originalData: unknown;
 }
