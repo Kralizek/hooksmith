@@ -325,7 +325,7 @@ jobs:
         working-directory: downstream
         run: deno task check
 
-      - name: Open dependency bump pull request
+      - name: Open or update dependency bump pull request
         if: steps.bump.outputs.changed == 'true'
         working-directory: downstream
         shell: bash
@@ -336,24 +336,29 @@ jobs:
         run: |
           set -euo pipefail
 
-          branch="chore/hooksmith-runtime-${VERSION}"
+          branch="chore/hooksmith-runtime"
+          title="Bump Hooksmith runtime to ${VERSION}"
+          body="Updates this repository's Hooksmith runtime dependencies to \`^${VERSION}\` after [Hooksmith v${VERSION}](https://github.com/Kralizek/hooksmith/releases/tag/v${VERSION}) was published."
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$branch"
           git add deno.json
-          git commit -m "Bump Hooksmith runtime to ${VERSION}"
+          git commit -m "$title"
           git push --force origin "$branch"
 
           existing="$(gh pr list --repo "$REPOSITORY" --head "$branch" --state open --json number --jq '.[0].number // empty')"
           if [[ -n "$existing" ]]; then
-            echo "Pull request #$existing already exists."
-            exit 0
+            gh pr edit "$existing" \
+              --repo "$REPOSITORY" \
+              --title "$title" \
+              --body "$body"
+            echo "Updated pull request #$existing."
+          else
+            gh pr create \
+              --repo "$REPOSITORY" \
+              --base master \
+              --head "$branch" \
+              --title "$title" \
+              --body "$body"
           fi
-
-          gh pr create \
-            --repo "$REPOSITORY" \
-            --base master \
-            --head "$branch" \
-            --title "Bump Hooksmith runtime to ${VERSION}" \
-            --body "Updates this repository's Hooksmith runtime dependencies to \`^${VERSION}\` after [Hooksmith v${VERSION}](https://github.com/Kralizek/hooksmith/releases/tag/v${VERSION}) was published."
