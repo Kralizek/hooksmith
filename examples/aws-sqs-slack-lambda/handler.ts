@@ -31,9 +31,5 @@ const processor = createProcessor<QueueItem>(runtime);
 export const handler = createHandler<QueueItem>(
   (record) => fromSqs<QueueItem>(record),
   processor,
-  {
-    onRecordError(error, record) {
-      context.log.error(`Failed SQS record ${record.messageId}.`, error);
-    },
-  },
+  context,
 );

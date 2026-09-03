@@ -52,9 +52,10 @@ To make AWS honor that response, configure the SQS event source mapping with
 `ReportBatchItemFailures` enabled. Without it, Lambda retries failures at batch
 granularity.
 
-`onRecordError` logs exceptions while preserving the partial-batch response.
-Hooksmith reports that complete unsuccessfully are also returned as failed batch
-items by `@hooksmith/aws-lambda/sqs`.
+Reader and processor exceptions are logged through the supplied Hooksmith
+`Context` by default while preserving the partial-batch response. Hooksmith
+reports that complete unsuccessfully are also returned as failed batch items by
+`@hooksmith/aws-lambda/sqs`.
 
 ## Packaging
 
