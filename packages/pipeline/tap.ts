@@ -38,7 +38,8 @@ export function tap<T>(
     return {
       name: listener.name,
       async transform(input, context) {
-        const event = (context as Partial<PipelineTransformContext>)[eventContext];
+        const event =
+          (context as Partial<PipelineTransformContext>)[eventContext];
 
         if (event === undefined) {
           throw new Error("tap(listener) can only run inside a pipeline.");
@@ -49,7 +50,9 @@ export function tap<T>(
         if (!result.success) {
           throw new Error(
             result.message ??
-              `Listener ${listener.name === undefined ? "tap" : `\"${listener.name}\"`} failed.`,
+              `Listener ${
+                listener.name === undefined ? "tap" : `\"${listener.name}\"`
+              } failed.`,
           );
         }
 
