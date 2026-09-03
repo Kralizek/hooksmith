@@ -64,13 +64,15 @@ whether the terminal listener ultimately runs.
   and returns their outputs as a typed tuple.
 - `when` conditionally applies a same-type `Transformer<T, T>`.
 - `split` projects one value into a homogeneous collection.
-- `each` applies one transformation concurrently to every item in a collection.
+- `each` applies a transformer or listener concurrently to every item in a
+  collection. With a transformer, the pipeline continues with the collected
+  outputs. With a listener, `each` becomes the terminal fan-out listener.
 - `merge()` wraps a tuple or collection as `{ items: ... }` while preserving its
   exact type.
 - `pipe` composes transformations and a final listener into a listener for the
   pipeline's original input type.
 
-For example, a collection pipeline can be written as:
+For example, a collection transformation pipeline can be written as:
 
 ```ts
 pipe(
@@ -80,6 +82,19 @@ pipe(
   listener,
 );
 ```
+
+A split collection can also fan out directly into a listener:
+
+```ts
+pipe(
+  split((page: Page) => page.content.split("\n\n")),
+  each(listener),
+);
+```
+
+The fan-out listener runs once per item and aggregates all returned
+`ListenerResult` values. The aggregate succeeds only when every invocation
+succeeds. Listener exceptions retain normal Hooksmith listener behavior.
 
 Named transformers are reported by name when they fail. Unnamed transformers are
 reported by their one-based position in the pipeline. Transformation failures
