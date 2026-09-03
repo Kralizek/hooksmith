@@ -1,11 +1,6 @@
-import type { Context, Event, Listener } from "@hooksmith/core";
-import type { TransformContext, Transformer } from "./mod.ts";
-
-const eventContext = Symbol("hooksmith.pipeline.event");
-
-type PipelineTransformContext = TransformContext & {
-  readonly [eventContext]: Event<unknown>;
-};
+import type { Event, Listener } from "@hooksmith/core";
+import { getTransformEvent, type TransformContext } from "./context.ts";
+import type { Transformer } from "./transformer.ts";
 
 export type TapEffect<T> = (
   input: T,
@@ -32,14 +27,16 @@ export function tap<T>(
   effect: TapEffect<T> | Listener<Event<T>>,
   name?: string,
 ): Transformer<T, T> {
-  if (typeof effect === "object" && effect !== null && "run" in effect) {
-    const listener = effect;
+  if (
+    typeof effect === "object" && effect !== null &&
+    "run" in effect && typeof effect.run === "function"
+  ) {
+    const listener = effect as Listener<Event<T>>;
 
     return {
       name: listener.name,
       async transform(input, context) {
-        const event =
-          (context as Partial<PipelineTransformContext>)[eventContext];
+        const event = getTransformEvent(context);
 
         if (event === undefined) {
           throw new Error("tap(listener) can only run inside a pipeline.");
@@ -50,9 +47,9 @@ export function tap<T>(
         if (!result.success) {
           throw new Error(
             result.message ??
-              `Listener ${
-                listener.name === undefined ? "tap" : `\"${listener.name}\"`
-              } failed.`,
+              (listener.name === undefined
+                ? "Tapped listener failed."
+                : `Listener "${listener.name}" failed.`),
           );
         }
 
@@ -61,23 +58,13 @@ export function tap<T>(
     };
   }
 
+  const callback = effect as TapEffect<T>;
+
   return {
     name,
     async transform(input, context) {
-      await effect(input, context);
+      await callback(input, context);
       return input;
     },
   };
-}
-
-/** @internal */
-export function createTransformContext(
-  context: Context,
-  event: Event<unknown>,
-): TransformContext {
-  return {
-    ...context,
-    originalData: event.data,
-    [eventContext]: event,
-  } as PipelineTransformContext;
 }

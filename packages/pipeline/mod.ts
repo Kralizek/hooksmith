@@ -1,5 +1,15 @@
-export * from "./pipeline.ts";
-export { caseOf, match, otherwise } from "./match.ts";
-export type { MatchCase, MatchOtherwise } from "./match.ts";
+export type { TransformContext } from "./context.ts";
+export type { Transformer } from "./transformer.ts";
+export { pipe } from "./pipe.ts";
+export type { PipeOptions } from "./pipe.ts";
+export { project } from "./project.ts";
 export { tap } from "./tap.ts";
 export type { TapEffect } from "./tap.ts";
+export { parallel } from "./parallel.ts";
+export { when } from "./when.ts";
+export { caseOf, match, otherwise } from "./match.ts";
+export type { MatchCase, MatchOtherwise } from "./match.ts";
+export { split } from "./split.ts";
+export { each } from "./each.ts";
+export { merge } from "./merge.ts";
+export type { MergeOperator } from "./merge.ts";
