@@ -17,10 +17,10 @@ SLACK_BOT_TOKEN=xoxb-...
 SLACK_CHANNEL=C0123456789
 ```
 
-From this directory, run the local Hooksmith CLI against the sample event:
+From this directory, run the published Hooksmith CLI against the sample event:
 
 ```sh
-deno run -A ../../packages/cli/mod.ts run event.yaml --config hooksmith.config.ts
+deno run -A jsr:@hooksmith/cli@^0.9.0 run event.yaml --config hooksmith.config.ts
 ```
 
 Running from this directory lets Deno discover the local `deno.json`. If you
