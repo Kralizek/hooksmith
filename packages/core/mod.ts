@@ -1,8 +1,10 @@
+/** Identifies a resource associated with an event. */
 export interface ResourceReference {
   kind: string;
   id?: string;
 }
 
+/** In-memory Hooksmith event processed by conditions and listeners. */
 export interface Event<TData = unknown> {
   type: string;
   timestamp: Temporal.Instant;
@@ -26,6 +28,7 @@ export interface EventDocument<TData = unknown> {
   data: TData;
 }
 
+/** Logging contract exposed through the Hooksmith execution context. */
 export interface Logger {
   debug(message: string, ...args: unknown[]): void;
   info(message: string, ...args: unknown[]): void;
@@ -33,10 +36,12 @@ export interface Logger {
   error(message: string, ...args: unknown[]): void;
 }
 
+/** Shared execution context passed to conditions and listeners. */
 export interface Context {
   log: Logger;
 }
 
+/** Predicate used by a route to decide whether an event matches. */
 export interface Condition<TEvent extends Event = Event> {
   name?: string;
   evaluate(
@@ -45,12 +50,14 @@ export interface Condition<TEvent extends Event = Event> {
   ): boolean | Promise<boolean>;
 }
 
+/** Result returned by a Hooksmith listener. */
 export interface ListenerResult<TData = unknown> {
   success: boolean;
   message?: string;
   data?: TData;
 }
 
+/** Event consumer invoked by the Hooksmith runtime. */
 export interface Listener<TEvent extends Event = Event> {
   name?: string;
   run(
@@ -59,12 +66,14 @@ export interface Listener<TEvent extends Event = Event> {
   ): ListenerResult | Promise<ListenerResult>;
 }
 
+/** Ordered route containing an optional condition and its listeners. */
 export interface Route<TEvent extends Event = Event> {
   name?: string;
   when?: Condition<TEvent>;
   listeners: Listener<TEvent>[];
 }
 
+/** Hooksmith runtime configuration for routes and optional fallback listeners. */
 export interface Config<TEvent extends Event = Event> {
   routes: Route<TEvent>[];
   fallback?: Listener<TEvent>[];
