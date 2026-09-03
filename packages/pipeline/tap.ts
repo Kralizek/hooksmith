@@ -2,6 +2,7 @@ import type { Event, Listener } from "@hooksmith/core";
 import { getTransformEvent, type TransformContext } from "./context.ts";
 import type { Transformer } from "./transformer.ts";
 
+/** Side-effect callback used by {@link tap} without changing the pipeline value. */
 export type TapEffect<T> = (
   input: T,
   context: TransformContext,
