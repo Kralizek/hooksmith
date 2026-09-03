@@ -83,7 +83,8 @@ pipe(
 );
 ```
 
-A split collection can also fan out directly into a listener:
+A split collection can fan out directly into a listener, or continue through
+per-item transformations before fan-out.
 
 ```ts
 pipe(
@@ -92,9 +93,32 @@ pipe(
 );
 ```
 
-The fan-out listener runs once per item and aggregates all returned
-`ListenerResult` values. The aggregate succeeds only when every invocation
-succeeds. Listener exceptions retain normal Hooksmith listener behavior.
+Here, `split` produces a collection and `each(listener)` invokes the listener
+once for every item.
+
+You can also transform every item before invoking the listener:
+
+```ts
+pipe(
+  split((page: Page) => page.content.split("\n\n")),
+  each(project((section: string) => summarize(section))),
+  each(listener),
+);
+```
+
+This composes as:
+
+```text
+Page
+→ string[]
+→ Summary[]
+→ one listener invocation per Summary
+```
+
+Both `each(transformer)` and `each(listener)` process collection items
+concurrently. A fan-out listener aggregates all returned `ListenerResult`
+values, and the aggregate succeeds only when every invocation succeeds. Listener
+exceptions retain normal Hooksmith listener behavior.
 
 Named transformers are reported by name when they fail. Unnamed transformers are
 reported by their one-based position in the pipeline. Transformation failures
