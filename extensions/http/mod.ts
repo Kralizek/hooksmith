@@ -1,14 +1,17 @@
 import type { Context, Event, Listener, ListenerResult } from "@hooksmith/core";
 
+/** Fixed value or event-aware factory resolved when an HTTP listener runs. */
 export type ValueOrFactory<T, TEvent extends Event = Event> =
   | T
   | ((event: TEvent, context: Context) => T | Promise<T>);
 
+/** Header values or an event-aware factory that produces them. */
 export type HeaderSource<TEvent extends Event = Event> = ValueOrFactory<
   HeadersInit,
   TEvent
 >;
 
+/** Deferred HTTP request body resolved for the current Hooksmith event. */
 export interface HttpBody<TEvent extends Event = Event> {
   contentType?: string;
   resolve(
@@ -17,8 +20,10 @@ export interface HttpBody<TEvent extends Event = Event> {
   ): BodyInit | null | Promise<BodyInit | null>;
 }
 
+/** Built-in response body parsing modes. */
 export type ResponseParser = "none" | "text" | "json";
 
+/** Normalized HTTP response exposed to success checks and response mappers. */
 export interface HttpResponseReport<TBody = unknown> {
   status: number;
   statusText: string;
@@ -26,12 +31,14 @@ export interface HttpResponseReport<TBody = unknown> {
   body?: TBody;
 }
 
+/** Predicate that determines whether an HTTP response is successful. */
 export type HttpResponseSuccess<TEvent extends Event = Event> = (
   response: HttpResponseReport,
   event: TEvent,
   context: Context,
 ) => boolean | Promise<boolean>;
 
+/** Response parsing, success evaluation, and result-mapping options. */
 export interface HttpResponseOptions<TEvent extends Event = Event> {
   parse?: ResponseParser;
   success?: HttpResponseSuccess<TEvent>;
@@ -47,10 +54,12 @@ export interface HttpResponseOptions<TEvent extends Event = Event> {
   ) => unknown | Promise<unknown>;
 }
 
+/** Shorthand response predicate or full response configuration. */
 export type HttpResponse<TEvent extends Event = Event> =
   | HttpResponseSuccess<TEvent>
   | HttpResponseOptions<TEvent>;
 
+/** Options used to create a Hooksmith HTTP request listener. */
 export interface HttpRequestOptions<TEvent extends Event = Event> {
   method?: string;
   url: ValueOrFactory<string | URL, TEvent>;

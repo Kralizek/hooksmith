@@ -15,7 +15,8 @@
     "@std/yaml": "jsr:@std/yaml@^1"
   },
   "tasks": {
-    "check": "deno fmt --check && deno lint && deno test -A",
+    "check": "deno fmt --check && deno lint && deno task check:docs && deno test -A",
+    "check:docs": "deno run --allow-read=packages,extensions scripts/check_export_docs.ts",
     "test": "deno test -A"
   },
   "fmt": {

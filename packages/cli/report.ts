@@ -7,19 +7,23 @@ import type {
 } from "@hooksmith/runtime";
 import type { ReportFormat } from "./args.ts";
 
+/** Locates an event within the CLI input sources. */
 export interface EventInput {
   source: string;
   index: number;
   sourceIndex: number;
 }
 
+/** Error captured while loading or processing one CLI event. */
 export interface EventError {
   stage: "input" | "runtime";
   message: string;
 }
 
+/** Routing or failure outcome reported for one CLI event. */
 export type EventOutcome = RoutingOutcome | "rejected" | "failed";
 
+/** Complete execution report for one input event. */
 export interface EventExecutionReport {
   input: EventInput;
   event?: EventReport;
@@ -29,6 +33,7 @@ export interface EventExecutionReport {
   error?: EventError;
 }
 
+/** Aggregate CLI report for a bounded run or plan. */
 export interface CliReport {
   mode: "run" | "plan";
   events: EventExecutionReport[];

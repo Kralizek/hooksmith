@@ -3,6 +3,7 @@ import type { Transformer } from "./transformer.ts";
 
 type MatchNoInfer<T> = [T][T extends unknown ? 0 : never];
 
+/** Ordered predicate branch evaluated by {@link match}. */
 export interface MatchCase<TInput, TOutput> {
   readonly kind: "case";
   readonly predicate: (
@@ -12,6 +13,7 @@ export interface MatchCase<TInput, TOutput> {
   readonly transformer: Transformer<TInput, TOutput>;
 }
 
+/** Required fallback branch evaluated when no {@link MatchCase} matches. */
 export interface MatchOtherwise<TInput, TOutput> {
   readonly kind: "otherwise";
   readonly transformer: Transformer<TInput, TOutput>;
