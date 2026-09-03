@@ -2,6 +2,7 @@ import type { Context, Event } from "@hooksmith/core";
 
 const eventContext = Symbol("hooksmith.pipeline.event");
 
+/** Context passed to pipeline transformers, including the pipeline's original data. */
 export interface TransformContext extends Context {
   readonly originalData: unknown;
 }
