@@ -28,8 +28,8 @@ const context: Context = {
 const runtime = createRuntime<QueueItemEvent>(config, context);
 const processor = createProcessor<QueueItem>(runtime);
 
-export const handler = createHandler<QueueItem>(
-  (record) => fromSqs<QueueItem>(record),
+export const handler = createHandler(
+  fromSqs,
   processor,
   context,
 );
