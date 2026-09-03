@@ -1,5 +1,6 @@
 const roots = ["packages", "extensions"];
-const declaration = /^\s*export\s+(?:interface|type|class|enum)\s+[A-Za-z_$][\w$]*/;
+const declaration =
+  /^\s*export\s+(?:interface|type|class|enum)\s+[A-Za-z_$][\w$]*/;
 const missing: string[] = [];
 
 for (const root of roots) {
@@ -23,9 +24,10 @@ async function scan(directory: string): Promise<void> {
       await scan(path);
       continue;
     }
-    if (!entry.isFile || !entry.name.endsWith(".ts") || entry.name.endsWith("_test.ts")) {
-      continue;
-    }
+    if (
+      !entry.isFile || !entry.name.endsWith(".ts") ||
+      entry.name.endsWith("_test.ts")
+    ) continue;
 
     const lines = (await Deno.readTextFile(path)).split("\n");
     for (let index = 0; index < lines.length; index++) {
