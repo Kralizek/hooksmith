@@ -3,7 +3,10 @@ import { createRuntime } from "@hooksmith/runtime";
 import { fromSqs } from "@hooksmith/aws/sqs";
 import { createProcessor } from "@hooksmith/aws-lambda";
 import { createHandler } from "@hooksmith/aws-lambda/sqs";
-import config, { type QueueItem, type QueueItemEvent } from "./hooksmith.config.ts";
+import config, {
+  type QueueItem,
+  type QueueItemEvent,
+} from "./hooksmith.config.ts";
 
 const context: Context = {
   log: {
