@@ -1,5 +1,6 @@
 import type { Condition, Event, Listener, Logger } from "@hooksmith/core";
 
+/** Logging levels supported by the Hooksmith logger contract. */
 export type LogLevel = keyof Logger;
 
 export function eventType<TEvent extends Event = Event>(
