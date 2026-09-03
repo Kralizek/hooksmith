@@ -47,25 +47,25 @@ export function match<TInput, TOutput>(
     MatchOtherwise<MatchNoInfer<TInput>, MatchNoInfer<TOutput>>,
   ]
 ): Transformer<TInput, TOutput> {
-  const candidates = [first, ...branches];
+  const fallback = branches.at(-1);
+  const cases = [first, ...branches.slice(0, -1)];
 
   return {
     async transform(input, context) {
-      if (branches.length === 0 || branches.at(-1)?.kind !== "otherwise") {
+      if (fallback?.kind !== "otherwise") {
         throw new Error("match requires a final otherwise branch.");
       }
 
-      for (const branch of candidates) {
-        if (branch.kind === "otherwise") {
-          return await branch.transformer.transform(input, context);
-        }
-
-        if (await branch.predicate(input, context)) {
+      for (const branch of cases) {
+        if (
+          branch.kind === "case" &&
+          await branch.predicate(input, context)
+        ) {
           return await branch.transformer.transform(input, context);
         }
       }
 
-      throw new Error("match requires a final otherwise branch.");
+      return await fallback.transformer.transform(input, context);
     },
   };
 }
