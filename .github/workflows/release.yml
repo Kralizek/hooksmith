@@ -347,13 +347,13 @@ jobs:
           git commit -m "$title"
           git push --force origin "$branch"
 
-          existing="$(gh pr list --repo "$REPOSITORY" --head "$branch" --state open --json number --jq '.[0].number // empty')"
-          if [[ -n "$existing" ]]; then
-            gh pr edit "$existing" \
+          pr="$(gh pr list --repo "$REPOSITORY" --head "$branch" --state open --json number --jq '.[0].number // empty')"
+          if [[ -n "$pr" ]]; then
+            gh pr edit "$pr" \
               --repo "$REPOSITORY" \
               --title "$title" \
               --body "$body"
-            echo "Updated pull request #$existing."
+            echo "Updated pull request #$pr."
           else
             gh pr create \
               --repo "$REPOSITORY" \
@@ -361,4 +361,15 @@ jobs:
               --head "$branch" \
               --title "$title" \
               --body "$body"
+            pr="$(gh pr list --repo "$REPOSITORY" --head "$branch" --state open --json number --jq '.[0].number // empty')"
           fi
+
+          if [[ -z "$pr" ]]; then
+            echo "Unable to resolve dependency bump pull request." >&2
+            exit 1
+          fi
+
+          gh pr merge "$pr" \
+            --repo "$REPOSITORY" \
+            --auto \
+            --squash
