@@ -45,12 +45,7 @@ export function tap<T>(
         const result = await listener.run({ ...event, data: input }, context);
 
         if (!result.success) {
-          throw new Error(
-            result.message ??
-              (listener.name === undefined
-                ? "Tapped listener failed."
-                : `Listener "${listener.name}" failed.`),
-          );
+          throw new Error(result.message ?? "Tapped listener failed.");
         }
 
         return input;
