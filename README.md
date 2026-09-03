@@ -6,22 +6,23 @@ The project deliberately keeps event production outside the runtime. A static-si
 
 ## Status
 
-Hooksmith is at the beginning of its design and implementation. The packages are versioned together and the public API should be considered experimental.
+Hooksmith is at the beginning of its design and implementation. The packages in this repository are versioned together and the public API should be considered experimental.
 
 ## Package family
 
-The Hooksmith packages are versioned and released together.
+The Hooksmith runtime packages in this repository are versioned and released together.
 
 | Package | Latest | Downloads | Purpose |
 | --- | --- | --- | --- |
 | [`@hooksmith/core`](https://jsr.io/@hooksmith/core) | [![latest](https://jsr.io/badges/@hooksmith/core)](https://jsr.io/@hooksmith/core) | [![downloads](https://jsr.io/badges/@hooksmith/core/total-downloads)](https://jsr.io/@hooksmith/core) | Public contracts for events, routes, conditions, listeners, execution context, and listener results. |
 | [`@hooksmith/pipeline`](https://jsr.io/@hooksmith/pipeline) | [![latest](https://jsr.io/badges/@hooksmith/pipeline)](https://jsr.io/@hooksmith/pipeline) | [![downloads](https://jsr.io/badges/@hooksmith/pipeline/total-downloads)](https://jsr.io/@hooksmith/pipeline) | Typed listener-side data transformations and composition helpers. |
 | [`@hooksmith/runtime`](https://jsr.io/@hooksmith/runtime) | [![latest](https://jsr.io/badges/@hooksmith/runtime)](https://jsr.io/@hooksmith/runtime) | [![downloads](https://jsr.io/badges/@hooksmith/runtime/total-downloads)](https://jsr.io/@hooksmith/runtime) | Event hydration, validation, routing, planning, listener execution, fallback handling, and run reports. |
-| [`@hooksmith/cli`](https://jsr.io/@hooksmith/cli) | [![latest](https://jsr.io/badges/@hooksmith/cli)](https://jsr.io/@hooksmith/cli) | [![downloads](https://jsr.io/badges/@hooksmith/cli/total-downloads)](https://jsr.io/@hooksmith/cli) | Command-line interface for bounded multi-event runs, NDJSON streaming, planning, and reports. |
 | [`@hooksmith/standard`](https://jsr.io/@hooksmith/standard) | [![latest](https://jsr.io/badges/@hooksmith/standard)](https://jsr.io/@hooksmith/standard) | [![downloads](https://jsr.io/badges/@hooksmith/standard/total-downloads)](https://jsr.io/@hooksmith/standard) | Standard generic conditions, condition composition, and basic listeners for authoring Hooksmith configuration. |
 | [`@hooksmith/http`](https://jsr.io/@hooksmith/http) | [![latest](https://jsr.io/badges/@hooksmith/http)](https://jsr.io/@hooksmith/http) | [![downloads](https://jsr.io/badges/@hooksmith/http/total-downloads)](https://jsr.io/@hooksmith/http) | HTTP request listeners plus helpers for headers, authentication, request bodies, status assertions, response mapping, and reporting. |
 
-For extension authors, `@hooksmith/core` is the primary dependency. Applications invoking Hooksmith from the command line normally use `@hooksmith/cli`. `@hooksmith/pipeline` provides listener-side transformation composition without depending on the runtime engine. `@hooksmith/standard` provides reusable configuration building blocks without depending on the runtime engine, while `@hooksmith/http` provides protocol-level HTTP listeners that provider-specific extensions can build on.
+For extension authors, `@hooksmith/core` is the primary dependency. `@hooksmith/pipeline` provides listener-side transformation composition without depending on the runtime engine. `@hooksmith/standard` provides reusable configuration building blocks without depending on the runtime engine, while `@hooksmith/http` provides protocol-level HTTP listeners that provider-specific extensions can build on.
+
+The command-line interface and GitHub Action live in [`Kralizek/hooksmith-cli`](https://github.com/Kralizek/hooksmith-cli) and follow their own release cadence.
 
 ## External extensions
 
@@ -45,12 +46,9 @@ packages/
   core/       Public contracts for extension authors
   pipeline/   Typed listener-side transformation pipelines
   runtime/    Validation, routing, execution, planning, and reports
-  cli/        Bounded runs, streaming, config discovery, and report formatting
 extensions/
   standard/   Generic conditions, composition, and basic listeners
   http/       HTTP request listeners and request/response helpers
-action.yml    Primary Hooksmith GitHub Action
-actions/      Reserved for future specialized actions
 examples/
   basic/                   Minimal event and configuration example
   pipeline/                Listener-side transformation composition
@@ -60,7 +58,7 @@ examples/
   aws-sqs-slack-lambda/    SQS -> Hooksmith -> Slack Lambda example
 ```
 
-The main runtime dependency direction is intentionally one-way: `core <- runtime <- cli`. The pipeline, standard, and HTTP packages depend only on `core`.
+The main runtime dependency direction is intentionally one-way: `core <- runtime`. The pipeline, standard, and HTTP packages depend only on `core`.
 
 ## Event model
 
@@ -93,7 +91,7 @@ The serialized `EventDocument` uses a string timestamp and can be represented as
 
 ## Configuration
 
-Hooksmith loads `./hooksmith.config.ts` from the current working directory by default. Configuration is ordinary TypeScript and can import reusable listeners, conditions, and routes through Deno's module system.
+Configuration is ordinary TypeScript and can import reusable listeners, conditions, and routes through Deno's module system.
 
 ```ts
 import type { Config } from "@hooksmith/core";
@@ -140,63 +138,9 @@ Current operators include `project`, `tap`, `parallel`, `when`, `match`, `split`
 
 See [`packages/pipeline`](packages/pipeline) for detailed examples and type semantics.
 
-## GitHub Action
+## CLI and GitHub Action
 
-GitHub Actions workflows can run Hooksmith without installing Deno explicitly:
-
-```yaml
-- id: hooksmith
-  uses: Kralizek/hooksmith@v0
-  with:
-    event: .hooksmith/event.yaml
-```
-
-`event` is required. `config` defaults to `hooksmith.config.ts`, `plan` defaults to `false`, and `report-path` is optional.
-
-The Action always writes the complete JSON run report to a file. When `report-path` is omitted, the report is written under the runner temporary directory at `${{ runner.temp }}/hooksmith/report.json`. Relative custom report paths are resolved from the caller workspace, absolute paths are preserved, and parent directories are created automatically.
-
-The Action exposes three small outputs instead of embedding the full report in GitHub output data:
-
-- `success` — whether the Hooksmith run succeeded.
-- `mode` — `run` or `plan`.
-- `report-path` — absolute path to the JSON report file.
-
-For example:
-
-```yaml
-- name: Inspect Hooksmith report
-  run: jq . "${{ steps.hooksmith.outputs.report-path }}"
-```
-
-The Action installs Deno and invokes the exact `@hooksmith/cli` version corresponding to the Action release. Paths are resolved from the caller's workspace, so the same event documents, configuration modules, and Deno import mappings used by direct CLI execution continue to work.
-
-## CLI
-
-```text
-hooksmith help [command]
-hooksmith --version
-hooksmith -v
-hooksmith run <event-file|glob|-> [event-file|glob...] [options]
-hooksmith stream [options]
-```
-
-`run` accepts one or more YAML/JSON files, glob patterns, and `-` for bounded stdin. Each input may contain one event, an array of events, or multiple YAML documents. Inputs are flattened and processed sequentially through one reusable runtime instance.
-
-```sh
-hooksmith run first.yaml second.json -c hooksmith.config.ts
-hooksmith run "events/**/*.json" -c hooksmith.config.ts
-cat events.yaml | hooksmith run - --format json
-```
-
-Bounded runs support `--plan`, `--format table|json|tsv`, and `--allow-empty`.
-
-`stream` reads NDJSON from stdin and emits one compact NDJSON report per non-empty line:
-
-```sh
-producer | hooksmith stream -c hooksmith.config.ts
-```
-
-Event-level failures are reported and streaming continues; process-level failures remain fatal. See [`packages/cli`](packages/cli) for the full command contract.
+The Hooksmith CLI and GitHub Action are maintained in [`Kralizek/hooksmith-cli`](https://github.com/Kralizek/hooksmith-cli). See that repository for command usage and Action integration.
 
 ## Extensions
 

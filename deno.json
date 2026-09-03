@@ -3,16 +3,11 @@
     "./packages/core",
     "./packages/pipeline",
     "./packages/runtime",
-    "./packages/cli",
     "./extensions/standard",
     "./extensions/http"
   ],
   "imports": {
-    "@cliffy/command": "jsr:@cliffy/command@^1.2.1",
-    "@std/assert": "jsr:@std/assert@^1",
-    "@std/fs": "jsr:@std/fs@^1",
-    "@std/path": "jsr:@std/path@^1",
-    "@std/yaml": "jsr:@std/yaml@^1"
+    "@std/assert": "jsr:@std/assert@^1"
   },
   "tasks": {
     "check": "deno fmt --check && deno lint && deno task check:docs && deno test -A",
@@ -21,8 +16,7 @@
   },
   "fmt": {
     "exclude": [
-      "README.md",
-      "actions"
+      "README.md"
     ]
   },
   "lock": false

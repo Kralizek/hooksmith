@@ -204,7 +204,6 @@ jobs:
           fi
 
           version="${TAG#v}"
-          IFS='.' read -r major minor patch <<< "$version"
 
           while IFS= read -r manifest; do
             actual="$(jq -r .version "$manifest")"
@@ -215,8 +214,6 @@ jobs:
           done < <(jq -r '.workspace[] + "/deno.json"' deno.json)
 
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "major_tag=v$major" >> "$GITHUB_OUTPUT"
-          echo "minor_tag=v$major.$minor" >> "$GITHUB_OUTPUT"
 
       - name: Check
         run: deno task check
@@ -251,14 +248,3 @@ jobs:
 
       - name: Publish packages
         run: deno publish
-
-      - name: Move action version tags
-        env:
-          MAJOR_TAG: ${{ steps.version.outputs.major_tag }}
-          MINOR_TAG: ${{ steps.version.outputs.minor_tag }}
-        run: |
-          set -euo pipefail
-
-          git tag --force "$MAJOR_TAG" HEAD
-          git tag --force "$MINOR_TAG" HEAD
-          git push --force origin "$MAJOR_TAG" "$MINOR_TAG"
