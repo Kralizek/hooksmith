@@ -254,10 +254,40 @@ export function split<TInput, TItem>(
   return { name, transform: selector };
 }
 
-/** Applies one transformation concurrently to every item in a collection. */
+/** Applies one operation concurrently to every item in a collection. */
 export function each<TInput, TOutput>(
   transformer: Transformer<TInput, TOutput>,
-): Transformer<readonly TInput[], readonly TOutput[]> {
+): Transformer<readonly TInput[], readonly TOutput[]>;
+export function each<TInput>(
+  listener: Listener<Event<TInput>>,
+): Listener<Event<readonly TInput[]>>;
+export function each<TInput, TOutput>(
+  operation: Transformer<TInput, TOutput> | Listener<Event<TInput>>,
+):
+  | Transformer<readonly TInput[], readonly TOutput[]>
+  | Listener<Event<readonly TInput[]>> {
+  if (!("transform" in operation) && "run" in operation) {
+    const listener = operation;
+
+    return {
+      name: listener.name,
+      async run(event, context) {
+        const results = await Promise.all(
+          event.data.map((item) =>
+            listener.run({ ...event, data: item }, context)
+          ),
+        );
+
+        return {
+          success: results.every((result) => result.success),
+          data: { results },
+        };
+      },
+    };
+  }
+
+  const transformer = operation as Transformer<TInput, TOutput>;
+
   return {
     name: transformer.name,
     async transform(input, context) {
