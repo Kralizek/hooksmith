@@ -1,4 +1,5 @@
-import type { TransformContext, Transformer } from "./mod.ts";
+import type { TransformContext } from "./context.ts";
+import type { Transformer } from "./transformer.ts";
 
 type MatchNoInfer<T> = [T][T extends unknown ? 0 : never];
 

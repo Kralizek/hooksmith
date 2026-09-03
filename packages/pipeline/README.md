@@ -60,6 +60,8 @@ whether the terminal listener ultimately runs.
 ## Operators
 
 - `project` creates an arbitrary inline `Transformer<A, B>`.
+- `tap` performs a side effect while preserving the current pipeline value. It
+  accepts either a void/`Promise<void>` callback or a Hooksmith listener.
 - `parallel` runs multiple transformations concurrently against the same input
   and returns their outputs as a typed tuple.
 - `when` conditionally applies a same-type `Transformer<T, T>`.
@@ -74,6 +76,29 @@ whether the terminal listener ultimately runs.
   exact type.
 - `pipe` composes transformations and a final listener into a listener for the
   pipeline's original input type.
+
+A tap can run an inline side effect without affecting downstream types:
+
+```ts
+pipe(
+  project((page: Page) => createAnnouncement(page)),
+  tap((announcement) => audit(announcement)),
+  bluesky,
+);
+```
+
+An existing listener can also be tapped. The listener receives the original
+event envelope with the current pipeline value as `data`; its returned data is
+ignored and the original value continues downstream. An unsuccessful listener
+result fails the transformation.
+
+```ts
+pipe(
+  project((page: Page) => createAnnouncement(page)),
+  tap(slack),
+  bluesky,
+);
+```
 
 Conditional branching can be expressed with `match(...)`. Cases are evaluated in
 declaration order and only the first matching transformer runs:
