@@ -87,10 +87,10 @@ pipe(
 );
 ```
 
-An existing listener can also be tapped. The listener receives the original event
-envelope with the current pipeline value as `data`; its returned data is ignored
-and the original value continues downstream. An unsuccessful listener result
-fails the transformation.
+An existing listener can also be tapped. The listener receives the original
+event envelope with the current pipeline value as `data`; its returned data is
+ignored and the original value continues downstream. An unsuccessful listener
+result fails the transformation.
 
 ```ts
 pipe(
