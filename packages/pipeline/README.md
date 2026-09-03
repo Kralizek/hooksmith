@@ -63,6 +63,9 @@ whether the terminal listener ultimately runs.
 - `parallel` runs multiple transformations concurrently against the same input
   and returns their outputs as a typed tuple.
 - `when` conditionally applies a same-type `Transformer<T, T>`.
+- `match` selects the first matching `caseOf(...)` branch and otherwise uses the
+  required final `otherwise(...)` branch. All branches share the same input and
+  output types.
 - `split` projects one value into a homogeneous collection.
 - `each` applies a transformer or listener concurrently to every item in a
   collection. With a transformer, the pipeline continues with the collected
@@ -71,6 +74,32 @@ whether the terminal listener ultimately runs.
   exact type.
 - `pipe` composes transformations and a final listener into a listener for the
   pipeline's original input type.
+
+Conditional branching can be expressed with `match(...)`. Cases are evaluated in
+declaration order and only the first matching transformer runs:
+
+```ts
+pipe(
+  match(
+    caseOf(
+      (message: Message) => message.kind === "email",
+      project((message: Message) => toEmailPayload(message)),
+    ),
+    caseOf(
+      (message: Message) => message.kind === "sms",
+      project((message: Message) => toSmsPayload(message)),
+    ),
+    otherwise(
+      project((message: Message) => toGenericPayload(message)),
+    ),
+  ),
+  listener,
+);
+```
+
+The first `caseOf(...)` establishes the input and output contract for the match.
+Every later case and `otherwise(...)` must use compatible types, so downstream
+pipeline stages continue to see one stable output type.
 
 For example, a collection transformation pipeline can be written as:
 
