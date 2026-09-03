@@ -130,7 +130,7 @@ Deno.test("match rejects a missing otherwise branch at runtime", async () => {
   );
 
   await assertRejects(
-    () => transformation.transform(1, { ...context, originalData: 1 }),
+    async () => await transformation.transform(1, { ...context, originalData: 1 }),
     Error,
     "match requires a final otherwise branch.",
   );
@@ -155,15 +155,15 @@ Deno.test({
       otherwise(numberOutput),
     );
 
-    // @ts-expect-error all match branches must produce the same output type
     match(
       caseOf((value: string) => value.length > 0, numberOutput),
+      // @ts-expect-error all match branches must produce the same output type
       otherwise(stringOutput),
     );
 
-    // @ts-expect-error all match branches must accept the same input type
     match(
       caseOf((value: string) => value.length > 0, numberOutput),
+      // @ts-expect-error all match branches must accept the same input type
       otherwise(numberInput),
     );
   },
