@@ -17,8 +17,7 @@
   },
   "fmt": {
     "exclude": [
-      "README.md",
-      "actions"
+      "README.md"
     ]
   },
   "lock": false
