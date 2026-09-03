@@ -1,0 +1,15 @@
+{
+  "imports": {
+    "@hooksmith/core": "../../packages/core/mod.ts",
+    "@hooksmith/runtime": "../../packages/runtime/mod.ts",
+    "@hooksmith/aws/sqs": "jsr:@hooksmith/aws@^0.2.0/sqs",
+    "@hooksmith/aws-lambda": "jsr:@hooksmith/aws-lambda@^0.2.0",
+    "@hooksmith/aws-lambda/sqs": "jsr:@hooksmith/aws-lambda@^0.2.0/sqs",
+    "@hooksmith/slack": "jsr:@hooksmith/slack@^0.1.0"
+  },
+  "tasks": {
+    "check": "deno check handler.ts"
+  },
+  "minimumDependencyAge": 0,
+  "lock": false
+}
