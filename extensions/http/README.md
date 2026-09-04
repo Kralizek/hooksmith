@@ -104,14 +104,32 @@ fails the tap while a successful one leaves the pipeline value unchanged.
 
 ## Transformers
 
+- `fetchJson<TInput, TResponse, TOutput = TResponse>` sends an HTTP request with
+  an arbitrary method and parses the JSON response.
 - `getJson<TInput, TResponse, TOutput = TResponse>` performs a GET request and
   parses the JSON response.
 - `postJson<TInput, TResponse, TOutput = TResponse>` performs a POST request,
   sends JSON, and parses the JSON response.
 
-Both transformers can resolve the URL and headers from the current pipeline
+All JSON transformers assume the response body is JSON that should become part
+of the data flow. They can resolve the URL and headers from the current pipeline
 value and `TransformContext`. Unsuccessful HTTP responses throw, so the pipeline
 reports them as transformation failures.
+
+Use `fetchJson` when the method is not covered by a convenience transformer:
+
+```ts
+const transformer = fetchJson<
+  { id: string },
+  { updated: boolean },
+  { id: string; updated: boolean }
+>({
+  method: "PATCH",
+  url: ({ id }) => `https://example.com/items/${id}`,
+  body: { enabled: true },
+  map: (input, response) => ({ ...input, updated: response.updated }),
+});
+```
 
 Without a mapper, the parsed JSON response becomes the next pipeline value:
 
