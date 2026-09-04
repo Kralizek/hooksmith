@@ -41,7 +41,7 @@ export interface Context {
   log: Logger;
 }
 
-/** Context passed to transformers, including the original pipeline data. */
+/** Context passed to transformers, including the original input data. */
 export interface TransformContext extends Context {
   readonly originalData: unknown;
 }
