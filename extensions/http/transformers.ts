@@ -1,16 +1,10 @@
-import type {
-  Transformer,
-  TransformContext,
-} from "@hooksmith/core";
+import type { TransformContext, Transformer } from "@hooksmith/core";
 import {
   executeRequest,
   resolve,
   unsuccessfulResponseMessage,
 } from "./request.ts";
-import type {
-  JsonTransformerOptions,
-  PostJsonOptions,
-} from "./types.ts";
+import type { JsonTransformerOptions, PostJsonOptions } from "./types.ts";
 
 /** Fetches JSON with GET and replaces the current value with the mapped response. */
 export function getJson<
