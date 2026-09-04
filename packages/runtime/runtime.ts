@@ -36,7 +36,11 @@ async function executeEvent<TEvent extends Event>(
   context: Context,
   plan: boolean,
 ): Promise<RunReport> {
-  const enrichedEvent = await enrichEvent(event, config.enrichers ?? [], context);
+  const enrichedEvent = await enrichEvent(
+    event,
+    config.enrichers ?? [],
+    context,
+  );
   const results: ListenerReport[] = [];
   let matched = false;
 
