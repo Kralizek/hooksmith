@@ -4,6 +4,7 @@ import type {
 } from "@hooksmith/core";
 import {
   executeRequest,
+  resolve,
   unsuccessfulResponseMessage,
 } from "./request.ts";
 import type {
@@ -35,7 +36,7 @@ export function postJson<
     async transform(input, context): Promise<TOutput> {
       const bodyValue = options.body === undefined
         ? input
-        : await resolveBody(options.body, input, context);
+        : await resolve(options.body, input, context);
 
       const { response, report } = await executeRequest<
         TInput,
@@ -58,10 +59,7 @@ export function postJson<
         throw new Error(unsuccessfulResponseMessage(response));
       }
 
-      const responseBody = report.body as TResponse;
-      return options.map
-        ? await options.map(input, responseBody)
-        : responseBody as unknown as TOutput;
+      return mapResponse(input, report.body as TResponse, options);
     },
   };
 }
@@ -92,20 +90,17 @@ function jsonTransformer<
         throw new Error(unsuccessfulResponseMessage(response));
       }
 
-      const responseBody = report.body as TResponse;
-      return options.map
-        ? await options.map(input, responseBody)
-        : responseBody as unknown as TOutput;
+      return mapResponse(input, report.body as TResponse, options);
     },
   };
 }
 
-async function resolveBody<TInput>(
-  value: NonNullable<PostJsonOptions<TInput, unknown>["body"]>,
+async function mapResponse<TInput, TResponse, TOutput>(
   input: TInput,
-  context: TransformContext,
-): Promise<unknown> {
-  return typeof value === "function"
-    ? await value(input, context)
-    : value;
+  response: TResponse,
+  options: JsonTransformerOptions<TInput, TResponse, TOutput>,
+): Promise<TOutput> {
+  return options.map
+    ? await options.map(input, response)
+    : response as unknown as TOutput;
 }
