@@ -95,6 +95,16 @@ export interface JsonTransformerOptions<
   map?: JsonResponseMap<TInput, TResponse, TOutput>;
 }
 
+/** Options used by fetchJson. */
+export interface FetchJsonOptions<
+  TInput,
+  TResponse,
+  TOutput = TResponse,
+> extends JsonTransformerOptions<TInput, TResponse, TOutput> {
+  method: string;
+  body?: ValueOrFactory<unknown, TInput, TransformContext>;
+}
+
 /** Options used by postJson. */
 export interface PostJsonOptions<
   TInput,
