@@ -24,23 +24,24 @@ export function fetchJson<
       const body = options.body === undefined
         ? undefined
         : await resolveJsonBody(options.body, input, context);
-      const { response, report } = await executeRequest<
-        TInput,
-        TransformContext,
-        TResponse
-      >(input, context, {
-        method: options.method,
-        url: options.url,
-        headers: options.headers,
-        body,
-        parser: "json",
-      });
+      const { response } = await executeRequest<TInput, TransformContext>(
+        input,
+        context,
+        {
+          method: options.method,
+          url: options.url,
+          headers: options.headers,
+          body,
+          parser: "none",
+        },
+      );
 
       if (!response.ok) {
         throw new Error(unsuccessfulResponseMessage(response));
       }
 
-      return mapResponse(input, report.body as TResponse, options);
+      const responseBody = await response.json() as TResponse;
+      return mapResponse(input, responseBody, options);
     },
   };
 }
