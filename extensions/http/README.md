@@ -7,6 +7,8 @@ HTTP listeners, transformers, and request helpers for Hooksmith.
 - `httpRequest` sends an HTTP request with an arbitrary method.
 - `httpGet` sends a GET request.
 - `httpPost` sends a POST request.
+- `httpPut` sends a PUT request.
+- `httpDelete` sends a DELETE request.
 
 All request values that commonly depend on the current event can be provided as
 either constants or factories.
@@ -82,16 +84,36 @@ the common exact-status case and can be used either directly as `response` or as
 `ListenerResult.data`. `errorMap` does the same for failed responses. If the
 relevant mapper is omitted, the complete HTTP response report is returned.
 
+HTTP listeners can also be used as pipeline side effects through `tap(...)`:
+
+```ts
+import { httpPost, jsonBody } from "@hooksmith/http";
+import { pipe, tap } from "@hooksmith/pipeline";
+
+const listener = pipe(
+  tap(httpPost({
+    url: "https://example.com/audit",
+    body: jsonBody((event) => event.data),
+  })),
+  finalListener,
+);
+```
+
+The current pipeline value is passed as `event.data`; a failed HTTP listener
+fails the tap while a successful one leaves the pipeline value unchanged.
+
 ## Transformers
 
-- `getJson<TInput, TOutput>` performs a GET request, parses the JSON response,
-  and replaces the current value with the response body.
-- `postJson<TInput, TOutput>` performs a POST request, sends JSON, parses the
-  JSON response, and replaces the current value with the response body.
+- `getJson<TInput, TResponse, TOutput = TResponse>` performs a GET request and
+  parses the JSON response.
+- `postJson<TInput, TResponse, TOutput = TResponse>` performs a POST request,
+  sends JSON, and parses the JSON response.
 
 Both transformers can resolve the URL and headers from the current pipeline
 value and `TransformContext`. Unsuccessful HTTP responses throw, so the pipeline
 reports them as transformation failures.
+
+Without a mapper, the parsed JSON response becomes the next pipeline value:
 
 ```ts
 import { getJson } from "@hooksmith/http";
@@ -104,6 +126,30 @@ const listener = pipe(
   }),
   finalListener,
 );
+```
+
+Use `map` when the next value should combine the current input with the JSON
+response:
+
+```ts
+interface Order {
+  orderId: string;
+  customerId: string;
+}
+
+interface Customer {
+  name: string;
+}
+
+const enrichOrder = getJson<
+  Order,
+  Customer,
+  Order & { customer: Customer }
+>({
+  url: ({ customerId }) =>
+    `https://example.com/customers/${customerId}`,
+  map: (order, customer) => ({ ...order, customer }),
+});
 ```
 
 `postJson` serializes the current value as the request body by default:
