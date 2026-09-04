@@ -10,7 +10,7 @@ export function httpRequest<TEvent extends Event = Event>(
   options: HttpRequestOptions<TEvent>,
 ): Listener<TEvent> {
   return {
-    name: `http-${(options.method ?? "GET").toLowerCase()}`,
+    name: options.name ?? `http-${(options.method ?? "GET").toLowerCase()}`,
     async run(event, context): Promise<ListenerResult> {
       const responseOptions = normalizeResponse(options.response);
       const { response, report } = await executeRequest(event, context, {
