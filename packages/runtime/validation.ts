@@ -1,6 +1,8 @@
 import type {
   Config,
   EventDocument,
+  EventEnricher,
+  EventEnrichment,
   Listener,
   ListenerResult,
   ResourceReference,
@@ -10,6 +12,16 @@ import type {
 export function assertConfig(value: unknown): asserts value is Config {
   if (!isRecord(value)) {
     throw new Error("Config must be an object.");
+  }
+
+  if (value.enrichers !== undefined) {
+    if (!Array.isArray(value.enrichers)) {
+      throw new Error("Config.enrichers must be an array.");
+    }
+
+    value.enrichers.forEach((enricher, index) =>
+      assertEventEnricher(enricher, `Config enricher ${index + 1}`)
+    );
   }
 
   if (!Array.isArray(value.routes)) {
@@ -59,6 +71,21 @@ export function assertEventDocument(
   }
 }
 
+export function assertEventEnrichment(
+  value: unknown,
+  enricher: string,
+): asserts value is EventEnrichment {
+  if (!isRecord(value)) {
+    throw new Error(`Event enricher ${enricher} must return an object.`);
+  }
+
+  if (value.metadata !== undefined && !isRecord(value.metadata)) {
+    throw new Error(
+      `Event enricher ${enricher} returned non-object metadata.`,
+    );
+  }
+}
+
 export function assertListenerResult(
   value: unknown,
   route: string,
@@ -74,6 +101,19 @@ export function assertListenerResult(
     throw new Error(
       `Listener ${route}/${listener} returned a non-string message.`,
     );
+  }
+}
+
+function assertEventEnricher(
+  value: unknown,
+  label: string,
+): asserts value is EventEnricher {
+  if (!isRecord(value) || typeof value.enrich !== "function") {
+    throw new Error(`${label} must expose enrich().`);
+  }
+
+  if (value.name !== undefined && typeof value.name !== "string") {
+    throw new Error(`${label}.name must be a string.`);
   }
 }
 
