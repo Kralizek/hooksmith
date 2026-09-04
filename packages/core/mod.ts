@@ -41,6 +41,20 @@ export interface Context {
   log: Logger;
 }
 
+/** Context passed to transformers, including the original pipeline data. */
+export interface TransformContext extends Context {
+  readonly originalData: unknown;
+}
+
+/** Typed transformation stage that converts one value into another. */
+export interface Transformer<TInput, TOutput> {
+  name?: string;
+  transform(
+    input: TInput,
+    context: TransformContext,
+  ): TOutput | Promise<TOutput>;
+}
+
 /** Predicate used by a route to decide whether an event matches. */
 export interface Condition<TEvent extends Event = Event> {
   name?: string;
