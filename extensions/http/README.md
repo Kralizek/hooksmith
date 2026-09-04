@@ -1,6 +1,6 @@
 # @hooksmith/http
 
-HTTP listeners and request helpers for Hooksmith.
+HTTP listeners, transformers, and request helpers for Hooksmith.
 
 ## Listeners
 
@@ -82,9 +82,53 @@ the common exact-status case and can be used either directly as `response` or as
 `ListenerResult.data`. `errorMap` does the same for failed responses. If the
 relevant mapper is omitted, the complete HTTP response report is returned.
 
+## Transformers
+
+- `getJson<TInput, TOutput>` performs a GET request, parses the JSON response,
+  and replaces the current value with the response body.
+- `postJson<TInput, TOutput>` performs a POST request, sends JSON, parses the
+  JSON response, and replaces the current value with the response body.
+
+Both transformers can resolve the URL and headers from the current pipeline
+value and `TransformContext`. Unsuccessful HTTP responses throw, so the pipeline
+reports them as transformation failures.
+
+```ts
+import { getJson } from "@hooksmith/http";
+import { pipe, project } from "@hooksmith/pipeline";
+
+const listener = pipe(
+  project((event: { userId: string }) => event.userId),
+  getJson<string, { id: string; email: string }>({
+    url: (userId) => `https://example.com/users/${userId}`,
+  }),
+  finalListener,
+);
+```
+
+`postJson` serializes the current value as the request body by default:
+
+```ts
+const transformer = postJson<
+  { title: string },
+  { id: string; title: string }
+>({
+  url: "https://example.com/posts",
+});
+```
+
+Use `body` when the request payload should differ from the current value:
+
+```ts
+postJson<{ id: string; title: string }, { accepted: boolean }>({
+  url: "https://example.com/posts",
+  body: ({ id }) => ({ postId: id }),
+});
+```
+
 ## Helpers
 
-- `headers(...)` combines static and event-derived header sources.
+- `headers(...)` combines static and input-derived header sources.
 - `bearerAuth(...)` adds a Bearer authorization header.
 - `basicAuth(...)` adds an HTTP Basic authorization header.
 - `jsonBody(...)` serializes a value and sets `Content-Type: application/json`
