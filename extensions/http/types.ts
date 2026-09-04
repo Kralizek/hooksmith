@@ -1,8 +1,4 @@
-import type {
-  Context,
-  Event,
-  TransformContext,
-} from "@hooksmith/core";
+import type { Context, Event, TransformContext } from "@hooksmith/core";
 
 /** Fixed value or input-aware factory resolved when an HTTP operation runs. */
 export type ValueOrFactory<
