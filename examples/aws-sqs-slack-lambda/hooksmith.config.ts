@@ -2,6 +2,7 @@ import type { Config, Event } from "@hooksmith/core";
 import { getCallerIdentityEnrichment } from "@hooksmith/aws/sts";
 import { lambdaEnvironmentEnrichment } from "@hooksmith/aws-lambda";
 import { sendMessage } from "@hooksmith/slack";
+import { metadata } from "@hooksmith/standard";
 
 interface QueueItem {
   text: string;
@@ -16,7 +17,11 @@ export default {
     getCallerIdentityEnrichment<Event<QueueItem>>(),
   ],
   routes: [{
-    name: "forward-sqs-message-to-slack",
+    name: "forward-eu-north-1-sqs-message-to-slack",
+    when: metadata(
+      "aws",
+      (value) => (value as { region?: string } | undefined)?.region === "eu-north-1",
+    ),
     listeners: [
       sendMessage<Event<QueueItem>>({
         token: slackBotToken,
