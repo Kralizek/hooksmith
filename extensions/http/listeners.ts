@@ -1,12 +1,5 @@
-import type {
-  Event,
-  Listener,
-  ListenerResult,
-} from "@hooksmith/core";
-import {
-  executeRequest,
-  unsuccessfulResponseMessage,
-} from "./request.ts";
+import type { Event, Listener, ListenerResult } from "@hooksmith/core";
+import { executeRequest, unsuccessfulResponseMessage } from "./request.ts";
 import type {
   HttpRequestOptions,
   HttpResponse,
