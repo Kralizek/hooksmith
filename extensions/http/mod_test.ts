@@ -13,8 +13,10 @@ import {
   formBody,
   getJson,
   headers,
+  httpDelete,
   httpGet,
   httpPost,
+  httpPut,
   jsonBody,
   postJson,
 } from "./mod.ts";
@@ -91,6 +93,23 @@ Deno.test("httpPost resolves auth, headers and JSON body", async () => {
   });
 });
 
+Deno.test("httpPut and httpDelete use their respective methods", async () => {
+  const methods: string[] = [];
+
+  await withFetch((_input, init) => {
+    methods.push(init?.method ?? "");
+    return Promise.resolve(new Response(null, { status: 204 }));
+  }, async () => {
+    await httpPut({ url: "https://example.test/resource" }).run(event, context);
+    await httpDelete({ url: "https://example.test/resource" }).run(
+      event,
+      context,
+    );
+  });
+
+  assertEquals(methods, ["PUT", "DELETE"]);
+});
+
 Deno.test("getJson resolves request from transform input and returns JSON body", async () => {
   interface Input {
     id: string;
@@ -124,6 +143,39 @@ Deno.test("getJson resolves request from transform input and returns JSON body",
       { name: "answer" },
     );
   });
+});
+
+Deno.test("getJson can map input and response into a new output", async () => {
+  interface Order {
+    orderId: string;
+    customerId: string;
+  }
+
+  interface Customer {
+    name: string;
+  }
+
+  interface EnrichedOrder extends Order {
+    customer: Customer;
+  }
+
+  const input: Order = { orderId: "42", customerId: "7" };
+
+  await withFetch(
+    () => Promise.resolve(Response.json({ name: "Ada" })),
+    async () => {
+      const transformer = getJson<Order, Customer, EnrichedOrder>({
+        url: ({ customerId }) =>
+          `https://example.test/customers/${customerId}`,
+        map: (order, customer) => ({ ...order, customer }),
+      });
+
+      assertEquals(await transformer.transform(input, transformContext), {
+        ...input,
+        customer: { name: "Ada" },
+      });
+    },
+  );
 });
 
 Deno.test("postJson posts current transform input as JSON by default", async () => {
@@ -162,6 +214,29 @@ Deno.test("postJson can project a custom JSON request body", async () => {
       accepted: true,
     });
   });
+});
+
+Deno.test("postJson can map input and response into a new output", async () => {
+  const input = { orderId: "42", amount: 10 };
+
+  await withFetch(
+    () => Promise.resolve(Response.json({ remoteId: "abc" })),
+    async () => {
+      const transformer = postJson<
+        typeof input,
+        { remoteId: string },
+        typeof input & { remoteId: string }
+      >({
+        url: "https://example.test/orders",
+        map: (order, response) => ({ ...order, remoteId: response.remoteId }),
+      });
+
+      assertEquals(await transformer.transform(input, transformContext), {
+        ...input,
+        remoteId: "abc",
+      });
+    },
+  );
 });
 
 Deno.test("JSON transformers reject unsuccessful responses", async () => {
