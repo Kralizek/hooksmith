@@ -1,4 +1,4 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertRejects } from "@std/assert";
 import type { Context, TransformContext } from "@hooksmith/core";
 import { fetchJson } from "./mod.ts";
 
@@ -66,6 +66,33 @@ Deno.test("fetchJson does not send a body unless configured", async () => {
     assertEquals(await transformer.transform("42", transformContext), {
       deleted: true,
     });
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+Deno.test("fetchJson reports unsuccessful HTTP responses before parsing JSON", async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = () =>
+    Promise.resolve(
+      new Response("upstream failure", {
+        status: 502,
+        statusText: "Bad Gateway",
+        headers: { "content-type": "text/plain" },
+      }),
+    );
+
+  try {
+    const transformer = fetchJson<unknown, unknown>({
+      method: "GET",
+      url: "https://example.test/items/42",
+    });
+
+    await assertRejects(
+      () => Promise.resolve(transformer.transform({}, transformContext)),
+      Error,
+      "HTTP response considered unsuccessful: 502 Bad Gateway",
+    );
   } finally {
     globalThis.fetch = original;
   }
