@@ -165,8 +165,7 @@ Deno.test("getJson can map input and response into a new output", async () => {
     () => Promise.resolve(Response.json({ name: "Ada" })),
     async () => {
       const transformer = getJson<Order, Customer, EnrichedOrder>({
-        url: ({ customerId }) =>
-          `https://example.test/customers/${customerId}`,
+        url: ({ customerId }) => `https://example.test/customers/${customerId}`,
         map: (order, customer) => ({ ...order, customer }),
       });
 
