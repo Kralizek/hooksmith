@@ -127,8 +127,7 @@ enrichment metadata:
 
 ```ts
 const enricher = getEnrichment<Event, { plan: string }>({
-  url: (event) =>
-    `https://example.com/tenants/${event.metadata?.tenantId}`,
+  url: (event) => `https://example.com/tenants/${event.metadata?.tenantId}`,
   map: (_event, tenant) => ({
     metadata: {
       tenantPlan: tenant.plan,
