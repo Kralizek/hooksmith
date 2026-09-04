@@ -4,7 +4,46 @@ import {
   resolve,
   unsuccessfulResponseMessage,
 } from "./request.ts";
-import type { JsonTransformerOptions, PostJsonOptions } from "./types.ts";
+import type {
+  FetchJsonOptions,
+  JsonTransformerOptions,
+  PostJsonOptions,
+} from "./types.ts";
+
+/** Fetches and parses a JSON response using an arbitrary HTTP method. */
+export function fetchJson<
+  TInput,
+  TResponse,
+  TOutput = TResponse,
+>(
+  options: FetchJsonOptions<TInput, TResponse, TOutput>,
+): Transformer<TInput, TOutput> {
+  return {
+    name: options.name ?? `http-${options.method.toLowerCase()}-json`,
+    async transform(input, context): Promise<TOutput> {
+      const body = options.body === undefined
+        ? undefined
+        : await jsonBody(options.body, input, context);
+      const { response, report } = await executeRequest<
+        TInput,
+        TransformContext,
+        TResponse
+      >(input, context, {
+        method: options.method,
+        url: options.url,
+        headers: options.headers,
+        body,
+        parser: "json",
+      });
+
+      if (!response.ok) {
+        throw new Error(unsuccessfulResponseMessage(response));
+      }
+
+      return mapResponse(input, report.body as TResponse, options);
+    },
+  };
+}
 
 /** Fetches JSON with GET and replaces the current value with the mapped response. */
 export function getJson<
@@ -14,7 +53,7 @@ export function getJson<
 >(
   options: JsonTransformerOptions<TInput, TResponse, TOutput>,
 ): Transformer<TInput, TOutput> {
-  return jsonTransformer("GET", options);
+  return fetchJson({ ...options, method: "GET" });
 }
 
 /** Posts JSON and replaces the current value with the mapped JSON response. */
@@ -28,63 +67,25 @@ export function postJson<
   return {
     name: options.name ?? "http-post-json",
     async transform(input, context): Promise<TOutput> {
-      const bodyValue = options.body === undefined
-        ? input
-        : await resolve(options.body, input, context);
-
-      const { response, report } = await executeRequest<
-        TInput,
-        TransformContext,
-        TResponse
-      >(input, context, {
+      return await fetchJson<TInput, TResponse, TOutput>({
+        ...options,
         method: "POST",
-        url: options.url,
-        headers: options.headers,
-        body: {
-          contentType: "application/json",
-          resolve() {
-            return JSON.stringify(bodyValue);
-          },
-        },
-        parser: "json",
-      });
-
-      if (!response.ok) {
-        throw new Error(unsuccessfulResponseMessage(response));
-      }
-
-      return mapResponse(input, report.body as TResponse, options);
+        body: options.body ?? input,
+      }).transform(input, context);
     },
   };
 }
 
-function jsonTransformer<
-  TInput,
-  TResponse,
-  TOutput,
->(
-  method: string,
-  options: JsonTransformerOptions<TInput, TResponse, TOutput>,
-): Transformer<TInput, TOutput> {
+async function jsonBody<TInput>(
+  value: NonNullable<FetchJsonOptions<TInput, unknown>["body"]>,
+  input: TInput,
+  context: TransformContext,
+) {
+  const resolved = await resolve(value, input, context);
   return {
-    name: options.name ?? `http-${method.toLowerCase()}-json`,
-    async transform(input, context): Promise<TOutput> {
-      const { response, report } = await executeRequest<
-        TInput,
-        TransformContext,
-        TResponse
-      >(input, context, {
-        method,
-        url: options.url,
-        headers: options.headers,
-        parser: "json",
-      });
-
-      if (!response.ok) {
-        throw new Error(unsuccessfulResponseMessage(response));
-      }
-
-      return mapResponse(input, report.body as TResponse, options);
+    contentType: "application/json",
+    resolve() {
+      return JSON.stringify(resolved);
     },
   };
 }
