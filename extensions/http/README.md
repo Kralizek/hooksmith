@@ -1,6 +1,6 @@
 # @hooksmith/http
 
-HTTP listeners, transformers, and request helpers for Hooksmith.
+HTTP listeners, enrichers, transformers, and request helpers for Hooksmith.
 
 ## Listeners
 
@@ -101,6 +101,53 @@ const listener = pipe(
 
 The current pipeline value is passed as `event.data`; a failed HTTP listener
 fails the tap while a successful one leaves the pipeline value unchanged.
+
+## Enrichers
+
+- `fetchEnrichment<TEvent, TResponse = EventEnrichment>` sends an HTTP request
+  with an arbitrary method, parses the JSON response, and maps it to event
+  enrichment.
+- `getEnrichment<TEvent, TResponse = EventEnrichment>` performs the same
+  operation with GET.
+
+The pair follows the same request → fetch → get layering as the JSON transformer
+family. Use `fetchEnrichment` when a method other than GET is needed; use
+`getEnrichment` for the common GET case.
+
+If the endpoint already returns an `EventEnrichment`, no mapper is required:
+
+```ts
+const enricher = getEnrichment({
+  url: (event) => `https://example.com/enrichment/${event.type}`,
+});
+```
+
+Use `map` when the response represents domain data that should be projected into
+enrichment metadata:
+
+```ts
+const enricher = getEnrichment<Event, { plan: string }>({
+  url: (event) =>
+    `https://example.com/tenants/${event.metadata?.tenantId}`,
+  map: (_event, tenant) => ({
+    metadata: {
+      tenantPlan: tenant.plan,
+    },
+  }),
+});
+```
+
+`fetchEnrichment` also supports JSON request bodies:
+
+```ts
+const enricher = fetchEnrichment({
+  method: "POST",
+  url: "https://example.com/enrich",
+  body: (event) => ({ type: event.type }),
+});
+```
+
+Unsuccessful HTTP responses throw before the response body is parsed.
 
 ## Transformers
 
