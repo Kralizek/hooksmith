@@ -10,11 +10,10 @@ Hooksmith is at the beginning of its design and implementation. The packages in 
 
 ## Package family
 
-The Hooksmith runtime packages in this repository are versioned and released together. The CLI is maintained separately and follows its own release cadence.
+The Hooksmith runtime packages in this repository are versioned and released together.
 
 | Package | Latest | Downloads | Purpose |
 | --- | --- | --- | --- |
-| [`@hooksmith/cli`](https://jsr.io/@hooksmith/cli) | [![latest](https://jsr.io/badges/@hooksmith/cli)](https://jsr.io/@hooksmith/cli) | [![downloads](https://jsr.io/badges/@hooksmith/cli/total-downloads)](https://jsr.io/@hooksmith/cli) | Command-line interface for bounded runs, NDJSON streaming, planning, reports, and the GitHub Action distribution. |
 | [`@hooksmith/core`](https://jsr.io/@hooksmith/core) | [![latest](https://jsr.io/badges/@hooksmith/core)](https://jsr.io/@hooksmith/core) | [![downloads](https://jsr.io/badges/@hooksmith/core/total-downloads)](https://jsr.io/@hooksmith/core) | Public contracts for events, routes, conditions, listeners, execution context, and listener results. |
 | [`@hooksmith/pipeline`](https://jsr.io/@hooksmith/pipeline) | [![latest](https://jsr.io/badges/@hooksmith/pipeline)](https://jsr.io/@hooksmith/pipeline) | [![downloads](https://jsr.io/badges/@hooksmith/pipeline/total-downloads)](https://jsr.io/@hooksmith/pipeline) | Typed listener-side data transformations and composition helpers. |
 | [`@hooksmith/runtime`](https://jsr.io/@hooksmith/runtime) | [![latest](https://jsr.io/badges/@hooksmith/runtime)](https://jsr.io/@hooksmith/runtime) | [![downloads](https://jsr.io/badges/@hooksmith/runtime/total-downloads)](https://jsr.io/@hooksmith/runtime) | Event hydration, validation, routing, planning, listener execution, fallback handling, and run reports. |
@@ -23,7 +22,14 @@ The Hooksmith runtime packages in this repository are versioned and released tog
 
 For extension authors, `@hooksmith/core` is the primary dependency. `@hooksmith/pipeline` provides listener-side transformation composition without depending on the runtime engine. `@hooksmith/standard` provides reusable configuration building blocks without depending on the runtime engine, while `@hooksmith/http` provides protocol-level HTTP listeners that provider-specific extensions can build on.
 
-The command-line interface and GitHub Action live in [`Kralizek/hooksmith-cli`](https://github.com/Kralizek/hooksmith-cli) and follow their own release cadence.
+## Hosts
+
+Hooksmith hosts provide environments for loading and running a Hooksmith runtime. Hosts can live in separate repositories and follow their own release cadence.
+
+| Package | Latest | Downloads | Repository | Purpose |
+| --- | --- | --- | --- | --- |
+| [`@hooksmith/aws-lambda`](https://jsr.io/@hooksmith/aws-lambda) | [![latest](https://jsr.io/badges/@hooksmith/aws-lambda)](https://jsr.io/@hooksmith/aws-lambda) | [![downloads](https://jsr.io/badges/@hooksmith/aws-lambda/total-downloads)](https://jsr.io/@hooksmith/aws-lambda) | [`aws`](https://github.com/Kralizek/hooksmith-aws) | AWS Lambda host for Hooksmith runtimes. |
+| [`@hooksmith/cli`](https://jsr.io/@hooksmith/cli) | [![latest](https://jsr.io/badges/@hooksmith/cli)](https://jsr.io/@hooksmith/cli) | [![downloads](https://jsr.io/badges/@hooksmith/cli/total-downloads)](https://jsr.io/@hooksmith/cli) | [`cli`](https://github.com/Kralizek/hooksmith-cli) | Command-line and streaming host, also distributed as a Docker image and GitHub Action. |
 
 ## External extensions
 
@@ -32,7 +38,6 @@ Provider-specific extensions can live in separate repositories and follow their 
 | Package | Latest | Downloads | Repository | Purpose |
 | --- | --- | --- | --- | --- |
 | [`@hooksmith/aws`](https://jsr.io/@hooksmith/aws) | [![latest](https://jsr.io/badges/@hooksmith/aws)](https://jsr.io/@hooksmith/aws) | [![downloads](https://jsr.io/badges/@hooksmith/aws/total-downloads)](https://jsr.io/@hooksmith/aws) | [`aws`](https://github.com/Kralizek/hooksmith-aws) | AWS event adapters, service listeners, and pipeline transformers. |
-| [`@hooksmith/aws-lambda`](https://jsr.io/@hooksmith/aws-lambda) | [![latest](https://jsr.io/badges/@hooksmith/aws-lambda)](https://jsr.io/@hooksmith/aws-lambda) | [![downloads](https://jsr.io/badges/@hooksmith/aws-lambda/total-downloads)](https://jsr.io/@hooksmith/aws-lambda) | [`aws`](https://github.com/Kralizek/hooksmith-aws) | AWS Lambda hosting support for Hooksmith runtimes. |
 | [`@hooksmith/bluesky`](https://jsr.io/@hooksmith/bluesky) | [![latest](https://jsr.io/badges/@hooksmith/bluesky)](https://jsr.io/@hooksmith/bluesky) | [![downloads](https://jsr.io/badges/@hooksmith/bluesky/total-downloads)](https://jsr.io/@hooksmith/bluesky) | [`social`](https://github.com/Kralizek/hooksmith-social) | Publish posts to Bluesky using an account identifier and app password. |
 | [`@hooksmith/discord`](https://jsr.io/@hooksmith/discord) | [![latest](https://jsr.io/badges/@hooksmith/discord)](https://jsr.io/@hooksmith/discord) | [![downloads](https://jsr.io/badges/@hooksmith/discord/total-downloads)](https://jsr.io/@hooksmith/discord) | [`notifications`](https://github.com/Kralizek/hooksmith-notifications) | Send messages through Discord webhooks. |
 | [`@hooksmith/mastodon`](https://jsr.io/@hooksmith/mastodon) | [![latest](https://jsr.io/badges/@hooksmith/mastodon)](https://jsr.io/@hooksmith/mastodon) | [![downloads](https://jsr.io/badges/@hooksmith/mastodon/total-downloads)](https://jsr.io/@hooksmith/mastodon) | [`social`](https://github.com/Kralizek/hooksmith-social) | Publish statuses to Mastodon-compatible instances using a user access token. |
