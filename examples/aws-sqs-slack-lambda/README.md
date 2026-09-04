@@ -2,8 +2,8 @@
 
 This example shows a deployable Lambda-shaped Hooksmith composition: AWS Lambda
 receives an SQS batch, Hooksmith processes each record independently, enriches
-the event with AWS execution and caller metadata, and sends each successful item
-to Slack.
+the event with AWS execution and caller metadata, routes only events running in
+`eu-north-1`, and sends matching items to Slack.
 
 ```text
 SQS batch
@@ -17,7 +17,7 @@ SQS batch
 Hooksmith runtime
   ↓ enrich before routing
 @hooksmith/aws-lambda environment + @hooksmith/aws/sts
-  ↓
+  ↓ condition: metadata.aws.region == eu-north-1
 @hooksmith/slack
   ↓
 Slack channel
@@ -36,15 +36,16 @@ Before routing, `lambdaEnvironmentEnrichment()` adds Lambda execution metadata
 under `metadata.aws`, while `getCallerIdentityEnrichment()` adds the current AWS
 caller identity under `metadata.sts`.
 
-The Slack listener then receives the enriched event and posts a message such as:
+The route condition then reads the enriched `metadata.aws.region` value and only
+continues when it is `eu-north-1`. This demonstrates that enrichment can affect
+routing, not only listener payloads.
+
+For matching events, the Slack listener receives the enriched event and posts a
+message such as:
 
 ```text
 Deployment completed · region=eu-north-1 · account=123456789012
 ```
-
-This demonstrates that enrichers run once per event before route conditions and
-listeners, so downstream behavior can use metadata obtained from the execution
-environment or AWS APIs.
 
 ## Environment
 
@@ -104,6 +105,6 @@ deno task check
 ```
 
 The example has its own import map. AWS and Slack extensions come from their
-published JSR packages while `@hooksmith/core` and `@hooksmith/runtime` point at
-the local main-repo packages, so CI also checks compatibility between the main
-repo and released external extensions.
+published JSR packages while `@hooksmith/core`, `@hooksmith/runtime`, and
+`@hooksmith/standard` point at local main-repo packages, so CI also checks
+compatibility between the main repo and released external extensions.
