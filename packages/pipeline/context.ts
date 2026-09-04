@@ -1,11 +1,8 @@
-import type { Context, Event } from "@hooksmith/core";
+import type { Context, Event, TransformContext } from "@hooksmith/core";
+
+export type { TransformContext } from "@hooksmith/core";
 
 const eventContext = Symbol("hooksmith.pipeline.event");
-
-/** Context passed to pipeline transformers, including the pipeline's original data. */
-export interface TransformContext extends Context {
-  readonly originalData: unknown;
-}
 
 type PipelineTransformContext = TransformContext & {
   readonly [eventContext]: Event<unknown>;
