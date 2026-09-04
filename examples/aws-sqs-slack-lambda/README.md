@@ -1,9 +1,9 @@
-# SQS Lambda to Slack
+# SQS Lambda to Slack and Teams
 
 This example shows a deployable Lambda-shaped Hooksmith composition: AWS Lambda
 receives an SQS batch, Hooksmith processes each record independently, enriches
-the event with AWS execution and caller metadata, and sends matching items to
-Slack.
+the event with AWS execution and caller metadata, and routes matching items to
+Slack or Teams.
 
 ```text
 SQS batch
@@ -18,11 +18,9 @@ Hooksmith runtime
   ↓ enrich before routing
 Lambda environment + STS caller identity
   ↓
-route only when awsRegion == eu-north-1
-  ↓
-@hooksmith/slack
-  ↓
-Slack channel
+account == 1122334455
+  ├─ region starts with eu- → Slack
+  └─ region starts with us- → Teams
 ```
 
 Each SQS message body is expected to contain JSON like:
@@ -38,22 +36,29 @@ Before routing, `lambdaEnvironmentEnrichment()` maps the Lambda region to
 `metadata.awsRegion`, while `getCallerIdentityEnrichment()` maps the current AWS
 account to `metadata.awsAccount`.
 
-The route then stays declarative:
+The routes then stay declarative. Both require account `1122334455`; European
+regions go to Slack and US regions go to Teams:
 
 ```ts
-when: metadata("awsRegion", "eu-north-1"),
+const account = metadata("awsAccount", "1122334455");
+
+when: all(account, regionStartsWith("eu-"));
+when: all(account, regionStartsWith("us-"));
 ```
 
-Only events processed in `eu-north-1` reach the Slack listener. The listener can
-still consume the other enriched metadata and posts a message such as:
+Events from other accounts do not match either route. Events from account
+`1122334455` in regions outside the `eu-` and `us-` prefixes also remain
+unmatched.
+
+Both listeners consume the enriched metadata and send a message such as:
 
 ```text
-Deployment completed · account=123456789012
+Deployment completed · region=eu-north-1 · account=1122334455
 ```
 
 This demonstrates both parts of enrichment: the enricher controls how external
-AWS data is projected into Hooksmith metadata, and route conditions can use that
-metadata before any listener runs.
+AWS data is projected into Hooksmith metadata, and multiple route conditions can
+use that metadata before any listener runs.
 
 ## Environment
 
@@ -61,13 +66,14 @@ The Lambda function needs these environment variables:
 
 - `SLACK_BOT_TOKEN` — Slack bot token used by `@hooksmith/slack`.
 - `SLACK_CHANNEL` — target Slack channel ID.
+- `TEAMS_WORKFLOW_URL` — Teams Workflow webhook URL used by `@hooksmith/teams`.
 
 The Lambda execution role also needs permission to call STS `GetCallerIdentity`.
 AWS region and Lambda execution details are supplied by the Lambda environment
 itself.
 
-See the `@hooksmith/slack` package documentation for the Slack app and token
-setup.
+See the `@hooksmith/slack` and `@hooksmith/teams` package documentation for the
+provider setup.
 
 ## SQS partial-batch behavior
 
@@ -91,9 +97,9 @@ The example targets the published AWS integration packages from the `0.3` line:
 - `@hooksmith/aws@^0.3.0`
 - `@hooksmith/aws-lambda@^0.3.0`
 
-It also uses `@hooksmith/slack@^0.2.2`, so the resulting Hooksmith report
-identifies the Slack listener as `slack` rather than the underlying HTTP
-listener.
+It also uses `@hooksmith/slack@^0.2.2` and `@hooksmith/teams@^0.2.2`, so the
+resulting Hooksmith report identifies the provider listeners as `slack` and
+`teams` rather than the underlying HTTP listeners.
 
 ## Packaging
 
@@ -112,7 +118,7 @@ From this directory:
 deno task check
 ```
 
-The example has its own import map. AWS and Slack extensions come from their
-published JSR packages while `@hooksmith/core`, `@hooksmith/runtime`, and
+The example has its own import map. AWS, Slack, and Teams extensions come from
+their published JSR packages while `@hooksmith/core`, `@hooksmith/runtime`, and
 `@hooksmith/standard` point at the local main-repo packages, so CI also checks
 compatibility between the main repo and released external extensions.
