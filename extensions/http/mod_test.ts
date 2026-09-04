@@ -2,18 +2,21 @@ import {
   assertEquals,
   assertFalse,
   assertObjectMatch,
+  assertRejects,
   assertThrows,
 } from "@std/assert";
-import type { Context, Event } from "@hooksmith/core";
+import type { Context, Event, TransformContext } from "@hooksmith/core";
 import {
   basicAuth,
   bearerAuth,
   expectStatus,
   formBody,
+  getJson,
   headers,
   httpGet,
   httpPost,
   jsonBody,
+  postJson,
 } from "./mod.ts";
 
 const event: Event = {
@@ -30,6 +33,11 @@ const context: Context = {
     warn() {},
     error() {},
   },
+};
+
+const transformContext: TransformContext = {
+  ...context,
+  originalData: { source: "original" },
 };
 
 Deno.test("httpGet sends a GET request and reports status", async () => {
@@ -81,6 +89,102 @@ Deno.test("httpPost resolves auth, headers and JSON body", async () => {
       body: { id: "posted" },
     });
   });
+});
+
+Deno.test("getJson resolves request from transform input and returns JSON body", async () => {
+  interface Input {
+    id: string;
+  }
+
+  interface Output {
+    name: string;
+  }
+
+  await withFetch((request, init) => {
+    assertEquals(String(request), "https://example.test/items/42");
+    assertEquals(init?.method, "GET");
+    const requestHeaders = new Headers(init?.headers);
+    assertEquals(requestHeaders.get("authorization"), "Bearer secret");
+    assertEquals(requestHeaders.get("x-original"), "original");
+    return Promise.resolve(Response.json({ name: "answer" }));
+  }, async () => {
+    const transformer = getJson<Input, Output>({
+      url: ({ id }) => `https://example.test/items/${id}`,
+      headers: headers<Input, TransformContext>(
+        bearerAuth<Input, TransformContext>("secret"),
+        (_input, currentContext) => ({
+          "X-Original": (currentContext.originalData as { source: string })
+            .source,
+        }),
+      ),
+    });
+
+    assertEquals(
+      await transformer.transform({ id: "42" }, transformContext),
+      { name: "answer" },
+    );
+  });
+});
+
+Deno.test("postJson posts current transform input as JSON by default", async () => {
+  const input = { orderId: "42", amount: 10 };
+
+  await withFetch((_request, init) => {
+    assertEquals(init?.method, "POST");
+    const requestHeaders = new Headers(init?.headers);
+    assertEquals(requestHeaders.get("content-type"), "application/json");
+    assertEquals(init?.body, JSON.stringify(input));
+    return Promise.resolve(Response.json({ accepted: true }));
+  }, async () => {
+    const transformer = postJson<typeof input, { accepted: boolean }>({
+      url: "https://example.test/orders",
+    });
+
+    assertEquals(await transformer.transform(input, transformContext), {
+      accepted: true,
+    });
+  });
+});
+
+Deno.test("postJson can project a custom JSON request body", async () => {
+  const input = { orderId: "42", amount: 10 };
+
+  await withFetch((_request, init) => {
+    assertEquals(init?.body, JSON.stringify({ id: "42" }));
+    return Promise.resolve(Response.json({ accepted: true }));
+  }, async () => {
+    const transformer = postJson<typeof input, { accepted: boolean }>({
+      url: "https://example.test/orders",
+      body: ({ orderId }) => ({ id: orderId }),
+    });
+
+    assertEquals(await transformer.transform(input, transformContext), {
+      accepted: true,
+    });
+  });
+});
+
+Deno.test("JSON transformers reject unsuccessful responses", async () => {
+  await withFetch(
+    () =>
+      Promise.resolve(
+        Response.json({ error: "missing" }, {
+          status: 404,
+          statusText: "Not Found",
+        }),
+      ),
+    async () => {
+      const transformer = getJson<unknown, unknown>({
+        url: "https://example.test/missing",
+      });
+
+      await assertRejects(
+        () => transformer.transform({}, transformContext),
+        Error,
+        "HTTP response considered unsuccessful: 404 Not Found",
+      );
+    },
+  );
 });
 
 Deno.test("formBody encodes URL form data", async () => {
