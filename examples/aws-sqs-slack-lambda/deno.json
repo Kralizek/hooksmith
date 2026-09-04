@@ -2,6 +2,7 @@
   "imports": {
     "@hooksmith/core": "../../packages/core/mod.ts",
     "@hooksmith/runtime": "../../packages/runtime/mod.ts",
+    "@hooksmith/standard": "../../extensions/standard/mod.ts",
     "@hooksmith/aws/sqs": "jsr:@hooksmith/aws@^0.3.0/sqs",
     "@hooksmith/aws/sts": "jsr:@hooksmith/aws@^0.3.0/sts",
     "@hooksmith/aws-lambda": "jsr:@hooksmith/aws-lambda@^0.3.0",
