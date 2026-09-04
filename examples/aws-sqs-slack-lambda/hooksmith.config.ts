@@ -1,8 +1,9 @@
 import type { Config, Event } from "@hooksmith/core";
 import { getCallerIdentityEnrichment } from "@hooksmith/aws/sts";
 import { lambdaEnvironmentEnrichment } from "@hooksmith/aws-lambda";
-import { sendMessage } from "@hooksmith/slack";
-import { metadata } from "@hooksmith/standard";
+import { sendMessage as sendSlackMessage } from "@hooksmith/slack";
+import { all, metadata } from "@hooksmith/standard";
+import { sendMessage as sendTeamsMessage } from "@hooksmith/teams";
 
 interface QueueItem {
   text: string;
@@ -10,6 +11,14 @@ interface QueueItem {
 
 const slackBotToken = requiredEnv("SLACK_BOT_TOKEN");
 const slackChannel = requiredEnv("SLACK_CHANNEL");
+const teamsWorkflowUrl = requiredEnv("TEAMS_WORKFLOW_URL");
+
+const account = metadata("awsAccount", "1122334455");
+const regionStartsWith = (prefix: string) =>
+  metadata(
+    "awsRegion",
+    (value) => typeof value === "string" && value.startsWith(prefix),
+  );
 
 export default {
   enrichers: [
@@ -24,19 +33,38 @@ export default {
       }),
     }),
   ],
-  routes: [{
-    name: "forward-eu-north-1-sqs-message-to-slack",
-    when: metadata("awsRegion", "eu-north-1"),
-    listeners: [
-      sendMessage<Event<QueueItem>>({
-        token: slackBotToken,
-        channel: slackChannel,
-        text: (event) =>
-          `${event.data.text} · account=${String(event.metadata?.awsAccount)}`,
-      }),
-    ],
-  }],
+  routes: [
+    {
+      name: "forward-eu-sqs-message-to-slack",
+      when: all(account, regionStartsWith("eu-")),
+      listeners: [
+        sendSlackMessage<Event<QueueItem>>({
+          token: slackBotToken,
+          channel: slackChannel,
+          text: (event) => enrichedMessage(event),
+        }),
+      ],
+    },
+    {
+      name: "forward-us-sqs-message-to-teams",
+      when: all(account, regionStartsWith("us-")),
+      listeners: [
+        sendTeamsMessage<Event<QueueItem>>({
+          workflowUrl: teamsWorkflowUrl,
+          text: (event) => enrichedMessage(event),
+        }),
+      ],
+    },
+  ],
 } satisfies Config<Event<QueueItem>>;
+
+function enrichedMessage(event: Event<QueueItem>): string {
+  return [
+    event.data.text,
+    `region=${String(event.metadata?.awsRegion)}`,
+    `account=${String(event.metadata?.awsAccount)}`,
+  ].join(" · ");
+}
 
 function requiredEnv(name: string): string {
   const value = Deno.env.get(name);
