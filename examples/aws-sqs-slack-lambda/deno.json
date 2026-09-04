@@ -2,10 +2,13 @@
   "imports": {
     "@hooksmith/core": "../../packages/core/mod.ts",
     "@hooksmith/runtime": "../../packages/runtime/mod.ts",
-    "@hooksmith/aws/sqs": "jsr:@hooksmith/aws@^0.2.0/sqs",
-    "@hooksmith/aws-lambda": "jsr:@hooksmith/aws-lambda@^0.2.0",
-    "@hooksmith/aws-lambda/sqs": "jsr:@hooksmith/aws-lambda@^0.2.0/sqs",
-    "@hooksmith/slack": "jsr:@hooksmith/slack@^0.1.0"
+    "@hooksmith/standard": "../../extensions/standard/mod.ts",
+    "@hooksmith/aws/sqs": "jsr:@hooksmith/aws@^0.3.0/sqs",
+    "@hooksmith/aws/sts": "jsr:@hooksmith/aws@^0.3.0/sts",
+    "@hooksmith/aws-lambda": "jsr:@hooksmith/aws-lambda@^0.3.0",
+    "@hooksmith/aws-lambda/sqs": "jsr:@hooksmith/aws-lambda@^0.3.0/sqs",
+    "@hooksmith/slack": "jsr:@hooksmith/slack@^0.2.2",
+    "@hooksmith/teams": "jsr:@hooksmith/teams@^0.2.2"
   },
   "tasks": {
     "check": "deno check handler.ts"
