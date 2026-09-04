@@ -7,6 +7,7 @@ import type {
   ValueOrFactory,
 } from "./types.ts";
 
+/** Low-level HTTP request execution options shared by listeners and transformers. */
 export interface HttpExecutionOptions<
   TInput,
   TContext extends Context,
@@ -22,6 +23,7 @@ export interface HttpExecutionOptions<
   parser: ResponseParser;
 }
 
+/** Raw fetch response together with its normalized Hooksmith response report. */
 export interface HttpExecutionResult<TBody = unknown> {
   response: Response;
   report: HttpResponseReport<TBody>;
