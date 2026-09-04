@@ -14,8 +14,9 @@ export {
   httpPut,
   httpRequest,
 } from "./listeners.ts";
-export { getJson, postJson } from "./transformers.ts";
+export { fetchJson, getJson, postJson } from "./transformers.ts";
 export type {
+  FetchJsonOptions,
   HeaderSource,
   HttpBody,
   HttpRequestOptions,
