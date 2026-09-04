@@ -70,6 +70,115 @@ Deno.test("processes multiple events with one runtime", async () => {
   assertEquals(secondReport.success, true);
 });
 
+Deno.test("runs event enrichers in order before route conditions", async () => {
+  const calls: string[] = [];
+  const config: Config = {
+    enrichers: [
+      {
+        name: "trace",
+        enrich(currentEvent) {
+          calls.push("trace");
+          assertEquals(currentEvent.metadata?.traceId, undefined);
+          return { metadata: { traceId: "trace-1", shared: "first" } };
+        },
+      },
+      {
+        name: "tenant",
+        enrich(currentEvent) {
+          calls.push("tenant");
+          assertEquals(currentEvent.metadata?.traceId, "trace-1");
+          return { metadata: { tenantId: "tenant-1", shared: "second" } };
+        },
+      },
+    ],
+    routes: [{
+      when: {
+        evaluate(currentEvent) {
+          calls.push("condition");
+          return currentEvent.metadata?.tenantId === "tenant-1";
+        },
+      },
+      listeners: [{
+        run(currentEvent) {
+          calls.push("listener");
+          assertEquals(currentEvent.metadata, {
+            url: "https://example.com/hello",
+            traceId: "trace-1",
+            tenantId: "tenant-1",
+            shared: "second",
+          });
+          return { success: true };
+        },
+      }],
+    }],
+  };
+
+  const report = await createRuntime(config, context).process(event());
+
+  assertEquals(calls, ["trace", "tenant", "condition", "listener"]);
+  assertEquals(report.event.metadata, {
+    url: "https://example.com/hello",
+    traceId: "trace-1",
+    tenantId: "tenant-1",
+    shared: "second",
+  });
+});
+
+Deno.test("plan applies event enrichment before routing", async () => {
+  let conditionMatched = false;
+  const config: Config = {
+    enrichers: [{
+      enrich: () => ({ metadata: { planned: true } }),
+    }],
+    routes: [{
+      when: {
+        evaluate(currentEvent) {
+          conditionMatched = currentEvent.metadata?.planned === true;
+          return conditionMatched;
+        },
+      },
+      listeners: [{ run: () => ({ success: true }) }],
+    }],
+  };
+
+  const report = await createRuntime(config, context).plan(event());
+
+  assertEquals(conditionMatched, true);
+  assertEquals(report.outcome, "matched");
+  assertEquals(report.event.metadata?.planned, true);
+});
+
+Deno.test("event enricher errors identify the enricher and abort routing", async () => {
+  let conditionRan = false;
+  const cause = new Error("telemetry unavailable");
+  const config: Config = {
+    enrichers: [{
+      name: "otel",
+      enrich() {
+        throw cause;
+      },
+    }],
+    routes: [{
+      when: {
+        evaluate() {
+          conditionRan = true;
+          return true;
+        },
+      },
+      listeners: [],
+    }],
+  };
+
+  const error = await assertRejects(
+    () => createRuntime(config, context).process(event()),
+    Error,
+    "Event enricher otel failed: telemetry unavailable",
+  );
+
+  assertEquals(error.cause, cause);
+  assertEquals(conditionRan, false);
+});
+
 Deno.test("runs all matching routes and listeners in config order", async () => {
   const calls: string[] = [];
   const listener = (name: string): Listener => ({
