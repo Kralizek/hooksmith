@@ -23,7 +23,7 @@ export function fetchJson<
     async transform(input, context): Promise<TOutput> {
       const body = options.body === undefined
         ? undefined
-        : await jsonBody(options.body, input, context);
+        : await resolveJsonBody(options.body, input, context);
       const { response, report } = await executeRequest<
         TInput,
         TransformContext,
@@ -64,19 +64,14 @@ export function postJson<
 >(
   options: PostJsonOptions<TInput, TResponse, TOutput>,
 ): Transformer<TInput, TOutput> {
-  return {
-    name: options.name ?? "http-post-json",
-    async transform(input, context): Promise<TOutput> {
-      return await fetchJson<TInput, TResponse, TOutput>({
-        ...options,
-        method: "POST",
-        body: options.body ?? input,
-      }).transform(input, context);
-    },
-  };
+  return fetchJson({
+    ...options,
+    method: "POST",
+    body: options.body ?? ((input: TInput) => input),
+  });
 }
 
-async function jsonBody<TInput>(
+async function resolveJsonBody<TInput>(
   value: NonNullable<FetchJsonOptions<TInput, unknown>["body"]>,
   input: TInput,
   context: TransformContext,
