@@ -15,9 +15,9 @@ httpPost
 httpbin.org
 ```
 
-The configuration first runs a configuration-level `getEnrichment` enricher.
-It calls an HTTP endpoint, maps the JSON response to an `EventEnrichment`, and
-adds `tenantPlan` to the event metadata.
+The configuration first runs a configuration-level `getEnrichment` enricher. It
+calls an HTTP endpoint, maps the JSON response to an `EventEnrichment`, and adds
+`tenantPlan` to the event metadata.
 
 ```ts
 getEnrichment<Event, EnrichmentResponse>({
@@ -25,7 +25,7 @@ getEnrichment<Event, EnrichmentResponse>({
   map: (_event, response) => ({
     metadata: { tenantPlan: response.tenantPlan },
   }),
-})
+});
 ```
 
 Configuration-level enrichers run before route conditions. The
@@ -36,7 +36,7 @@ deciding whether it matches:
 when: all(
   eventType("page.published"),
   metadata("tenantPlan", "pro"),
-)
+);
 ```
 
 When the route matches, `httpPost` sends the event to httpbin. The listener
@@ -50,8 +50,10 @@ the route condition and the listener afterward.
 ## Files
 
 - `event.yaml` contains the input event.
-- `hooksmith.config.ts` defines the enricher, route condition, and HTTP listener.
-- `deno.json` maps the local Hooksmith packages and provides the validation task.
+- `hooksmith.config.ts` defines the enricher, route condition, and HTTP
+  listener.
+- `deno.json` maps the local Hooksmith packages and provides the validation
+  task.
 
 ## Validate
 
