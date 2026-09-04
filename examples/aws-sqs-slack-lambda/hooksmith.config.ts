@@ -13,7 +13,7 @@ const slackBotToken = requiredEnv("SLACK_BOT_TOKEN");
 const slackChannel = requiredEnv("SLACK_CHANNEL");
 const teamsWorkflowUrl = requiredEnv("TEAMS_WORKFLOW_URL");
 
-const account = metadata("awsAccount", "1122334455");
+const account = metadata("awsAccount", "112233445566");
 const regionStartsWith = (prefix: string) =>
   metadata(
     "awsRegion",

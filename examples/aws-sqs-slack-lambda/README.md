@@ -18,7 +18,7 @@ Hooksmith runtime
   ↓ enrich before routing
 Lambda environment + STS caller identity
   ↓
-account == 1122334455
+account == 112233445566
   ├─ region starts with eu- → Slack
   └─ region starts with us- → Teams
 ```
@@ -36,24 +36,24 @@ Before routing, `lambdaEnvironmentEnrichment()` maps the Lambda region to
 `metadata.awsRegion`, while `getCallerIdentityEnrichment()` maps the current AWS
 account to `metadata.awsAccount`.
 
-The routes then stay declarative. Both require account `1122334455`; European
+The routes then stay declarative. Both require account `112233445566`; European
 regions go to Slack and US regions go to Teams:
 
 ```ts
-const account = metadata("awsAccount", "1122334455");
+const account = metadata("awsAccount", "112233445566");
 
 when: all(account, regionStartsWith("eu-"));
 when: all(account, regionStartsWith("us-"));
 ```
 
 Events from other accounts do not match either route. Events from account
-`1122334455` in regions outside the `eu-` and `us-` prefixes also remain
+`112233445566` in regions outside the `eu-` and `us-` prefixes also remain
 unmatched.
 
 Both listeners consume the enriched metadata and send a message such as:
 
 ```text
-Deployment completed · region=eu-north-1 · account=1122334455
+Deployment completed · region=eu-north-1 · account=112233445566
 ```
 
 This demonstrates both parts of enrichment: the enricher controls how external
