@@ -1,3 +1,4 @@
+export { fetchEnrichment, getEnrichment } from "./enrichers.ts";
 export {
   basicAuth,
   bearerAuth,
@@ -16,7 +17,11 @@ export {
 } from "./listeners.ts";
 export { fetchJson, getJson, postJson } from "./transformers.ts";
 export type {
+  EnrichmentOptions,
+  EnrichmentResponseMap,
+  FetchEnrichmentOptions,
   FetchJsonOptions,
+  GetEnrichmentOptions,
   HeaderSource,
   HttpBody,
   HttpRequestOptions,
