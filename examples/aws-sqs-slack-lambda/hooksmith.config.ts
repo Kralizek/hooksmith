@@ -13,39 +13,30 @@ const slackChannel = requiredEnv("SLACK_CHANNEL");
 
 export default {
   enrichers: [
-    lambdaEnvironmentEnrichment<Event<QueueItem>>(),
-    getCallerIdentityEnrichment<Event<QueueItem>>(),
+    lambdaEnvironmentEnrichment<Event<QueueItem>>({
+      map: (_event, environment) => ({
+        metadata: { awsRegion: environment.region },
+      }),
+    }),
+    getCallerIdentityEnrichment<Event<QueueItem>>({
+      map: (_event, response) => ({
+        metadata: { awsAccount: response.Account },
+      }),
+    }),
   ],
   routes: [{
     name: "forward-eu-north-1-sqs-message-to-slack",
-    when: metadata(
-      "aws",
-      (value) => (value as { region?: string } | undefined)?.region === "eu-north-1",
-    ),
+    when: metadata("awsRegion", "eu-north-1"),
     listeners: [
       sendMessage<Event<QueueItem>>({
         token: slackBotToken,
         channel: slackChannel,
-        text: (event) => enrichedMessage(event),
+        text: (event) =>
+          `${event.data.text} · account=${String(event.metadata?.awsAccount)}`,
       }),
     ],
   }],
 } satisfies Config<Event<QueueItem>>;
-
-function enrichedMessage(event: Event<QueueItem>): string {
-  const aws = event.metadata?.aws as
-    | { region?: string }
-    | undefined;
-  const sts = event.metadata?.sts as
-    | { account?: string }
-    | undefined;
-
-  return [
-    event.data.text,
-    aws?.region === undefined ? undefined : `region=${aws.region}`,
-    sts?.account === undefined ? undefined : `account=${sts.account}`,
-  ].filter((value): value is string => value !== undefined).join(" · ");
-}
 
 function requiredEnv(name: string): string {
   const value = Deno.env.get(name);
