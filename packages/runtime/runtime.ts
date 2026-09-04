@@ -2,12 +2,17 @@ import type {
   Config,
   Context,
   Event,
+  EventEnricher,
   Listener,
   ListenerResult,
   Route,
 } from "@hooksmith/core";
 import type { ListenerReport, RunReport, Runtime } from "./types.ts";
-import { assertConfig, assertListenerResult } from "./validation.ts";
+import {
+  assertConfig,
+  assertEventEnrichment,
+  assertListenerResult,
+} from "./validation.ts";
 
 export function createRuntime<TEvent extends Event>(
   config: Config<TEvent>,
@@ -31,6 +36,7 @@ async function executeEvent<TEvent extends Event>(
   context: Context,
   plan: boolean,
 ): Promise<RunReport> {
+  const enrichedEvent = await enrichEvent(event, config.enrichers ?? [], context);
   const results: ListenerReport[] = [];
   let matched = false;
 
@@ -43,7 +49,7 @@ async function executeEvent<TEvent extends Event>(
       let matches: boolean;
 
       try {
-        matches = await route.when.evaluate(event, context);
+        matches = await route.when.evaluate(enrichedEvent, context);
       } catch (error) {
         throw new Error(
           `Condition ${conditionName} failed: ${errorMessage(error)}`,
@@ -63,7 +69,7 @@ async function executeEvent<TEvent extends Event>(
     await executeListeners(
       route.listeners,
       routeName,
-      event,
+      enrichedEvent,
       context,
       plan,
       results,
@@ -74,7 +80,7 @@ async function executeEvent<TEvent extends Event>(
     await executeListeners(
       config.fallback,
       "fallback",
-      event,
+      enrichedEvent,
       context,
       plan,
       results,
@@ -84,11 +90,11 @@ async function executeEvent<TEvent extends Event>(
   return {
     mode: plan ? "plan" : "run",
     event: {
-      type: event.type,
-      timestamp: event.timestamp.toString(),
-      source: event.source,
-      subject: event.subject,
-      metadata: event.metadata,
+      type: enrichedEvent.type,
+      timestamp: enrichedEvent.timestamp.toString(),
+      source: enrichedEvent.source,
+      subject: enrichedEvent.subject,
+      metadata: enrichedEvent.metadata,
     },
     results,
     success: plan || results.every((result) => result.status === "success"),
@@ -98,6 +104,43 @@ async function executeEvent<TEvent extends Event>(
       ? "unmatched"
       : "fallback",
   };
+}
+
+async function enrichEvent<TEvent extends Event>(
+  event: TEvent,
+  enrichers: EventEnricher<TEvent>[],
+  context: Context,
+): Promise<TEvent> {
+  let enrichedEvent = event;
+
+  for (let index = 0; index < enrichers.length; index++) {
+    const enricher = enrichers[index];
+    const enricherName = enricher.name ?? `enricher-${index + 1}`;
+
+    let enrichment: unknown;
+    try {
+      enrichment = await enricher.enrich(enrichedEvent, context);
+    } catch (error) {
+      throw new Error(
+        `Event enricher ${enricherName} failed: ${errorMessage(error)}`,
+        { cause: error },
+      );
+    }
+
+    assertEventEnrichment(enrichment, enricherName);
+
+    if (enrichment.metadata !== undefined) {
+      enrichedEvent = {
+        ...enrichedEvent,
+        metadata: {
+          ...enrichedEvent.metadata,
+          ...enrichment.metadata,
+        },
+      };
+    }
+  }
+
+  return enrichedEvent;
 }
 
 async function executeListeners<TEvent extends Event>(
