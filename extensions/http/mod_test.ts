@@ -206,7 +206,7 @@ Deno.test("postJson can project a custom JSON request body", async () => {
   }, async () => {
     const transformer = postJson<typeof input, { accepted: boolean }>({
       url: "https://example.test/orders",
-      body: ({ orderId }) => ({ id: orderId }),
+      body: ({ orderId }: typeof input) => ({ id: orderId }),
     });
 
     assertEquals(await transformer.transform(input, transformContext), {
@@ -253,7 +253,7 @@ Deno.test("JSON transformers reject unsuccessful responses", async () => {
       });
 
       await assertRejects(
-        () => transformer.transform({}, transformContext),
+        () => Promise.resolve(transformer.transform({}, transformContext)),
         Error,
         "HTTP response considered unsuccessful: 404 Not Found",
       );
