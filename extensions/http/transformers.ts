@@ -72,7 +72,7 @@ export function postJson<
 }
 
 async function resolveJsonBody<TInput>(
-  value: NonNullable<FetchJsonOptions<TInput, unknown>["body"]>,
+  value: Exclude<FetchJsonOptions<TInput, unknown>["body"], undefined>,
   input: TInput,
   context: TransformContext,
 ) {
