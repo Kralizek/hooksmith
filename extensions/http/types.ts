@@ -68,6 +68,7 @@ export type HttpResponse<TEvent extends Event = Event> =
 
 /** Options used to create a Hooksmith HTTP request listener. */
 export interface HttpRequestOptions<TEvent extends Event = Event> {
+  name?: string;
   method?: string;
   url: ValueOrFactory<string | URL, TEvent>;
   headers?: HeaderSource<TEvent> | readonly HeaderSource<TEvent>[];
