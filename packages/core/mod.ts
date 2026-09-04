@@ -55,6 +55,20 @@ export interface Transformer<TInput, TOutput> {
   ): TOutput | Promise<TOutput>;
 }
 
+/** Metadata additions produced by an event enricher. */
+export interface EventEnrichment {
+  metadata?: Record<string, unknown>;
+}
+
+/** Configuration-level event enrichment stage executed before routing. */
+export interface EventEnricher<TEvent extends Event = Event> {
+  name?: string;
+  enrich(
+    event: TEvent,
+    context: Context,
+  ): EventEnrichment | Promise<EventEnrichment>;
+}
+
 /** Predicate used by a route to decide whether an event matches. */
 export interface Condition<TEvent extends Event = Event> {
   name?: string;
@@ -87,8 +101,9 @@ export interface Route<TEvent extends Event = Event> {
   listeners: Listener<TEvent>[];
 }
 
-/** Hooksmith runtime configuration for routes and optional fallback listeners. */
+/** Hooksmith runtime configuration for enrichment, routes and fallback listeners. */
 export interface Config<TEvent extends Event = Event> {
+  enrichers?: EventEnricher<TEvent>[];
   routes: Route<TEvent>[];
   fallback?: Listener<TEvent>[];
 }
