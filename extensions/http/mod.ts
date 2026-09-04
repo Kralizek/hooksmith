@@ -1,15 +1,26 @@
-import type { Context, Event, Listener, ListenerResult } from "@hooksmith/core";
+import type {
+  Context,
+  Event,
+  Listener,
+  ListenerResult,
+  Transformer,
+  TransformContext,
+} from "@hooksmith/core";
 
-/** Fixed value or event-aware factory resolved when an HTTP listener runs. */
-export type ValueOrFactory<T, TEvent extends Event = Event> =
+/** Fixed value or input-aware factory resolved when an HTTP operation runs. */
+export type ValueOrFactory<
+  T,
+  TInput = Event,
+  TContext extends Context = Context,
+> =
   | T
-  | ((event: TEvent, context: Context) => T | Promise<T>);
+  | ((input: TInput, context: TContext) => T | Promise<T>);
 
-/** Header values or an event-aware factory that produces them. */
-export type HeaderSource<TEvent extends Event = Event> = ValueOrFactory<
-  HeadersInit,
-  TEvent
->;
+/** Header values or an input-aware factory that produces them. */
+export type HeaderSource<
+  TInput = Event,
+  TContext extends Context = Context,
+> = ValueOrFactory<HeadersInit, TInput, TContext>;
 
 /** Deferred HTTP request body resolved for the current Hooksmith event. */
 export interface HttpBody<TEvent extends Event = Event> {
@@ -68,27 +79,47 @@ export interface HttpRequestOptions<TEvent extends Event = Event> {
   response?: HttpResponse<TEvent>;
 }
 
-export function headers<TEvent extends Event = Event>(
-  ...sources: HeaderSource<TEvent>[]
-): HeaderSource<TEvent>[] {
+/** Shared options used by JSON-returning HTTP transformers. */
+export interface JsonTransformerOptions<TInput> {
+  name?: string;
+  url: ValueOrFactory<string | URL, TInput, TransformContext>;
+  headers?:
+    | HeaderSource<TInput, TransformContext>
+    | readonly HeaderSource<TInput, TransformContext>[];
+}
+
+/** Options used by {@link postJson}. */
+export interface PostJsonOptions<TInput> extends JsonTransformerOptions<TInput> {
+  body?: ValueOrFactory<unknown, TInput, TransformContext>;
+}
+
+export function headers<TInput = Event, TContext extends Context = Context>(
+  ...sources: HeaderSource<TInput, TContext>[]
+): HeaderSource<TInput, TContext>[] {
   return sources;
 }
 
-export function bearerAuth<TEvent extends Event = Event>(
-  token: ValueOrFactory<string, TEvent>,
-): HeaderSource<TEvent> {
-  return async (event, context) => ({
-    Authorization: `Bearer ${await resolve(token, event, context)}`,
+export function bearerAuth<
+  TInput = Event,
+  TContext extends Context = Context,
+>(
+  token: ValueOrFactory<string, TInput, TContext>,
+): HeaderSource<TInput, TContext> {
+  return async (input, context) => ({
+    Authorization: `Bearer ${await resolve(token, input, context)}`,
   });
 }
 
-export function basicAuth<TEvent extends Event = Event>(
-  username: ValueOrFactory<string, TEvent>,
-  password: ValueOrFactory<string, TEvent>,
-): HeaderSource<TEvent> {
-  return async (event, context) => {
-    const user = await resolve(username, event, context);
-    const pass = await resolve(password, event, context);
+export function basicAuth<
+  TInput = Event,
+  TContext extends Context = Context,
+>(
+  username: ValueOrFactory<string, TInput, TContext>,
+  password: ValueOrFactory<string, TInput, TContext>,
+): HeaderSource<TInput, TContext> {
+  return async (input, context) => {
+    const user = await resolve(username, input, context);
+    const pass = await resolve(password, input, context);
     return { Authorization: `Basic ${btoa(`${user}:${pass}`)}` };
   };
 }
@@ -162,14 +193,14 @@ export function httpRequest<TEvent extends Event = Event>(
         body = await resolve(options.body, event, context);
       }
 
-      const response = await fetch(url, {
-        method: options.method ?? "GET",
-        headers: requestHeaders,
-        body,
-      });
-
       const responseOptions = normalizeResponse(options.response);
-      const report = await toReport(response, responseOptions.parse ?? "none");
+      const { response, report } = await sendRequest(
+        url,
+        options.method ?? "GET",
+        requestHeaders,
+        body,
+        responseOptions.parse ?? "none",
+      );
       const success = responseOptions.success
         ? await responseOptions.success(report, event, context)
         : response.ok;
@@ -182,8 +213,7 @@ export function httpRequest<TEvent extends Event = Event>(
         success,
         message: success
           ? `${response.status} ${response.statusText}`.trim()
-          : `HTTP response considered unsuccessful: ${response.status} ${response.statusText}`
-            .trim(),
+          : unsuccessfulResponseMessage(response),
         data,
       };
     },
@@ -202,30 +232,101 @@ export function httpPost<TEvent extends Event = Event>(
   return httpRequest({ ...options, method: "POST" });
 }
 
-async function resolve<T, TEvent extends Event>(
-  value: ValueOrFactory<T, TEvent>,
-  event: TEvent,
-  context: Context,
+/** Fetches JSON with GET and replaces the current value with the response body. */
+export function getJson<TInput, TOutput>(
+  options: JsonTransformerOptions<TInput>,
+): Transformer<TInput, TOutput> {
+  return {
+    name: options.name ?? "http-get-json",
+    async transform(input, context): Promise<TOutput> {
+      const url = await resolve(options.url, input, context);
+      const requestHeaders = await resolveHeaders(
+        options.headers,
+        input,
+        context,
+      );
+      const { response, report } = await sendRequest(
+        url,
+        "GET",
+        requestHeaders,
+        undefined,
+        "json",
+      );
+
+      if (!response.ok) {
+        throw new Error(unsuccessfulResponseMessage(response));
+      }
+
+      return report.body as TOutput;
+    },
+  };
+}
+
+/** Posts JSON and replaces the current value with the JSON response body. */
+export function postJson<TInput, TOutput>(
+  options: PostJsonOptions<TInput>,
+): Transformer<TInput, TOutput> {
+  return {
+    name: options.name ?? "http-post-json",
+    async transform(input, context): Promise<TOutput> {
+      const url = await resolve(options.url, input, context);
+      const requestHeaders = await resolveHeaders(
+        options.headers,
+        input,
+        context,
+      );
+      if (!requestHeaders.has("Content-Type")) {
+        requestHeaders.set("Content-Type", "application/json");
+      }
+
+      const value = options.body === undefined
+        ? input
+        : await resolve(options.body, input, context);
+      const body = JSON.stringify(value);
+      const { response, report } = await sendRequest(
+        url,
+        "POST",
+        requestHeaders,
+        body,
+        "json",
+      );
+
+      if (!response.ok) {
+        throw new Error(unsuccessfulResponseMessage(response));
+      }
+
+      return report.body as TOutput;
+    },
+  };
+}
+
+async function resolve<T, TInput, TContext extends Context>(
+  value: ValueOrFactory<T, TInput, TContext>,
+  input: TInput,
+  context: TContext,
 ): Promise<T> {
   return typeof value === "function"
-    ? await (value as (event: TEvent, context: Context) => T | Promise<T>)(
-      event,
-      context,
-    )
+    ? await (value as (
+      input: TInput,
+      context: TContext,
+    ) => T | Promise<T>)(input, context)
     : value;
 }
 
-async function resolveHeaders<TEvent extends Event>(
-  value: HttpRequestOptions<TEvent>["headers"],
-  event: TEvent,
-  context: Context,
+async function resolveHeaders<TInput, TContext extends Context>(
+  value:
+    | HeaderSource<TInput, TContext>
+    | readonly HeaderSource<TInput, TContext>[]
+    | undefined,
+  input: TInput,
+  context: TContext,
 ): Promise<Headers> {
   const result = new Headers();
   if (value === undefined) return result;
 
   const sources = Array.isArray(value) ? value : [value];
   for (const source of sources) {
-    const resolved = await resolve(source, event, context);
+    const resolved = await resolve(source, input, context);
     new Headers(resolved).forEach((headerValue, key) =>
       result.set(key, headerValue)
     );
@@ -247,6 +348,23 @@ function isHttpBody<TEvent extends Event>(
     value !== null &&
     "resolve" in value &&
     typeof (value as { resolve?: unknown }).resolve === "function";
+}
+
+async function sendRequest(
+  url: string | URL,
+  method: string,
+  headers: Headers,
+  body: BodyInit | null | undefined,
+  parser: ResponseParser,
+): Promise<{ response: Response; report: HttpResponseReport }> {
+  const response = await fetch(url, { method, headers, body });
+  const report = await toReport(response, parser);
+  return { response, report };
+}
+
+function unsuccessfulResponseMessage(response: Response): string {
+  return `HTTP response considered unsuccessful: ${response.status} ${response.statusText}`
+    .trim();
 }
 
 async function toReport(
