@@ -65,7 +65,9 @@ Deno.test("fetchEnrichment supports arbitrary HTTP methods and JSON bodies", asy
     const enricher = fetchEnrichment<Event<{ tenantId: string }>>({
       method: "POST",
       url: "https://example.test/enrich",
-      body: ({ data }) => ({ tenantId: data.tenantId }),
+      body: (currentEvent: Event<{ tenantId: string }>) => ({
+        tenantId: currentEvent.data.tenantId,
+      }),
     });
 
     assertEquals(await enricher.enrich(event(), context), {
