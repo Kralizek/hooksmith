@@ -6,10 +6,7 @@ import type {
 } from "@hooksmith/core";
 import { jsonBody } from "./helpers.ts";
 import { executeRequest, unsuccessfulResponseMessage } from "./request.ts";
-import type {
-  FetchEnrichmentOptions,
-  GetEnrichmentOptions,
-} from "./types.ts";
+import type { FetchEnrichmentOptions, GetEnrichmentOptions } from "./types.ts";
 
 /** Fetches JSON with an arbitrary HTTP method and maps it to event enrichment. */
 export function fetchEnrichment<
