@@ -146,8 +146,7 @@ const enrichOrder = getJson<
   Customer,
   Order & { customer: Customer }
 >({
-  url: ({ customerId }) =>
-    `https://example.com/customers/${customerId}`,
+  url: ({ customerId }) => `https://example.com/customers/${customerId}`,
   map: (order, customer) => ({ ...order, customer }),
 });
 ```
