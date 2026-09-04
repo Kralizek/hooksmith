@@ -2,8 +2,8 @@
 
 This example shows a deployable Lambda-shaped Hooksmith composition: AWS Lambda
 receives an SQS batch, Hooksmith processes each record independently, enriches
-the event with AWS execution and caller metadata, routes only events running in
-`eu-north-1`, and sends matching items to Slack.
+the event with AWS execution and caller metadata, and sends matching items to
+Slack.
 
 ```text
 SQS batch
@@ -16,8 +16,10 @@ SQS batch
   ↓
 Hooksmith runtime
   ↓ enrich before routing
-@hooksmith/aws-lambda environment + @hooksmith/aws/sts
-  ↓ condition: metadata.aws.region == eu-north-1
+Lambda environment + STS caller identity
+  ↓
+route only when awsRegion == eu-north-1
+  ↓
 @hooksmith/slack
   ↓
 Slack channel
@@ -32,20 +34,26 @@ Each SQS message body is expected to contain JSON like:
 ```
 
 `fromSqs` turns the record into a Hooksmith event with type `aws.sqs.message`.
-Before routing, `lambdaEnvironmentEnrichment()` adds Lambda execution metadata
-under `metadata.aws`, while `getCallerIdentityEnrichment()` adds the current AWS
-caller identity under `metadata.sts`.
+Before routing, `lambdaEnvironmentEnrichment()` maps the Lambda region to
+`metadata.awsRegion`, while `getCallerIdentityEnrichment()` maps the current AWS
+account to `metadata.awsAccount`.
 
-The route condition then reads the enriched `metadata.aws.region` value and only
-continues when it is `eu-north-1`. This demonstrates that enrichment can affect
-routing, not only listener payloads.
+The route then stays declarative:
 
-For matching events, the Slack listener receives the enriched event and posts a
-message such as:
+```ts
+when: metadata("awsRegion", "eu-north-1"),
+```
+
+Only events processed in `eu-north-1` reach the Slack listener. The listener can
+still consume the other enriched metadata and posts a message such as:
 
 ```text
-Deployment completed · region=eu-north-1 · account=123456789012
+Deployment completed · account=123456789012
 ```
+
+This demonstrates both parts of enrichment: the enricher controls how external
+AWS data is projected into Hooksmith metadata, and route conditions can use that
+metadata before any listener runs.
 
 ## Environment
 
@@ -106,5 +114,5 @@ deno task check
 
 The example has its own import map. AWS and Slack extensions come from their
 published JSR packages while `@hooksmith/core`, `@hooksmith/runtime`, and
-`@hooksmith/standard` point at local main-repo packages, so CI also checks
+`@hooksmith/standard` point at the local main-repo packages, so CI also checks
 compatibility between the main repo and released external extensions.
