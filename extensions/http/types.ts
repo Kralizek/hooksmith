@@ -1,4 +1,9 @@
-import type { Context, Event, TransformContext } from "@hooksmith/core";
+import type {
+  Context,
+  Event,
+  EventEnrichment,
+  TransformContext,
+} from "@hooksmith/core";
 
 /** Fixed value or input-aware factory resolved when an HTTP operation runs. */
 export type ValueOrFactory<
@@ -114,3 +119,39 @@ export interface PostJsonOptions<
 > extends JsonTransformerOptions<TInput, TResponse, TOutput> {
   body?: ValueOrFactory<unknown, TInput, TransformContext>;
 }
+
+/** Maps an HTTP JSON response to event enrichment. */
+export type EnrichmentResponseMap<
+  TEvent extends Event,
+  TResponse,
+> = (
+  event: TEvent,
+  response: TResponse,
+  context: Context,
+) => EventEnrichment | Promise<EventEnrichment>;
+
+/** Shared options used by JSON-returning HTTP enrichers. */
+export interface EnrichmentOptions<
+  TEvent extends Event = Event,
+  TResponse = EventEnrichment,
+> {
+  name?: string;
+  url: ValueOrFactory<string | URL, TEvent>;
+  headers?: HeaderSource<TEvent> | readonly HeaderSource<TEvent>[];
+  map?: EnrichmentResponseMap<TEvent, TResponse>;
+}
+
+/** Options used by fetchEnrichment. */
+export interface FetchEnrichmentOptions<
+  TEvent extends Event = Event,
+  TResponse = EventEnrichment,
+> extends EnrichmentOptions<TEvent, TResponse> {
+  method: string;
+  body?: ValueOrFactory<unknown, TEvent>;
+}
+
+/** Options used by getEnrichment. */
+export type GetEnrichmentOptions<
+  TEvent extends Event = Event,
+  TResponse = EventEnrichment,
+> = EnrichmentOptions<TEvent, TResponse>;
