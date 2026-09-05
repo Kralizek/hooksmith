@@ -1,9 +1,8 @@
 import { type Counter, metrics, trace } from "@opentelemetry/api";
 import type { Config, Event, Listener } from "@hooksmith/core";
+import { enableOpenTelemetry } from "@hooksmith/opentelemetry";
 import { pipe, project } from "@hooksmith/pipeline";
-import { enableOpenTelemetry as enablePipelineOpenTelemetry } from "@hooksmith/pipeline/opentelemetry";
 import { createRuntime, nullLoggerFactory } from "@hooksmith/runtime";
-import { enableOpenTelemetry as enableRuntimeOpenTelemetry } from "@hooksmith/runtime/opentelemetry";
 
 interface MessageData {
   text: string;
@@ -14,8 +13,7 @@ interface PreparedMessage {
   length: number;
 }
 
-enableRuntimeOpenTelemetry({ trace, metrics });
-enablePipelineOpenTelemetry({ trace, metrics });
+enableOpenTelemetry();
 
 const tracer = trace.getTracer("example-extension");
 let messagesHandled: Counter | undefined;
