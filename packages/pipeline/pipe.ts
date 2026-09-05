@@ -74,10 +74,13 @@ export function pipe(
       const transformContext = createTransformContext(context, event);
       let current: unknown = event.data;
 
-      log.debug("Executing pipeline with {transformationCount} transformations", {
-        transformationCount: transformations.length,
-        listener: listener.name ?? "listener",
-      });
+      log.debug(
+        "Executing pipeline with {transformationCount} transformations",
+        {
+          transformationCount: transformations.length,
+          listener: listener.name ?? "listener",
+        },
+      );
 
       for (let index = 0; index < transformations.length; index++) {
         const transformation = transformations[index];
