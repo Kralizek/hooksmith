@@ -1,5 +1,11 @@
 import { assertEquals, assertThrows } from "@std/assert";
-import type { Context, Event, Listener, Logger } from "@hooksmith/core";
+import type {
+  Context,
+  Event,
+  Listener,
+  Logger,
+  LoggerFactory,
+} from "@hooksmith/core";
 import {
   each,
   merge,
@@ -25,13 +31,20 @@ interface Announcement {
 }
 
 const logger: Logger = {
+  trace() {},
   debug() {},
   info() {},
   warn() {},
   error() {},
 };
 
-const context: Context = { log: logger };
+const loggerFactory: LoggerFactory = {
+  getLogger() {
+    return logger;
+  },
+};
+
+const context: Context = { logger: loggerFactory };
 
 const event: Event<PageData> = {
   type: "page.published",

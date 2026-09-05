@@ -1,4 +1,4 @@
-import type { Context } from "@hooksmith/core";
+import type { Context, Logger } from "@hooksmith/core";
 import type {
   HeaderSource,
   HttpBody,
@@ -36,6 +36,7 @@ export async function executeRequest<
 >(
   input: TInput,
   context: TContext,
+  log: Logger,
   options: HttpExecutionOptions<TInput, TContext>,
 ): Promise<HttpExecutionResult<TBody>> {
   const url = await resolve(options.url, input, context);
@@ -51,10 +52,22 @@ export async function executeRequest<
     body = await resolve(options.body, input, context);
   }
 
+  log.debug("Sending {method} request to {url}", {
+    method: options.method,
+    url: url.toString(),
+  });
+
   const response = await fetch(url, {
     method: options.method,
     headers,
     body,
+  });
+
+  log.debug("Received HTTP {status} from {url}", {
+    method: options.method,
+    url: url.toString(),
+    status: response.status,
+    statusText: response.statusText,
   });
 
   return {

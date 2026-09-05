@@ -1,5 +1,11 @@
 import { assertEquals, assertRejects } from "@std/assert";
-import type { Context, Event, Listener, Logger } from "@hooksmith/core";
+import type {
+  Context,
+  Event,
+  Listener,
+  Logger,
+  LoggerFactory,
+} from "@hooksmith/core";
 import {
   caseOf,
   match,
@@ -10,13 +16,20 @@ import {
 } from "./mod.ts";
 
 const logger: Logger = {
+  trace() {},
   debug() {},
   info() {},
   warn() {},
   error() {},
 };
 
-const context: Context = { log: logger };
+const loggerFactory: LoggerFactory = {
+  getLogger() {
+    return logger;
+  },
+};
+
+const context: Context = { logger: loggerFactory };
 
 Deno.test("match selects the first matching case", async () => {
   const selected: string[] = [];

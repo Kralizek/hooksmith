@@ -9,11 +9,15 @@ import type {
 export function httpRequest<TEvent extends Event = Event>(
   options: HttpRequestOptions<TEvent>,
 ): Listener<TEvent> {
+  const name = options.name ??
+    `http-${(options.method ?? "GET").toLowerCase()}`;
+
   return {
-    name: options.name ?? `http-${(options.method ?? "GET").toLowerCase()}`,
+    name,
     async run(event, context): Promise<ListenerResult> {
+      const log = context.logger.getLogger(`HttpListener:${name}`);
       const responseOptions = normalizeResponse(options.response);
-      const { response, report } = await executeRequest(event, context, {
+      const { response, report } = await executeRequest(event, context, log, {
         method: options.method ?? "GET",
         url: options.url,
         headers: options.headers,

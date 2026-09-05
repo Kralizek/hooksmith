@@ -15,15 +15,20 @@ export function fetchEnrichment<
 >(
   options: FetchEnrichmentOptions<TEvent, TResponse>,
 ): EventEnricher<TEvent> {
+  const name = options.name ??
+    `http-${options.method.toLowerCase()}-enrichment`;
+
   return {
-    name: options.name ?? `http-${options.method.toLowerCase()}-enrichment`,
+    name,
     async enrich(event, context): Promise<EventEnrichment> {
+      const log = context.logger.getLogger(`HttpEnricher:${name}`);
       const body = options.body === undefined
         ? undefined
         : jsonBody<TEvent>(options.body);
       const { response } = await executeRequest<TEvent, Context>(
         event,
         context,
+        log,
         {
           method: options.method,
           url: options.url,

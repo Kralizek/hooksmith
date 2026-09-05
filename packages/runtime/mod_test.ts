@@ -1,15 +1,10 @@
 import { assertEquals, assertRejects, assertThrows } from "@std/assert";
-import type { Config, Context, Event, Listener, Logger } from "@hooksmith/core";
-import { createRuntime, hydrateEvent } from "./mod.ts";
+import type { Config, Context, Event, Listener } from "@hooksmith/core";
+import { createLoggerFactory, createRuntime, hydrateEvent } from "./mod.ts";
 
-const logger: Logger = {
-  debug() {},
-  info() {},
-  warn() {},
-  error() {},
+const context: Context = {
+  logger: createLoggerFactory({ minimumLevel: "none", write() {} }),
 };
-
-const context: Context = { log: logger };
 
 function event(): Event {
   return {

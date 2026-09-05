@@ -31,8 +31,11 @@ const normalizePage = project<PageData, PageData>(
 
 const announcementListener: Listener<Event<Announcement>> = {
   name: "publish-announcement",
-  run(event, { log }) {
-    log.info("Announcement ready", event.data);
+  run(event, context) {
+    context.logger.getLogger("Listener:publish-announcement").info(
+      "Announcement ready",
+      { announcement: event.data },
+    );
     return { success: true };
   },
 };
@@ -51,8 +54,11 @@ const announcementPipeline = pipe(
 
 const summaryListener: Listener<Event<{ items: readonly string[] }>> = {
   name: "log-section-summaries",
-  run(event, { log }) {
-    log.info("Section summaries", event.data.items);
+  run(event, context) {
+    context.logger.getLogger("Listener:log-section-summaries").info(
+      "Section summaries",
+      { items: event.data.items },
+    );
     return { success: true };
   },
 };
