@@ -359,7 +359,7 @@ async function executeListeners<TEvent extends Event>(
             "hooksmith.event.type": event.type,
             "hooksmith.route": routeName,
             "hooksmith.listener": listenerName,
-            "hooksmith.status": "error",
+            "hooksmith.status": "failure",
           };
           span.setAttributes(attributes);
           recordListenerMetrics(elapsedSeconds(startedAt), attributes);
