@@ -33,6 +33,7 @@ export type LogProperties = Record<string, unknown>;
 
 /** Source-bound logging contract exposed to Hooksmith components. */
 export interface Logger {
+  trace(template: string, properties?: LogProperties, error?: unknown): void;
   debug(template: string, properties?: LogProperties, error?: unknown): void;
   info(template: string, properties?: LogProperties, error?: unknown): void;
   warn(template: string, properties?: LogProperties, error?: unknown): void;
