@@ -70,11 +70,26 @@ export function pipe(
   return {
     name,
     async run(event, context): Promise<ListenerResult> {
+      const log = context.logger.getLogger(`Pipeline:${name}`);
       const transformContext = createTransformContext(context, event);
       let current: unknown = event.data;
 
+      log.debug("Executing pipeline with {transformationCount} transformations", {
+        transformationCount: transformations.length,
+        listener: listener.name ?? "listener",
+      });
+
       for (let index = 0; index < transformations.length; index++) {
         const transformation = transformations[index];
+        const ordinal = index + 1;
+        const transformationName = "name" in transformation
+          ? transformation.name
+          : undefined;
+
+        log.debug("Executing transformation {transformation}", {
+          transformation: transformationName ?? `#${ordinal}`,
+          index: ordinal,
+        });
 
         try {
           current = await transformation.transform(
@@ -82,14 +97,19 @@ export function pipe(
             transformContext,
           );
         } catch (error) {
-          const ordinal = index + 1;
-          const transformationName = "name" in transformation
-            ? transformation.name
-            : undefined;
           const identity = transformationName === undefined
             ? `Transformation #${ordinal}`
             : `Transformation "${transformationName}"`;
           const message = errorMessage(error);
+
+          log.error(
+            "Transformation {transformation} failed",
+            {
+              transformation: transformationName ?? `#${ordinal}`,
+              index: ordinal,
+            },
+            error,
+          );
 
           return {
             success: false,
@@ -104,9 +124,21 @@ export function pipe(
             },
           };
         }
+
+        log.debug("Transformation {transformation} completed", {
+          transformation: transformationName ?? `#${ordinal}`,
+          index: ordinal,
+        });
       }
 
-      return await listener.run({ ...event, data: current }, context);
+      log.debug("Invoking terminal listener {listener}", {
+        listener: listener.name ?? "listener",
+      });
+      const result = await listener.run({ ...event, data: current }, context);
+      log.debug("Pipeline completed with status {status}", {
+        status: result.success ? "success" : "failure",
+      });
+      return result;
     },
   };
 }
