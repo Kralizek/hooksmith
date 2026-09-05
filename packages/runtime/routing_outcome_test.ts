@@ -1,15 +1,10 @@
 import { assertEquals } from "@std/assert";
-import type { Config, Context, Event, Logger } from "@hooksmith/core";
-import { createRuntime } from "./mod.ts";
+import type { Config, Context, Event } from "@hooksmith/core";
+import { createLoggerFactory, createRuntime } from "./mod.ts";
 
-const logger: Logger = {
-  debug() {},
-  info() {},
-  warn() {},
-  error() {},
+const context: Context = {
+  logger: createLoggerFactory({ minimumLevel: "none", write() {} }),
 };
-
-const context: Context = { log: logger };
 
 const event: Event = {
   type: "page.published",
