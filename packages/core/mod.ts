@@ -51,6 +51,21 @@ export interface LoggerFactory {
   getLogger(source: string): Logger;
 }
 
+const nullLogger: Logger = {
+  trace() {},
+  debug() {},
+  info() {},
+  warn() {},
+  error() {},
+};
+
+/** Logger factory that discards all log entries. */
+export const nullLoggerFactory: LoggerFactory = {
+  getLogger() {
+    return nullLogger;
+  },
+};
+
 /** Shared execution context passed to conditions and listeners. */
 export interface Context {
   logger: LoggerFactory;
