@@ -1,7 +1,4 @@
-import {
-  setPipelineTelemetry,
-  type TelemetryAttributes,
-} from "./telemetry.ts";
+import { setPipelineTelemetry, type TelemetryAttributes } from "./telemetry.ts";
 
 interface OpenTelemetrySpan {
   setAttribute(name: string, value: string | number | boolean): void;
