@@ -31,14 +31,20 @@ export interface EventDocument<TData = unknown> {
 /** Structured properties attached to a log entry. */
 export type LogProperties = Record<string, unknown>;
 
-/** Source-bound logging contract exposed to Hooksmith components. */
-export interface Logger {
+/** Severity methods exposed by a Hooksmith logger. */
+export interface LogMethods {
   trace(template: string, properties?: LogProperties, error?: unknown): void;
   debug(template: string, properties?: LogProperties, error?: unknown): void;
   info(template: string, properties?: LogProperties, error?: unknown): void;
   warn(template: string, properties?: LogProperties, error?: unknown): void;
   error(template: string, properties?: LogProperties, error?: unknown): void;
 }
+
+/** Logging levels supported by Hooksmith. */
+export type LogLevel = keyof LogMethods;
+
+/** Source-bound logging contract exposed to Hooksmith components. */
+export interface Logger extends LogMethods {}
 
 /** Creates loggers bound to the component source emitting log entries. */
 export interface LoggerFactory {
