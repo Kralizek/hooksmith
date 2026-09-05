@@ -17,5 +17,5 @@ log.debug(
 ```
 
 `Logger` exposes `trace`, `debug`, `info`, `warn`, and `error`. `LogLevel` is
-derived from those methods so APIs that accept a log level stay aligned with
-the logger contract.
+derived from those methods so APIs that accept a log level stay aligned with the
+logger contract.
