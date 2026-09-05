@@ -89,7 +89,7 @@ export function renderLogTemplate(
   if (properties === undefined) return template;
 
   return template.replace(/\{([^{}]+)\}/g, (placeholder, key: string) => {
-    if (!(key in properties)) return placeholder;
+    if (!Object.hasOwn(properties, key)) return placeholder;
     return renderLogValue(properties[key]);
   });
 }
