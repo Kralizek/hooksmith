@@ -172,7 +172,7 @@ function logAttributes(record: HooksmithLogRecord): TelemetryAttributes {
   };
 
   for (const [key, value] of Object.entries(record.properties ?? {})) {
-    attributes[key] = toLogAttribute(value);
+    attributes[`hooksmith.log.property.${key}`] = toLogAttribute(value);
   }
 
   if (record.error instanceof Error) {
