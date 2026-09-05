@@ -11,10 +11,8 @@ import type {
 } from "@hooksmith/core";
 import {
   elapsedSeconds,
-  eventDuration,
-  eventsProcessed,
-  listenerDuration,
-  listenerInvocations,
+  recordEventMetrics,
+  recordListenerMetrics,
   tracer,
 } from "./telemetry.ts";
 import type { ListenerReport, RunReport, Runtime } from "./types.ts";
@@ -88,8 +86,7 @@ async function executeEvent<TEvent extends Event>(
           span.setStatus({ code: SpanStatusCode.ERROR });
         }
 
-        eventsProcessed.add(1, attributes);
-        eventDuration.record(elapsedSeconds(startedAt), attributes);
+        recordEventMetrics(elapsedSeconds(startedAt), attributes);
         return report;
       } catch (error) {
         span.recordException(toException(error));
@@ -103,8 +100,7 @@ async function executeEvent<TEvent extends Event>(
           "hooksmith.mode": mode,
           "hooksmith.status": "error",
         };
-        eventsProcessed.add(1, attributes);
-        eventDuration.record(elapsedSeconds(startedAt), attributes);
+        recordEventMetrics(elapsedSeconds(startedAt), attributes);
         throw error;
       } finally {
         span.end();
@@ -351,8 +347,7 @@ async function executeListeners<TEvent extends Event>(
             span.setStatus({ code: SpanStatusCode.ERROR });
           }
 
-          listenerInvocations.add(1, attributes);
-          listenerDuration.record(elapsedSeconds(startedAt), attributes);
+          recordListenerMetrics(elapsedSeconds(startedAt), attributes);
 
           log.debug("Listener {listener} completed with status {status}", {
             listener: listenerName,
@@ -372,8 +367,7 @@ async function executeListeners<TEvent extends Event>(
             "hooksmith.listener": listenerName,
             "hooksmith.status": "error",
           };
-          listenerInvocations.add(1, attributes);
-          listenerDuration.record(elapsedSeconds(startedAt), attributes);
+          recordListenerMetrics(elapsedSeconds(startedAt), attributes);
 
           log.error(
             "Listener {listener} threw while executing route {route}",
