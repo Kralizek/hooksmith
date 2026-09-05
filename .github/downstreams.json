@@ -3,6 +3,7 @@
     "Kralizek/hooksmith-cli",
     "Kralizek/hooksmith-aws",
     "Kralizek/hooksmith-social",
-    "Kralizek/hooksmith-notifications"
+    "Kralizek/hooksmith-notifications",
+    "Kralizek/hooksmith-server"
   ]
 }
