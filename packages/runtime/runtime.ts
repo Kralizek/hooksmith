@@ -67,7 +67,7 @@ async function executeEvent<TEvent extends Event>(
       const conditionName = route.when.name ?? `${routeName}/condition`;
       let matches: boolean;
 
-      log.debug("Evaluating condition {condition} for route {route}", {
+      log.trace("Evaluating condition {condition} for route {route}", {
         condition: conditionName,
         route: routeName,
       });
@@ -85,7 +85,7 @@ async function executeEvent<TEvent extends Event>(
         throw new Error(`Condition ${conditionName} must return a boolean.`);
       }
 
-      log.debug("Condition {condition} evaluated to {matches}", {
+      log.trace("Condition {condition} evaluated to {matches}", {
         condition: conditionName,
         route: routeName,
         matches,
@@ -163,7 +163,7 @@ async function enrichEvent<TEvent extends Event>(
     const enricher = enrichers[index];
     const enricherName = enricher.name ?? `enricher-${index + 1}`;
 
-    log.debug("Executing event enricher {enricher}", { enricher: enricherName });
+    log.trace("Executing event enricher {enricher}", { enricher: enricherName });
 
     let enrichment: unknown;
     try {
@@ -187,7 +187,7 @@ async function enrichEvent<TEvent extends Event>(
       };
     }
 
-    log.debug("Event enricher {enricher} completed", { enricher: enricherName });
+    log.trace("Event enricher {enricher} completed", { enricher: enricherName });
   }
 
   return enrichedEvent;
@@ -211,7 +211,7 @@ async function executeListeners<TEvent extends Event>(
     const listenerName = listener.name ?? `listener-${listenerIndex + 1}`;
 
     if (plan) {
-      log.debug("Planning listener {listener} for route {route}", {
+      log.trace("Planning listener {listener} for route {route}", {
         listener: listenerName,
         route: routeName,
       });
