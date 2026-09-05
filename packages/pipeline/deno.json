@@ -1,5 +1,8 @@
 {
   "name": "@hooksmith/pipeline",
   "version": "0.1.0",
-  "exports": "./mod.ts"
+  "exports": "./mod.ts",
+  "imports": {
+    "@opentelemetry/api": "npm:@opentelemetry/api@^1.9.0"
+  }
 }
