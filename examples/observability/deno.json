@@ -1,0 +1,13 @@
+{
+  "imports": {
+    "@hooksmith/core": "../../packages/core/mod.ts",
+    "@hooksmith/pipeline": "../../packages/pipeline/mod.ts",
+    "@hooksmith/runtime": "../../packages/runtime/mod.ts",
+    "@opentelemetry/api": "npm:@opentelemetry/api@^1.9.0"
+  },
+  "tasks": {
+    "check": "deno check main.ts",
+    "start": "deno run -A main.ts"
+  },
+  "lock": false
+}
