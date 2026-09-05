@@ -3,7 +3,11 @@ import type { Event, Listener, ListenerResult } from "@hooksmith/core";
 import { createTransformContext } from "./context.ts";
 import { errorMessage } from "./errors.ts";
 import type { MergeOperator } from "./merge.ts";
-import { elapsedSeconds, pipelineDuration, tracer } from "./telemetry.ts";
+import {
+  elapsedSeconds,
+  recordPipelineDuration,
+  tracer,
+} from "./telemetry.ts";
 import type { Transformer } from "./transformer.ts";
 
 /** Optional configuration used to assign an explicit pipeline listener name. */
@@ -192,7 +196,7 @@ export function pipe(
             throw error;
           } finally {
             span.setAttribute("hooksmith.status", status);
-            pipelineDuration.record(elapsedSeconds(startedAt), {
+            recordPipelineDuration(elapsedSeconds(startedAt), {
               "hooksmith.event.type": event.type,
               "hooksmith.pipeline": name,
               "hooksmith.status": status,
