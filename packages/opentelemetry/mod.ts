@@ -1,9 +1,9 @@
 import {
+  type Counter,
+  type Histogram,
   metrics,
   SpanStatusCode,
   trace,
-  type Counter,
-  type Histogram,
 } from "@opentelemetry/api";
 import {
   setTelemetry,
@@ -106,7 +106,8 @@ function instrumentKey(
   return `${scope}\u0000${name}\u0000${options?.unit ?? ""}`;
 }
 
-interface HooksmithLogRecord {
+/** Structured Hooksmith log record accepted by the OpenTelemetry log bridge. */
+export interface HooksmithLogRecord {
   level: "trace" | "debug" | "info" | "warn" | "error";
   source: string;
   template: string;
@@ -115,18 +116,16 @@ interface HooksmithLogRecord {
   error?: unknown;
 }
 
-interface OpenTelemetryLogger {
-  emit(record: {
-    severityNumber?: number;
-    severityText?: string;
-    body?: string;
-    attributes?: TelemetryAttributes;
-  }): void;
-}
-
 /** Experimental OpenTelemetry Logs API supplied by the consumer. */
 export interface OpenTelemetryLogsApi {
-  getLogger(name: string): OpenTelemetryLogger;
+  getLogger(name: string): {
+    emit(record: {
+      severityNumber?: number;
+      severityText?: string;
+      body?: string;
+      attributes?: TelemetryAttributes;
+    }): void;
+  };
 }
 
 /**
@@ -138,7 +137,7 @@ export interface OpenTelemetryLogsApi {
 export function createOpenTelemetryLogWriter(
   logs: OpenTelemetryLogsApi,
 ): (record: HooksmithLogRecord) => void {
-  let logger: OpenTelemetryLogger | undefined;
+  let logger: ReturnType<OpenTelemetryLogsApi["getLogger"]> | undefined;
 
   return (record) => {
     logger ??= logs.getLogger("@hooksmith/runtime");
