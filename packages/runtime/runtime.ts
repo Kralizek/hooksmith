@@ -127,7 +127,8 @@ async function executeEvent<TEvent extends Event>(
     : config.fallback === undefined
     ? "unmatched"
     : "fallback";
-  const success = plan || results.every((result) => result.status === "success");
+  const success = plan ||
+    results.every((result) => result.status === "success");
 
   log.debug("Event {eventType} completed with outcome {outcome}", {
     eventType: enrichedEvent.type,
@@ -163,7 +164,9 @@ async function enrichEvent<TEvent extends Event>(
     const enricher = enrichers[index];
     const enricherName = enricher.name ?? `enricher-${index + 1}`;
 
-    log.trace("Executing event enricher {enricher}", { enricher: enricherName });
+    log.trace("Executing event enricher {enricher}", {
+      enricher: enricherName,
+    });
 
     let enrichment: unknown;
     try {
@@ -187,7 +190,9 @@ async function enrichEvent<TEvent extends Event>(
       };
     }
 
-    log.trace("Event enricher {enricher} completed", { enricher: enricherName });
+    log.trace("Event enricher {enricher} completed", {
+      enricher: enricherName,
+    });
   }
 
   return enrichedEvent;
