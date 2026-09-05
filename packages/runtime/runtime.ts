@@ -1,8 +1,4 @@
-import {
-  type Attributes,
-  type Span,
-  SpanStatusCode,
-} from "@opentelemetry/api";
+import { type Attributes, type Span, SpanStatusCode } from "@opentelemetry/api";
 import type {
   Config,
   Context,
