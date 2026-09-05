@@ -1,21 +1,13 @@
 import { assertEquals, assertRejects } from "@std/assert";
-import type { Context, Event, Logger } from "@hooksmith/core";
+import {
+  type Context,
+  type Event,
+  nullLoggerFactory,
+} from "@hooksmith/core";
 import { fetchEnrichment, getEnrichment } from "./mod.ts";
 
-const logger: Logger = {
-  trace() {},
-  debug() {},
-  info() {},
-  warn() {},
-  error() {},
-};
-
 const context: Context = {
-  logger: {
-    getLogger() {
-      return logger;
-    },
-  },
+  logger: nullLoggerFactory,
 };
 
 function event(): Event<{ tenantId: string }> {
