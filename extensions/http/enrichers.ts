@@ -15,7 +15,8 @@ export function fetchEnrichment<
 >(
   options: FetchEnrichmentOptions<TEvent, TResponse>,
 ): EventEnricher<TEvent> {
-  const name = options.name ?? `http-${options.method.toLowerCase()}-enrichment`;
+  const name = options.name ??
+    `http-${options.method.toLowerCase()}-enrichment`;
 
   return {
     name,
