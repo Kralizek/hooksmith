@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import type { Logger } from "@hooksmith/core";
+import { nullLoggerFactory } from "@hooksmith/core";
 import type { Transformer } from "./mod.ts";
 import { each } from "./mod.ts";
 
@@ -14,21 +14,10 @@ Deno.test("each prefers transformer semantics for structurally ambiguous operati
       throw new Error("run should not be called");
     },
   };
-  const logger: Logger = {
-    trace() {},
-    debug() {},
-    info() {},
-    warn() {},
-    error() {},
-  };
 
   const transformer = each(operation);
   const result = await transformer.transform(["one", "three"], {
-    logger: {
-      getLogger() {
-        return logger;
-      },
-    },
+    logger: nullLoggerFactory,
     originalData: "original",
   });
 
