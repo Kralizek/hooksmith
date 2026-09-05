@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { nullLoggerFactory } from "@hooksmith/core";
+import { nullLoggerFactory } from "@hooksmith/runtime";
 import type { Transformer } from "./mod.ts";
 import { each } from "./mod.ts";
 
