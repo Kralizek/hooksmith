@@ -84,18 +84,19 @@ Deno.test("OpenTelemetry composes consumer, Hooksmith, pipeline, and extension t
     });
 
     const spans = spanExporter.getFinishedSpans();
-    const byName = new Map(spans.map((span) => [span.name, span]));
-    const consumer = byName.get("consumer.operation");
-    const eventSpan = byName.get("hooksmith.event.process");
-    const listenerSpan = byName.get("hooksmith.listener");
-    const pipelineSpan = byName.get("hooksmith.pipeline");
-    const extensionSpan = byName.get("extension.work");
+    const singleSpan = (name: string) => {
+      const matches = spans.filter((span) => span.name === name);
+      assertEquals(matches.length, 1, `Expected exactly one span named ${name}`);
+      const [span] = matches;
+      assert(span);
+      return span;
+    };
 
-    assert(consumer);
-    assert(eventSpan);
-    assert(listenerSpan);
-    assert(pipelineSpan);
-    assert(extensionSpan);
+    const consumer = singleSpan("consumer.operation");
+    const eventSpan = singleSpan("hooksmith.event.process");
+    const listenerSpan = singleSpan("hooksmith.listener");
+    const pipelineSpan = singleSpan("hooksmith.pipeline");
+    const extensionSpan = singleSpan("extension.work");
 
     assertEquals(
       eventSpan.parentSpanContext?.spanId,
