@@ -25,8 +25,7 @@ Deno.test("logger factory binds the source and renders structured properties", (
     level: "debug",
     source: "HttpListener:slack",
     template: "Sending {method} request to {url}",
-    message:
-      "Sending POST request to https://slack.com/api/chat.postMessage",
+    message: "Sending POST request to https://slack.com/api/chat.postMessage",
     properties: {
       method: "POST",
       url: "https://slack.com/api/chat.postMessage",
