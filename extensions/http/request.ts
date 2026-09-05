@@ -57,21 +57,11 @@ export async function executeRequest<
     url: url.toString(),
   });
 
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      method: options.method,
-      headers,
-      body,
-    });
-  } catch (error) {
-    log.error(
-      "{method} request to {url} failed",
-      { method: options.method, url: url.toString() },
-      error,
-    );
-    throw error;
-  }
+  const response = await fetch(url, {
+    method: options.method,
+    headers,
+    body,
+  });
 
   log.debug("Received HTTP {status} from {url}", {
     method: options.method,
