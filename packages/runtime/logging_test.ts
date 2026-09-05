@@ -50,6 +50,22 @@ Deno.test("logger factory filters entries below the minimum level", () => {
   assertEquals(records.map((record) => record.level), ["debug", "info"]);
 });
 
+Deno.test("none minimum level disables all logging", () => {
+  const records: LogRecord[] = [];
+  const log = createLoggerFactory({
+    minimumLevel: "none",
+    write: (record) => records.push(record),
+  }).getLogger("Runtime");
+
+  log.trace("trace");
+  log.debug("debug");
+  log.info("info");
+  log.warn("warn");
+  log.error("error");
+
+  assertEquals(records, []);
+});
+
 Deno.test("logger factory preserves the dedicated error value", () => {
   const records: LogRecord[] = [];
   const error = new Error("boom");
