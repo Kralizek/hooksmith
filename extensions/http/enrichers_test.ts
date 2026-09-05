@@ -1,9 +1,5 @@
 import { assertEquals, assertRejects } from "@std/assert";
-import {
-  type Context,
-  type Event,
-  nullLoggerFactory,
-} from "@hooksmith/core";
+import { type Context, type Event, nullLoggerFactory } from "@hooksmith/core";
 import { fetchEnrichment, getEnrichment } from "./mod.ts";
 
 const context: Context = {
