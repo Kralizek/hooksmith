@@ -3,11 +3,7 @@ import type { Event, Listener, ListenerResult } from "@hooksmith/core";
 import { createTransformContext } from "./context.ts";
 import { errorMessage } from "./errors.ts";
 import type { MergeOperator } from "./merge.ts";
-import {
-  elapsedSeconds,
-  recordPipelineDuration,
-  tracer,
-} from "./telemetry.ts";
+import { elapsedSeconds, recordPipelineDuration, tracer } from "./telemetry.ts";
 import type { Transformer } from "./transformer.ts";
 
 /** Optional configuration used to assign an explicit pipeline listener name. */
