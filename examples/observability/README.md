@@ -19,6 +19,7 @@ extension-owned `example.publish` span nested below them. The console exporter
 also prints the Hooksmith runtime/pipeline metrics and the example extension's
 `example.messages.handled` counter.
 
-Without `OTEL_DENO=true`, the same explicitly instrumented program still runs and
-the consumer-supplied OpenTelemetry API remains effectively no-op. Applications
-that do not enable the Hooksmith adapters need no OpenTelemetry imports at all.
+Without `OTEL_DENO=true`, the same explicitly instrumented program still runs
+and the consumer-supplied OpenTelemetry API remains effectively no-op.
+Applications that do not enable the Hooksmith adapters need no OpenTelemetry
+imports at all.
