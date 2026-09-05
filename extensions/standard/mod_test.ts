@@ -1,10 +1,11 @@
 import { assertEquals } from "@std/assert";
-import type {
-  Config,
-  Context,
-  Event,
-  Logger,
-  LoggerFactory,
+import {
+  type Config,
+  type Context,
+  type Event,
+  type Logger,
+  type LoggerFactory,
+  nullLoggerFactory,
 } from "@hooksmith/core";
 import {
   all,
@@ -41,21 +42,7 @@ const event: Event<PageData> = {
   },
 };
 
-const noopLogger: Logger = {
-  trace() {},
-  debug() {},
-  info() {},
-  warn() {},
-  error() {},
-};
-
-const loggerFactory: LoggerFactory = {
-  getLogger() {
-    return noopLogger;
-  },
-};
-
-const context: Context = { logger: loggerFactory };
+const context: Context = { logger: nullLoggerFactory };
 
 Deno.test("matches event and resource fields", async () => {
   assertEquals(
