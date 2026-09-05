@@ -1,10 +1,6 @@
 import { assertEquals } from "@std/assert";
-import {
-  type Context,
-  type Event,
-  type Listener,
-  nullLoggerFactory,
-} from "@hooksmith/core";
+import type { Context, Event, Listener } from "@hooksmith/core";
+import { nullLoggerFactory } from "@hooksmith/runtime";
 import { each, pipe, split } from "./mod.ts";
 
 const context: Context = { logger: nullLoggerFactory };
