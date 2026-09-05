@@ -1,4 +1,9 @@
-import { type Attributes, type Histogram, metrics, trace } from "@opentelemetry/api";
+import {
+  type Attributes,
+  type Histogram,
+  metrics,
+  trace,
+} from "@opentelemetry/api";
 
 export const tracer = trace.getTracer("@hooksmith/pipeline");
 
