@@ -1,5 +1,11 @@
 import { assertEquals } from "@std/assert";
-import type { Config, Context, Event, Logger } from "@hooksmith/core";
+import type {
+  Config,
+  Context,
+  Event,
+  Logger,
+  LoggerFactory,
+} from "@hooksmith/core";
 import {
   all,
   any,
@@ -35,14 +41,21 @@ const event: Event<PageData> = {
   },
 };
 
-const logger: Logger = {
+const noopLogger: Logger = {
+  trace() {},
   debug() {},
   info() {},
   warn() {},
   error() {},
 };
 
-const context: Context = { log: logger };
+const loggerFactory: LoggerFactory = {
+  getLogger() {
+    return noopLogger;
+  },
+};
+
+const context: Context = { logger: loggerFactory };
 
 Deno.test("matches event and resource fields", async () => {
   assertEquals(
@@ -153,19 +166,33 @@ Deno.test("typed configs can contextualize data predicates", () => {
 
 Deno.test("logs events at the requested level", async () => {
   const calls: unknown[][] = [];
+  let source: string | undefined;
   const testLogger: Logger = {
+    trace: (...args) => calls.push(["trace", ...args]),
     debug: (...args) => calls.push(["debug", ...args]),
     info: (...args) => calls.push(["info", ...args]),
     warn: (...args) => calls.push(["warn", ...args]),
     error: (...args) => calls.push(["error", ...args]),
   };
+  const testLoggerFactory: LoggerFactory = {
+    getLogger(currentSource) {
+      source = currentSource;
+      return testLogger;
+    },
+  };
 
-  const result = await logEvent("warn").run(event, { log: testLogger });
+  const result = await logEvent("warn").run(event, {
+    logger: testLoggerFactory,
+  });
 
+  assertEquals(source, "LogListener:log-event");
   assertEquals(calls.length, 1);
   assertEquals(calls[0][0], "warn");
-  assertEquals(calls[0][1], "Event page.published");
-  assertEquals(calls[0][2], event);
+  assertEquals(calls[0][1], "Event {eventType}");
+  assertEquals(calls[0][2], {
+    eventType: "page.published",
+    event,
+  });
   assertEquals(result, {
     success: true,
     message: "Logged page.published",
