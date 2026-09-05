@@ -59,8 +59,8 @@ Hooksmith currently emits these synchronous instruments:
 
 | Instrument                      | Type      | Unit           |
 | ------------------------------- | --------- | -------------- |
-| `hooksmith.event.processed`      | Counter   | `{event}`      |
-| `hooksmith.event.duration`       | Histogram | `s`            |
+| `hooksmith.event.processed`     | Counter   | `{event}`      |
+| `hooksmith.event.duration`      | Histogram | `s`            |
 | `hooksmith.listener.invocation` | Counter   | `{invocation}` |
 | `hooksmith.listener.duration`   | Histogram | `s`            |
 | `hooksmith.pipeline.duration`   | Histogram | `s`            |
