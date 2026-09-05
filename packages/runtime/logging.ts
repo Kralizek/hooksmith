@@ -50,7 +50,9 @@ export const nullLoggerFactory: LoggerFactory = {
  */
 export function createConsoleLogWriter(): LogWriter {
   return (record) => {
-    const values: unknown[] = [`[${record.source}] ${record.message}`];
+    const values: unknown[] = [
+      `[${record.level.toUpperCase()}] [${record.source}] ${record.message}`,
+    ];
     if (record.properties !== undefined) values.push(record.properties);
     if (record.error !== undefined) values.push(record.error);
 
