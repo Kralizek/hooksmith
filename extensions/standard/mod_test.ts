@@ -6,6 +6,7 @@ import type {
   Logger,
   LoggerFactory,
 } from "@hooksmith/core";
+import { nullLoggerFactory } from "@hooksmith/runtime";
 import {
   all,
   any,
@@ -41,21 +42,7 @@ const event: Event<PageData> = {
   },
 };
 
-const noopLogger: Logger = {
-  trace() {},
-  debug() {},
-  info() {},
-  warn() {},
-  error() {},
-};
-
-const loggerFactory: LoggerFactory = {
-  getLogger() {
-    return noopLogger;
-  },
-};
-
-const context: Context = { logger: loggerFactory };
+const context: Context = { logger: nullLoggerFactory };
 
 Deno.test("matches event and resource fields", async () => {
   assertEquals(

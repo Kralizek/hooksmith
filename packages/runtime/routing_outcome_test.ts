@@ -1,9 +1,9 @@
 import { assertEquals } from "@std/assert";
 import type { Config, Context, Event } from "@hooksmith/core";
-import { createLoggerFactory, createRuntime } from "./mod.ts";
+import { createRuntime, nullLoggerFactory } from "./mod.ts";
 
 const context: Context = {
-  logger: createLoggerFactory({ minimumLevel: "none", write() {} }),
+  logger: nullLoggerFactory,
 };
 
 const event: Event = {
