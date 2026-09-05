@@ -22,8 +22,11 @@ export default {
   fallback: [
     {
       name: "log-unhandled",
-      run(event, { log }) {
-        log.warn(`No route matched ${event.type}`);
+      run(event, context) {
+        context.logger.getLogger("FallbackListener:log-unhandled").warn(
+          "No route matched {eventType}",
+          { eventType: event.type },
+        );
         return { success: true, message: "Unhandled event recorded" };
       },
     },
