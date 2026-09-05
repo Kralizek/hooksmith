@@ -1,11 +1,14 @@
 import type {
   Logger,
   LoggerFactory,
+  LogLevel,
   LogProperties,
 } from "@hooksmith/core";
 
-/** Logging levels supported by the default Hooksmith logger factory. */
-export type LogLevel = "trace" | "debug" | "info" | "warn" | "error";
+export type { LogLevel } from "@hooksmith/core";
+
+/** Logging filter values supported by the default Hooksmith logger factory. */
+export type LogLevelFilter = LogLevel | "none";
 
 /** Normalized log entry produced by the default Hooksmith logger factory. */
 export interface LogRecord {
@@ -19,16 +22,17 @@ export interface LogRecord {
 
 /** Options used to create the default Hooksmith logger factory. */
 export interface LoggerFactoryOptions {
-  minimumLevel?: LogLevel;
+  minimumLevel?: LogLevelFilter;
   write(record: LogRecord): void;
 }
 
-const levelOrder: Record<LogLevel, number> = {
+const levelOrder: Record<LogLevelFilter, number> = {
   trace: 0,
   debug: 1,
   info: 2,
   warn: 3,
   error: 4,
+  none: 5,
 };
 
 /**
