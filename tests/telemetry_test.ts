@@ -1,9 +1,5 @@
 import { assert, assertEquals } from "@std/assert";
-import {
-  context,
-  metrics,
-  trace,
-} from "npm:@opentelemetry/api@^1.9.0";
+import { context, metrics, trace } from "npm:@opentelemetry/api@^1.9.0";
 import { AsyncLocalStorageContextManager } from "npm:@opentelemetry/context-async-hooks@^2.1.0";
 import {
   BasicTracerProvider,
@@ -100,10 +96,22 @@ Deno.test("OpenTelemetry composes consumer, Hooksmith, pipeline, and extension t
     assert(pipelineSpan);
     assert(extensionSpan);
 
-    assertEquals(eventSpan.parentSpanContext?.spanId, consumer.spanContext().spanId);
-    assertEquals(listenerSpan.parentSpanContext?.spanId, eventSpan.spanContext().spanId);
-    assertEquals(pipelineSpan.parentSpanContext?.spanId, listenerSpan.spanContext().spanId);
-    assertEquals(extensionSpan.parentSpanContext?.spanId, pipelineSpan.spanContext().spanId);
+    assertEquals(
+      eventSpan.parentSpanContext?.spanId,
+      consumer.spanContext().spanId,
+    );
+    assertEquals(
+      listenerSpan.parentSpanContext?.spanId,
+      eventSpan.spanContext().spanId,
+    );
+    assertEquals(
+      pipelineSpan.parentSpanContext?.spanId,
+      listenerSpan.spanContext().spanId,
+    );
+    assertEquals(
+      extensionSpan.parentSpanContext?.spanId,
+      pipelineSpan.spanContext().spanId,
+    );
 
     await metricReader.forceFlush();
     const metricNames = metricExporter.getMetrics()
