@@ -5,6 +5,7 @@ import type {
   LogProperties,
 } from "@hooksmith/core";
 
+export { nullLoggerFactory } from "@hooksmith/core";
 export type { LogLevel } from "@hooksmith/core";
 
 /** Logging filter values supported by the default Hooksmith logger factory. */
@@ -28,21 +29,6 @@ export interface LoggerFactoryOptions {
   minimumLevel?: LogLevelFilter;
   write: LogWriter;
 }
-
-const nullLogger: Logger = {
-  trace() {},
-  debug() {},
-  info() {},
-  warn() {},
-  error() {},
-};
-
-/** Logger factory that discards all log entries. */
-export const nullLoggerFactory: LoggerFactory = {
-  getLogger() {
-    return nullLogger;
-  },
-};
 
 /**
  * Creates a console-backed writer. Deno can capture these console calls into
