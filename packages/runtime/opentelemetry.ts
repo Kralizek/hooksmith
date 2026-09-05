@@ -1,8 +1,5 @@
 import type { LogRecord, LogWriter } from "./logging.ts";
-import {
-  setRuntimeTelemetry,
-  type TelemetryAttributes,
-} from "./telemetry.ts";
+import { setRuntimeTelemetry, type TelemetryAttributes } from "./telemetry.ts";
 
 interface OpenTelemetrySpan {
   setAttribute(name: string, value: string | number | boolean): void;
@@ -34,7 +31,10 @@ interface OpenTelemetryHistogram {
 }
 
 interface OpenTelemetryMeter {
-  createCounter(name: string, options?: { unit?: string }): OpenTelemetryCounter;
+  createCounter(
+    name: string,
+    options?: { unit?: string },
+  ): OpenTelemetryCounter;
   createHistogram(
     name: string,
     options?: { unit?: string },
