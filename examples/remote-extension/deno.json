@@ -1,6 +1,6 @@
 {
   "imports": {
-    "@hooksmith/core": "../../packages/core/mod.ts",
+    "@hooksmith/core": "jsr:@hooksmith/core@^0.2.0",
     "hooksmith-test-extension": "https://raw.githubusercontent.com/Kralizek/hooksmith-test-extension/ceae29a9e8fdb7507e32eed1b87171a4c602c2b2/mod.ts"
   },
   "minimumDependencyAge": 0,
