@@ -32,15 +32,15 @@ rendering and minimum-level filtering while the host decides how normalized log
 records are written.
 
 ```ts
-import { createLoggerFactory, createRuntime } from "@hooksmith/runtime";
+import {
+  createConsoleLogWriter,
+  createLoggerFactory,
+  createRuntime,
+} from "@hooksmith/runtime";
 
 const logger = createLoggerFactory({
   minimumLevel: "debug",
-  write(record) {
-    console.error(
-      `[${record.level.toUpperCase()}] [${record.source}] ${record.message}`,
-    );
-  },
+  write: createConsoleLogWriter(),
 });
 
 const runtime = createRuntime(config, { logger });
@@ -58,3 +58,32 @@ Missing template properties are left visible in the rendered message.
 Framework components use stable source names. Named component instances qualify
 the component type with their configured name, for example `HttpListener:slack`
 or `Pipeline:announcement`.
+
+`nullLoggerFactory` provides a reusable no-op logger for hosts, tests, and
+samples that intentionally do not want log output.
+
+## OpenTelemetry
+
+OpenTelemetry is fully opt-in. The base runtime package has no OpenTelemetry
+dependency and uses the shared no-op telemetry backend from `@hooksmith/core` by
+default.
+
+Consumers that want Hooksmith traces and metrics enable the dedicated
+integration package once:
+
+```ts
+import { enableOpenTelemetry } from "@hooksmith/opentelemetry";
+
+enableOpenTelemetry();
+```
+
+That shared backend covers runtime, pipeline, and other Hooksmith packages that
+emit telemetry through core. The integration does not install an SDK, provider,
+exporter, or collector.
+
+With Deno's built-in OpenTelemetry integration, `OTEL_DENO=true` can provide the
+registered provider and exporter.
+
+See [`../../docs/observability.md`](../../docs/observability.md) for the trace
+model, metric names, provider setup guidance, logging paths, and extension
+instrumentation example.

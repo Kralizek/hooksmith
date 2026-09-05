@@ -20,10 +20,58 @@ export interface LogRecord {
   error?: unknown;
 }
 
+/** Sink used by the default Hooksmith logger factory. */
+export type LogWriter = (record: LogRecord) => void;
+
 /** Options used to create the default Hooksmith logger factory. */
 export interface LoggerFactoryOptions {
   minimumLevel?: LogLevelFilter;
-  write(record: LogRecord): void;
+  write: LogWriter;
+}
+
+const nullLogger: Logger = {
+  trace() {},
+  debug() {},
+  info() {},
+  warn() {},
+  error() {},
+};
+
+/** Logger factory that discards all log entries. */
+export const nullLoggerFactory: LoggerFactory = {
+  getLogger() {
+    return nullLogger;
+  },
+};
+
+/**
+ * Creates a console-backed writer. Deno can capture these console calls into
+ * its OpenTelemetry pipeline when built-in telemetry is enabled.
+ */
+export function createConsoleLogWriter(): LogWriter {
+  return (record) => {
+    const values: unknown[] = [
+      `[${record.level.toUpperCase()}] [${record.source}] ${record.message}`,
+    ];
+    if (record.properties !== undefined) values.push(record.properties);
+    if (record.error !== undefined) values.push(record.error);
+
+    switch (record.level) {
+      case "trace":
+      case "debug":
+        console.debug(...values);
+        break;
+      case "info":
+        console.info(...values);
+        break;
+      case "warn":
+        console.warn(...values);
+        break;
+      case "error":
+        console.error(...values);
+        break;
+    }
+  };
 }
 
 const levelOrder: Record<LogLevelFilter, number> = {

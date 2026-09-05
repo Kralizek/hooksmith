@@ -2,6 +2,11 @@ import type { Event, Listener, ListenerResult } from "@hooksmith/core";
 import { createTransformContext } from "./context.ts";
 import { errorMessage } from "./errors.ts";
 import type { MergeOperator } from "./merge.ts";
+import {
+  elapsedSeconds,
+  recordPipelineDuration,
+  startActiveSpan,
+} from "./telemetry.ts";
 import type { Transformer } from "./transformer.ts";
 
 /** Optional configuration used to assign an explicit pipeline listener name. */
@@ -72,76 +77,125 @@ export function pipe(
     async run(event, context): Promise<ListenerResult> {
       const log = context.logger.getLogger(`Pipeline:${name}`);
       const transformContext = createTransformContext(context, event);
-      let current: unknown = event.data;
+      const startedAt = performance.now();
+      let status = "success";
 
-      log.debug(
-        "Executing pipeline with {transformationCount} transformations",
+      return await startActiveSpan(
+        "hooksmith.pipeline",
         {
-          transformationCount: transformations.length,
-          listener: listener.name ?? "listener",
+          "hooksmith.event.type": event.type,
+          "hooksmith.pipeline": name,
+          "hooksmith.listener": listener.name ?? "listener",
+          "hooksmith.transformation.count": transformations.length,
+        },
+        async (span) => {
+          let current: unknown = event.data;
+
+          try {
+            log.debug(
+              "Executing pipeline with {transformationCount} transformations",
+              {
+                transformationCount: transformations.length,
+                listener: listener.name ?? "listener",
+              },
+            );
+
+            for (let index = 0; index < transformations.length; index++) {
+              const transformation = transformations[index];
+              const ordinal = index + 1;
+              const transformationName = "name" in transformation
+                ? transformation.name
+                : undefined;
+              const identity = transformationName ?? `#${ordinal}`;
+
+              log.trace("Executing transformation {transformation}", {
+                transformation: identity,
+                index: ordinal,
+              });
+
+              try {
+                current = await transformation.transform(
+                  current as never,
+                  transformContext,
+                );
+              } catch (error) {
+                const label = transformationName === undefined
+                  ? `Transformation #${ordinal}`
+                  : `Transformation "${transformationName}"`;
+                const message = errorMessage(error);
+                status = "failure";
+
+                span.addEvent("hooksmith.transformation.failed", {
+                  "hooksmith.transformation": identity,
+                  "hooksmith.transformation.index": ordinal,
+                });
+                span.recordException(toException(error));
+                span.setError(message);
+
+                log.error(
+                  "Transformation {transformation} failed",
+                  {
+                    transformation: identity,
+                    index: ordinal,
+                  },
+                  error,
+                );
+
+                return {
+                  success: false,
+                  message: `${label} failed: ${message}`,
+                  data: {
+                    stage: "transform",
+                    index: ordinal,
+                    ...(transformationName === undefined
+                      ? {}
+                      : { name: transformationName }),
+                    error: message,
+                  },
+                };
+              }
+
+              log.trace("Transformation {transformation} completed", {
+                transformation: identity,
+                index: ordinal,
+              });
+              span.addEvent("hooksmith.transformation.completed", {
+                "hooksmith.transformation": identity,
+                "hooksmith.transformation.index": ordinal,
+              });
+            }
+
+            log.debug("Invoking terminal listener {listener}", {
+              listener: listener.name ?? "listener",
+            });
+            const result = await listener.run(
+              { ...event, data: current },
+              context,
+            );
+            status = result.success ? "success" : "failure";
+            span.setAttribute("hooksmith.status", status);
+            if (!result.success) {
+              span.setError();
+            }
+
+            log.debug("Pipeline completed with status {status}", { status });
+            return result;
+          } catch (error) {
+            status = "error";
+            span.recordException(toException(error));
+            span.setError(errorMessage(error));
+            throw error;
+          } finally {
+            span.setAttribute("hooksmith.status", status);
+            recordPipelineDuration(elapsedSeconds(startedAt), {
+              "hooksmith.event.type": event.type,
+              "hooksmith.pipeline": name,
+              "hooksmith.status": status,
+            });
+            span.end();
+          }
         },
       );
-
-      for (let index = 0; index < transformations.length; index++) {
-        const transformation = transformations[index];
-        const ordinal = index + 1;
-        const transformationName = "name" in transformation
-          ? transformation.name
-          : undefined;
-
-        log.trace("Executing transformation {transformation}", {
-          transformation: transformationName ?? `#${ordinal}`,
-          index: ordinal,
-        });
-
-        try {
-          current = await transformation.transform(
-            current as never,
-            transformContext,
-          );
-        } catch (error) {
-          const identity = transformationName === undefined
-            ? `Transformation #${ordinal}`
-            : `Transformation "${transformationName}"`;
-          const message = errorMessage(error);
-
-          log.error(
-            "Transformation {transformation} failed",
-            {
-              transformation: transformationName ?? `#${ordinal}`,
-              index: ordinal,
-            },
-            error,
-          );
-
-          return {
-            success: false,
-            message: `${identity} failed: ${message}`,
-            data: {
-              stage: "transform",
-              index: ordinal,
-              ...(transformationName === undefined
-                ? {}
-                : { name: transformationName }),
-              error: message,
-            },
-          };
-        }
-
-        log.trace("Transformation {transformation} completed", {
-          transformation: transformationName ?? `#${ordinal}`,
-          index: ordinal,
-        });
-      }
-
-      log.debug("Invoking terminal listener {listener}", {
-        listener: listener.name ?? "listener",
-      });
-      const result = await listener.run({ ...event, data: current }, context);
-      log.debug("Pipeline completed with status {status}", {
-        status: result.success ? "success" : "failure",
-      });
-      return result;
     },
   };
 }
@@ -150,4 +204,10 @@ function isPipeOptions(value: unknown): value is PipeOptions {
   return typeof value === "object" && value !== null &&
     "name" in value && typeof value.name === "string" &&
     !("transform" in value) && !("run" in value);
+}
+
+function toException(error: unknown): Error {
+  return error instanceof Error
+    ? error
+    : new Error(String(error), { cause: error });
 }

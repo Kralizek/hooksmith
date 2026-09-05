@@ -7,7 +7,15 @@ import type {
   ListenerResult,
   Logger,
   Route,
+  TelemetryAttributes,
+  TelemetrySpan,
 } from "@hooksmith/core";
+import {
+  elapsedSeconds,
+  recordEventMetrics,
+  recordListenerMetrics,
+  startActiveSpan,
+} from "./telemetry.ts";
 import type { ListenerReport, RunReport, Runtime } from "./types.ts";
 import {
   assertConfig,
@@ -45,6 +53,69 @@ async function executeEvent<TEvent extends Event>(
   log: Logger,
   plan: boolean,
 ): Promise<RunReport> {
+  const mode = plan ? "plan" : "run";
+  const startedAt = performance.now();
+
+  return await startActiveSpan(
+    plan ? "hooksmith.event.plan" : "hooksmith.event.process",
+    {
+      "hooksmith.event.type": event.type,
+      "hooksmith.mode": mode,
+    },
+    async (span) => {
+      try {
+        const report = await executeEventCore(
+          event,
+          config,
+          context,
+          log,
+          plan,
+          span,
+        );
+        const status = report.success ? "success" : "failure";
+        const attributes: TelemetryAttributes = {
+          "hooksmith.event.type": event.type,
+          "hooksmith.mode": mode,
+          ...(report.outcome === undefined
+            ? {}
+            : { "hooksmith.outcome": report.outcome }),
+          "hooksmith.status": status,
+        };
+
+        span.setAttributes(attributes);
+        if (!report.success) {
+          span.setError();
+        }
+
+        recordEventMetrics(elapsedSeconds(startedAt), attributes);
+        return report;
+      } catch (error) {
+        span.recordException(toException(error));
+        span.setError(errorMessage(error));
+
+        const attributes: TelemetryAttributes = {
+          "hooksmith.event.type": event.type,
+          "hooksmith.mode": mode,
+          "hooksmith.status": "error",
+        };
+        span.setAttributes(attributes);
+        recordEventMetrics(elapsedSeconds(startedAt), attributes);
+        throw error;
+      } finally {
+        span.end();
+      }
+    },
+  );
+}
+
+async function executeEventCore<TEvent extends Event>(
+  event: TEvent,
+  config: Config<TEvent>,
+  context: Context,
+  log: Logger,
+  plan: boolean,
+  span: TelemetrySpan,
+): Promise<RunReport> {
   log.debug("{mode} event {eventType}", {
     mode: plan ? "Planning" : "Processing",
     eventType: event.type,
@@ -55,6 +126,7 @@ async function executeEvent<TEvent extends Event>(
     config.enrichers ?? [],
     context,
     log,
+    span,
   );
   const results: ListenerReport[] = [];
   let matched = false;
@@ -90,6 +162,11 @@ async function executeEvent<TEvent extends Event>(
         route: routeName,
         matches,
       });
+      span.addEvent("hooksmith.condition.evaluated", {
+        "hooksmith.condition": conditionName,
+        "hooksmith.route": routeName,
+        "hooksmith.matches": matches,
+      });
 
       if (!matches) {
         continue;
@@ -98,6 +175,9 @@ async function executeEvent<TEvent extends Event>(
 
     matched = true;
     log.debug("Route {route} matched", { route: routeName });
+    span.addEvent("hooksmith.route.matched", {
+      "hooksmith.route": routeName,
+    });
     await executeListeners(
       route.listeners,
       routeName,
@@ -111,6 +191,7 @@ async function executeEvent<TEvent extends Event>(
 
   if (!matched && config.fallback !== undefined) {
     log.debug("No route matched; executing fallback listeners");
+    span.addEvent("hooksmith.fallback.selected");
     await executeListeners(
       config.fallback,
       "fallback",
@@ -157,6 +238,7 @@ async function enrichEvent<TEvent extends Event>(
   enrichers: EventEnricher<TEvent>[],
   context: Context,
   log: Logger,
+  span: TelemetrySpan,
 ): Promise<TEvent> {
   let enrichedEvent = event;
 
@@ -192,6 +274,9 @@ async function enrichEvent<TEvent extends Event>(
 
     log.trace("Event enricher {enricher} completed", {
       enricher: enricherName,
+    });
+    span.addEvent("hooksmith.enricher.completed", {
+      "hooksmith.enricher": enricherName,
     });
   }
 
@@ -233,29 +318,68 @@ async function executeListeners<TEvent extends Event>(
       route: routeName,
     });
 
-    try {
-      const result = await listener.run(event, context);
-      assertListenerResult(result, routeName, listenerName);
-      const report = toListenerReport(routeName, listenerName, result);
-      results.push(report);
-      log.debug("Listener {listener} completed with status {status}", {
-        listener: listenerName,
-        route: routeName,
-        status: report.status,
-      });
-    } catch (error) {
-      log.error(
-        "Listener {listener} threw while executing route {route}",
-        { listener: listenerName, route: routeName },
-        error,
-      );
-      results.push({
-        route: routeName,
-        listener: listenerName,
-        status: "failure",
-        message: errorMessage(error),
-      });
-    }
+    const startedAt = performance.now();
+    await startActiveSpan(
+      "hooksmith.listener",
+      {
+        "hooksmith.event.type": event.type,
+        "hooksmith.route": routeName,
+        "hooksmith.listener": listenerName,
+      },
+      async (span) => {
+        try {
+          const result = await listener.run(event, context);
+          assertListenerResult(result, routeName, listenerName);
+          const report = toListenerReport(routeName, listenerName, result);
+          results.push(report);
+
+          const attributes: TelemetryAttributes = {
+            "hooksmith.event.type": event.type,
+            "hooksmith.route": routeName,
+            "hooksmith.listener": listenerName,
+            "hooksmith.status": report.status,
+          };
+          span.setAttributes(attributes);
+          if (!result.success) {
+            span.setError();
+          }
+
+          recordListenerMetrics(elapsedSeconds(startedAt), attributes);
+
+          log.debug("Listener {listener} completed with status {status}", {
+            listener: listenerName,
+            route: routeName,
+            status: report.status,
+          });
+        } catch (error) {
+          span.recordException(toException(error));
+          span.setError(errorMessage(error));
+
+          const attributes: TelemetryAttributes = {
+            "hooksmith.event.type": event.type,
+            "hooksmith.route": routeName,
+            "hooksmith.listener": listenerName,
+            "hooksmith.status": "failure",
+          };
+          span.setAttributes(attributes);
+          recordListenerMetrics(elapsedSeconds(startedAt), attributes);
+
+          log.error(
+            "Listener {listener} threw while executing route {route}",
+            { listener: listenerName, route: routeName },
+            error,
+          );
+          results.push({
+            route: routeName,
+            listener: listenerName,
+            status: "failure",
+            message: errorMessage(error),
+          });
+        } finally {
+          span.end();
+        }
+      },
+    );
   }
 }
 
@@ -283,4 +407,10 @@ function errorMessage(error: unknown): string {
   }
 
   return String(error);
+}
+
+function toException(error: unknown): Error {
+  return error instanceof Error
+    ? error
+    : new Error(String(error), { cause: error });
 }
