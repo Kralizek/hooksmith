@@ -1,66 +1,62 @@
-import {
-  type Attributes,
-  type Counter,
-  type Histogram,
-  metrics,
-  trace,
-} from "@opentelemetry/api";
+export type TelemetryAttributeValue = string | number | boolean;
+export type TelemetryAttributes = Record<string, TelemetryAttributeValue>;
 
-export const tracer = trace.getTracer("@hooksmith/runtime");
-
-interface RuntimeMetrics {
-  eventsProcessed: Counter;
-  eventDuration: Histogram;
-  listenerInvocations: Counter;
-  listenerDuration: Histogram;
+export interface TelemetrySpan {
+  setAttribute(name: string, value: TelemetryAttributeValue): void;
+  setAttributes(attributes: TelemetryAttributes): void;
+  addEvent(name: string, attributes?: TelemetryAttributes): void;
+  recordException(error: Error): void;
+  setError(message?: string): void;
+  end(): void;
 }
 
-let runtimeMetrics: RuntimeMetrics | undefined;
-
-export function recordEventMetrics(
-  durationSeconds: number,
-  attributes: Attributes,
-): void {
-  const instruments = getRuntimeMetrics();
-  instruments.eventsProcessed.add(1, attributes);
-  instruments.eventDuration.record(durationSeconds, attributes);
+export interface RuntimeTelemetry {
+  startActiveSpan<T>(
+    name: string,
+    attributes: TelemetryAttributes,
+    run: (span: TelemetrySpan) => Promise<T>,
+  ): Promise<T>;
+  recordEventMetrics(
+    durationSeconds: number,
+    attributes: TelemetryAttributes,
+  ): void;
+  recordListenerMetrics(
+    durationSeconds: number,
+    attributes: TelemetryAttributes,
+  ): void;
 }
 
-export function recordListenerMetrics(
-  durationSeconds: number,
-  attributes: Attributes,
-): void {
-  const instruments = getRuntimeMetrics();
-  instruments.listenerInvocations.add(1, attributes);
-  instruments.listenerDuration.record(durationSeconds, attributes);
+const noopSpan: TelemetrySpan = {
+  setAttribute() {},
+  setAttributes() {},
+  addEvent() {},
+  recordException() {},
+  setError() {},
+  end() {},
+};
+
+const noopTelemetry: RuntimeTelemetry = {
+  async startActiveSpan(_name, _attributes, run) {
+    return await run(noopSpan);
+  },
+  recordEventMetrics() {},
+  recordListenerMetrics() {},
+};
+
+let runtimeTelemetry: RuntimeTelemetry = noopTelemetry;
+
+export function getRuntimeTelemetry(): RuntimeTelemetry {
+  return runtimeTelemetry;
+}
+
+export function setRuntimeTelemetry(telemetry: RuntimeTelemetry): () => void {
+  const previous = runtimeTelemetry;
+  runtimeTelemetry = telemetry;
+  return () => {
+    runtimeTelemetry = previous;
+  };
 }
 
 export function elapsedSeconds(startedAt: number): number {
   return (performance.now() - startedAt) / 1000;
-}
-
-function getRuntimeMetrics(): RuntimeMetrics {
-  if (runtimeMetrics !== undefined) return runtimeMetrics;
-
-  const meter = metrics.getMeter("@hooksmith/runtime");
-  runtimeMetrics = {
-    eventsProcessed: meter.createCounter(
-      "hooksmith.event.processed",
-      { unit: "{event}" },
-    ),
-    eventDuration: meter.createHistogram(
-      "hooksmith.event.duration",
-      { unit: "s" },
-    ),
-    listenerInvocations: meter.createCounter(
-      "hooksmith.listener.invocation",
-      { unit: "{invocation}" },
-    ),
-    listenerDuration: meter.createHistogram(
-      "hooksmith.listener.duration",
-      { unit: "s" },
-    ),
-  };
-
-  return runtimeMetrics;
 }
