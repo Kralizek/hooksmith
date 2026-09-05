@@ -59,8 +59,8 @@ Framework components use stable source names. Named component instances qualify
 the component type with their configured name, for example `HttpListener:slack`
 or `Pipeline:announcement`.
 
-`nullLoggerFactory` provides a reusable no-op logger for hosts, tests, and samples
-that intentionally do not want log output.
+`nullLoggerFactory` provides a reusable no-op logger for hosts, tests, and
+samples that intentionally do not want log output.
 
 ## OpenTelemetry
 
@@ -85,8 +85,8 @@ registered provider and exporter for the API imported by the consumer.
 
 The optional `@hooksmith/runtime/opentelemetry` subpath also exposes an
 experimental `createOpenTelemetryLogWriter(...)` bridge for the JavaScript
-OpenTelemetry Logs API. The base runtime does not depend on the experimental logs
-package.
+OpenTelemetry Logs API. The base runtime does not depend on the experimental
+logs package.
 
 See [`../../docs/observability.md`](../../docs/observability.md) for the trace
 model, metric names, provider setup guidance, logging paths, and extension
