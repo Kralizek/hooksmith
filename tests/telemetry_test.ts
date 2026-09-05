@@ -14,7 +14,9 @@ import {
 } from "@opentelemetry/sdk-metrics";
 import type { Config, Event, Listener } from "@hooksmith/core";
 import { pipe, project } from "@hooksmith/pipeline";
+import { enableOpenTelemetry as enablePipelineOpenTelemetry } from "@hooksmith/pipeline/opentelemetry";
 import { createRuntime, nullLoggerFactory } from "@hooksmith/runtime";
+import { enableOpenTelemetry as enableRuntimeOpenTelemetry } from "@hooksmith/runtime/opentelemetry";
 
 Deno.test("OpenTelemetry composes consumer, Hooksmith, pipeline, and extension telemetry", async () => {
   const spanExporter = new InMemorySpanExporter();
@@ -34,6 +36,9 @@ Deno.test("OpenTelemetry composes consumer, Hooksmith, pipeline, and extension t
   });
   const meterProvider = new MeterProvider({ readers: [metricReader] });
   metrics.setGlobalMeterProvider(meterProvider);
+
+  const restoreRuntimeTelemetry = enableRuntimeOpenTelemetry({ trace, metrics });
+  const restorePipelineTelemetry = enablePipelineOpenTelemetry({ trace, metrics });
 
   try {
     const extensionTracer = trace.getTracer("example-extension");
@@ -123,6 +128,8 @@ Deno.test("OpenTelemetry composes consumer, Hooksmith, pipeline, and extension t
     assert(metricNames.includes("hooksmith.listener.duration"));
     assert(metricNames.includes("hooksmith.pipeline.duration"));
   } finally {
+    restorePipelineTelemetry();
+    restoreRuntimeTelemetry();
     await tracerProvider.shutdown();
     await meterProvider.shutdown();
     contextManager.disable();
