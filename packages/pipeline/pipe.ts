@@ -2,7 +2,11 @@ import type { Event, Listener, ListenerResult } from "@hooksmith/core";
 import { createTransformContext } from "./context.ts";
 import { errorMessage } from "./errors.ts";
 import type { MergeOperator } from "./merge.ts";
-import { elapsedSeconds, getPipelineTelemetry } from "./telemetry.ts";
+import {
+  elapsedSeconds,
+  recordPipelineDuration,
+  startActiveSpan,
+} from "./telemetry.ts";
 import type { Transformer } from "./transformer.ts";
 
 /** Optional configuration used to assign an explicit pipeline listener name. */
@@ -74,10 +78,9 @@ export function pipe(
       const log = context.logger.getLogger(`Pipeline:${name}`);
       const transformContext = createTransformContext(context, event);
       const startedAt = performance.now();
-      const telemetry = getPipelineTelemetry();
       let status = "success";
 
-      return await telemetry.startActiveSpan(
+      return await startActiveSpan(
         "hooksmith.pipeline",
         {
           "hooksmith.event.type": event.type,
@@ -184,7 +187,7 @@ export function pipe(
             throw error;
           } finally {
             span.setAttribute("hooksmith.status", status);
-            telemetry.recordPipelineDuration(elapsedSeconds(startedAt), {
+            recordPipelineDuration(elapsedSeconds(startedAt), {
               "hooksmith.event.type": event.type,
               "hooksmith.pipeline": name,
               "hooksmith.status": status,
