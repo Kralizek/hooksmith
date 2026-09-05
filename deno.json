@@ -1,6 +1,7 @@
 {
   "workspace": [
     "./packages/core",
+    "./packages/opentelemetry",
     "./packages/pipeline",
     "./packages/runtime",
     "./extensions/standard",
