@@ -18,15 +18,19 @@ export function fetchJson<
 >(
   options: FetchJsonOptions<TInput, TResponse, TOutput>,
 ): Transformer<TInput, TOutput> {
+  const name = options.name ?? `http-${options.method.toLowerCase()}-json`;
+
   return {
-    name: options.name ?? `http-${options.method.toLowerCase()}-json`,
+    name,
     async transform(input, context): Promise<TOutput> {
+      const log = context.logger.getLogger(`HttpTransformer:${name}`);
       const body = options.body === undefined
         ? undefined
         : await resolveJsonBody(options.body, input, context);
       const { response } = await executeRequest<TInput, TransformContext>(
         input,
         context,
+        log,
         {
           method: options.method,
           url: options.url,
