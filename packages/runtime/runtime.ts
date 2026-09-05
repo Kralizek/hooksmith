@@ -410,5 +410,7 @@ function errorMessage(error: unknown): string {
 }
 
 function toException(error: unknown): Error {
-  return error instanceof Error ? error : new Error(String(error));
+  return error instanceof Error
+    ? error
+    : new Error(String(error), { cause: error });
 }
