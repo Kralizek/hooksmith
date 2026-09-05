@@ -67,7 +67,9 @@ consumer operation
 
 Planning uses `hooksmith.event.plan`. Enrichers, route matches, condition
 evaluations, fallback selection, and individual pipeline transformations are
-represented as span events rather than additional child spans.
+represented as span events rather than additional child spans. Runtime emits
+`hooksmith.enricher.failed` and `hooksmith.condition.failed` when those stages
+throw, while the parent event span records the exception and error status.
 
 Runtime and pipeline retain separate OpenTelemetry instrumentation scopes even
 though they share the same core telemetry backend.

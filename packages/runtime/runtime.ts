@@ -147,6 +147,10 @@ async function executeEventCore<TEvent extends Event>(
       try {
         matches = await route.when.evaluate(enrichedEvent, context);
       } catch (error) {
+        span.addEvent("hooksmith.condition.failed", {
+          "hooksmith.condition": conditionName,
+          "hooksmith.route": routeName,
+        });
         throw new Error(
           `Condition ${conditionName} failed: ${errorMessage(error)}`,
           { cause: error },
@@ -254,6 +258,9 @@ async function enrichEvent<TEvent extends Event>(
     try {
       enrichment = await enricher.enrich(enrichedEvent, context);
     } catch (error) {
+      span.addEvent("hooksmith.enricher.failed", {
+        "hooksmith.enricher": enricherName,
+      });
       throw new Error(
         `Event enricher ${enricherName} failed: ${errorMessage(error)}`,
         { cause: error },
