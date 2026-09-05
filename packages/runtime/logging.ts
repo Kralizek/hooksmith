@@ -26,6 +26,21 @@ export interface LoggerFactoryOptions {
   write(record: LogRecord): void;
 }
 
+const nullLogger: Logger = {
+  trace() {},
+  debug() {},
+  info() {},
+  warn() {},
+  error() {},
+};
+
+/** Logger factory that discards all log entries. */
+export const nullLoggerFactory: LoggerFactory = {
+  getLogger() {
+    return nullLogger;
+  },
+};
+
 const levelOrder: Record<LogLevelFilter, number> = {
   trace: 0,
   debug: 1,
