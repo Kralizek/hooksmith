@@ -1,4 +1,8 @@
-import { type Span, SpanStatusCode } from "@opentelemetry/api";
+import {
+  type Attributes,
+  type Span,
+  SpanStatusCode,
+} from "@opentelemetry/api";
 import type {
   Config,
   Context,
@@ -74,10 +78,12 @@ async function executeEvent<TEvent extends Event>(
           span,
         );
         const status = report.success ? "success" : "failure";
-        const attributes = {
+        const attributes: Attributes = {
           "hooksmith.event.type": event.type,
           "hooksmith.mode": mode,
-          "hooksmith.outcome": report.outcome,
+          ...(report.outcome === undefined
+            ? {}
+            : { "hooksmith.outcome": report.outcome }),
           "hooksmith.status": status,
         };
 
@@ -95,11 +101,12 @@ async function executeEvent<TEvent extends Event>(
           message: errorMessage(error),
         });
 
-        const attributes = {
+        const attributes: Attributes = {
           "hooksmith.event.type": event.type,
           "hooksmith.mode": mode,
           "hooksmith.status": "error",
         };
+        span.setAttributes(attributes);
         recordEventMetrics(elapsedSeconds(startedAt), attributes);
         throw error;
       } finally {
@@ -336,7 +343,7 @@ async function executeListeners<TEvent extends Event>(
           const report = toListenerReport(routeName, listenerName, result);
           results.push(report);
 
-          const attributes = {
+          const attributes: Attributes = {
             "hooksmith.event.type": event.type,
             "hooksmith.route": routeName,
             "hooksmith.listener": listenerName,
@@ -361,12 +368,13 @@ async function executeListeners<TEvent extends Event>(
             message: errorMessage(error),
           });
 
-          const attributes = {
+          const attributes: Attributes = {
             "hooksmith.event.type": event.type,
             "hooksmith.route": routeName,
             "hooksmith.listener": listenerName,
             "hooksmith.status": "error",
           };
+          span.setAttributes(attributes);
           recordListenerMetrics(elapsedSeconds(startedAt), attributes);
 
           log.error(
