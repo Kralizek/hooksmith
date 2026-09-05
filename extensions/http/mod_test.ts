@@ -5,7 +5,12 @@ import {
   assertRejects,
   assertThrows,
 } from "@std/assert";
-import type { Context, Event, TransformContext } from "@hooksmith/core";
+import type {
+  Context,
+  Event,
+  Logger,
+  TransformContext,
+} from "@hooksmith/core";
 import {
   basicAuth,
   bearerAuth,
@@ -28,12 +33,19 @@ const event: Event = {
   data: { value: 42 },
 };
 
+const logger: Logger = {
+  trace() {},
+  debug() {},
+  info() {},
+  warn() {},
+  error() {},
+};
+
 const context: Context = {
-  log: {
-    debug() {},
-    info() {},
-    warn() {},
-    error() {},
+  logger: {
+    getLogger() {
+      return logger;
+    },
   },
 };
 
