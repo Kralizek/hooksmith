@@ -344,7 +344,10 @@ async function executeListeners<TEvent extends Event>(
             span.setError();
           }
 
-          telemetry.recordListenerMetrics(elapsedSeconds(startedAt), attributes);
+          telemetry.recordListenerMetrics(
+            elapsedSeconds(startedAt),
+            attributes,
+          );
 
           log.debug("Listener {listener} completed with status {status}", {
             listener: listenerName,
@@ -362,7 +365,10 @@ async function executeListeners<TEvent extends Event>(
             "hooksmith.status": "error",
           };
           span.setAttributes(attributes);
-          telemetry.recordListenerMetrics(elapsedSeconds(startedAt), attributes);
+          telemetry.recordListenerMetrics(
+            elapsedSeconds(startedAt),
+            attributes,
+          );
 
           log.error(
             "Listener {listener} threw while executing route {route}",
