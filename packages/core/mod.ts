@@ -28,17 +28,25 @@ export interface EventDocument<TData = unknown> {
   data: TData;
 }
 
-/** Logging contract exposed through the Hooksmith execution context. */
+/** Structured properties attached to a log entry. */
+export type LogProperties = Record<string, unknown>;
+
+/** Source-bound logging contract exposed to Hooksmith components. */
 export interface Logger {
-  debug(message: string, ...args: unknown[]): void;
-  info(message: string, ...args: unknown[]): void;
-  warn(message: string, ...args: unknown[]): void;
-  error(message: string, ...args: unknown[]): void;
+  debug(template: string, properties?: LogProperties, error?: unknown): void;
+  info(template: string, properties?: LogProperties, error?: unknown): void;
+  warn(template: string, properties?: LogProperties, error?: unknown): void;
+  error(template: string, properties?: LogProperties, error?: unknown): void;
+}
+
+/** Creates loggers bound to the component source emitting log entries. */
+export interface LoggerFactory {
+  getLogger(source: string): Logger;
 }
 
 /** Shared execution context passed to conditions and listeners. */
 export interface Context {
-  log: Logger;
+  logger: LoggerFactory;
 }
 
 /** Context passed to transformers, including the original input data. */
