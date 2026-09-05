@@ -1,32 +1,33 @@
 # Observability
 
-Hooksmith observability is opt-in. The base `@hooksmith/runtime` and
-`@hooksmith/pipeline` packages do not depend on OpenTelemetry and use internal
-no-op telemetry hooks unless an adapter is explicitly enabled.
+Hooksmith observability is opt-in. The base `@hooksmith/core`,
+`@hooksmith/runtime`, and `@hooksmith/pipeline` packages do not depend on
+OpenTelemetry. Core provides a process-wide no-op telemetry backend by default.
 
 This means an application that does not use telemetry has no OpenTelemetry
 packages in its dependency graph because of Hooksmith.
 
 ## Enable OpenTelemetry
 
-Consumers that want traces and metrics import the OpenTelemetry API themselves
-and pass its global APIs to Hooksmith's optional adapter subpaths:
+Consumers that want traces and metrics install and import the dedicated
+OpenTelemetry integration package:
 
 ```ts
-import { metrics, trace } from "npm:@opentelemetry/api@^1.9";
-import { enableOpenTelemetry as enablePipelineOpenTelemetry } from "@hooksmith/pipeline/opentelemetry";
-import { enableOpenTelemetry as enableRuntimeOpenTelemetry } from "@hooksmith/runtime/opentelemetry";
+import { enableOpenTelemetry } from "@hooksmith/opentelemetry";
 
-enableRuntimeOpenTelemetry({ trace, metrics });
-enablePipelineOpenTelemetry({ trace, metrics });
+enableOpenTelemetry();
 ```
 
-The adapters do not import OpenTelemetry themselves. They accept the consumer's
-API objects structurally and translate Hooksmith's semantic operations into OTel
-spans and metrics.
+That single call replaces the shared core telemetry backend with an
+OpenTelemetry-backed implementation. Runtime, pipeline, and any other Hooksmith
+package using the core telemetry contract then participate automatically.
 
-Without these calls, Hooksmith runs through dependency-free no-op telemetry
-hooks and its execution semantics are unchanged.
+`@hooksmith/opentelemetry` depends on the standard OpenTelemetry API because
+importing the package is the explicit opt-in to OpenTelemetry. It does not
+install or configure an SDK, provider, exporter, collector, sampler, or backend.
+
+Without the call, Hooksmith uses the dependency-free no-op backend and its
+execution semantics are unchanged.
 
 ## Deno
 
@@ -43,8 +44,8 @@ OTEL_SERVICE_NAME=my-hooksmith-app \
 deno run -A main.ts
 ```
 
-The application still explicitly imports `@opentelemetry/api` and enables the
-Hooksmith adapters as shown above. Deno supplies the provider and exporter.
+The application still calls `enableOpenTelemetry()` so Hooksmith installs its
+OpenTelemetry backend. Deno supplies the provider and exporter.
 
 Deno also instruments native `fetch` calls, so HTTP client spans become children
 of the active Hooksmith or extension span without Hooksmith creating duplicate
@@ -52,7 +53,7 @@ HTTP spans.
 
 ## Trace model
 
-When the adapters are enabled, the runtime creates active spans around its main
+When OpenTelemetry is enabled, Hooksmith creates active spans around its main
 semantic execution boundaries:
 
 ```text
@@ -68,13 +69,16 @@ Planning uses `hooksmith.event.plan`. Enrichers, route matches, condition
 evaluations, fallback selection, and individual pipeline transformations are
 represented as span events rather than additional child spans.
 
+Runtime and pipeline retain separate OpenTelemetry instrumentation scopes even
+though they share the same core telemetry backend.
+
 Hooksmith uses bounded execution attributes such as `hooksmith.event.type`,
 `hooksmith.mode`, `hooksmith.outcome`, `hooksmith.route`, `hooksmith.listener`,
 `hooksmith.pipeline`, and `hooksmith.status`.
 
 ## Metrics
 
-The adapters emit synchronous instruments:
+The OpenTelemetry backend emits synchronous instruments:
 
 | Instrument                      | Type      | Unit           |
 | ------------------------------- | --------- | -------------- |
@@ -87,9 +91,9 @@ The adapters emit synchronous instruments:
 Metric attributes intentionally exclude event IDs, subject IDs, source IDs,
 URLs, trace IDs, and other high-cardinality values.
 
-Metric instruments are created lazily after the adapter is enabled, so importing
-Hooksmith before the application configures its OTel provider does not bind
-metrics to an earlier no-op provider.
+Metric instruments are created lazily on first use so importing or enabling
+Hooksmith before the application configures its provider does not create metric
+instruments against an earlier no-op provider.
 
 ## Consumer instrumentation
 
@@ -97,6 +101,8 @@ A consumer can create a parent span through its own OpenTelemetry API. Hooksmith
 will attach below the active context:
 
 ```ts
+import { trace } from "@opentelemetry/api";
+
 const tracer = trace.getTracer("my-application");
 
 await tracer.startActiveSpan("deployment.finalize", async (span) => {
@@ -115,7 +121,7 @@ use their package name as the instrumentation scope. No Hooksmith tracer or
 meter abstraction is exposed to extension authors.
 
 ```ts
-import { metrics, trace } from "npm:@opentelemetry/api@^1.9";
+import { metrics, trace } from "@opentelemetry/api";
 
 const tracer = trace.getTracer("@acme/hooksmith-publisher");
 const meter = metrics.getMeter("@acme/hooksmith-publisher");
@@ -147,14 +153,13 @@ its OTel log pipeline and correlate them with the active trace context.
 
 ### Experimental direct OpenTelemetry Logs bridge
 
-`@hooksmith/runtime/opentelemetry` also exports
-`createOpenTelemetryLogWriter(...)`. The consumer supplies the experimental
-JavaScript Logs API itself:
+`@hooksmith/opentelemetry` also exports `createOpenTelemetryLogWriter(...)`.
+The consumer supplies the experimental JavaScript Logs API itself:
 
 ```ts
 import { logs } from "npm:@opentelemetry/api-logs";
+import { createOpenTelemetryLogWriter } from "@hooksmith/opentelemetry";
 import { createLoggerFactory } from "@hooksmith/runtime";
-import { createOpenTelemetryLogWriter } from "@hooksmith/runtime/opentelemetry";
 
 const logger = createLoggerFactory({
   write: createOpenTelemetryLogWriter(logs),
@@ -164,8 +169,8 @@ const logger = createLoggerFactory({
 This bridge is explicitly experimental. The OpenTelemetry Logs specification is
 stable, but the JavaScript Logs implementation and `@opentelemetry/api-logs`
 package are still under active development and may introduce breaking changes.
-Hooksmith does not depend on that package; only consumers choosing this bridge
-need to import it.
+`@hooksmith/opentelemetry` does not depend on that package; only consumers
+choosing this bridge need to import it.
 
 See [`examples/observability`](../examples/observability) for a runnable trace
 and metrics example.
