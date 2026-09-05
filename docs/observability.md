@@ -57,13 +57,13 @@ The initial Hooksmith span attributes include bounded execution metadata such as
 
 Hooksmith currently emits these synchronous instruments:
 
-| Instrument | Type | Unit |
-| --- | --- | --- |
-| `hooksmith.event.processed` | Counter | `{event}` |
-| `hooksmith.event.duration` | Histogram | `s` |
-| `hooksmith.listener.invocation` | Counter | `{invocation}` |
-| `hooksmith.listener.duration` | Histogram | `s` |
-| `hooksmith.pipeline.duration` | Histogram | `s` |
+| Instrument                      | Type      | Unit           |
+| ------------------------------- | --------- | -------------- |
+| `hooksmith.event.processed`      | Counter   | `{event}`      |
+| `hooksmith.event.duration`       | Histogram | `s`            |
+| `hooksmith.listener.invocation` | Counter   | `{invocation}` |
+| `hooksmith.listener.duration`   | Histogram | `s`            |
+| `hooksmith.pipeline.duration`   | Histogram | `s`            |
 
 Metric attributes are intentionally bounded. Hooksmith does not use event IDs,
 subject IDs, source IDs, URLs, trace IDs, or other high-cardinality values as
@@ -143,4 +143,5 @@ Because Hooksmith invokes the listener inside an active span, `acme.publish`
 becomes its child. Any instrumented work performed by the extension can continue
 the same trace automatically.
 
-See [`examples/observability`](../examples/observability) for a runnable example.
+See [`examples/observability`](../examples/observability) for a runnable
+example.
