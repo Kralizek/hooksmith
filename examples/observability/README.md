@@ -1,8 +1,9 @@
 # Observability example
 
 This example shows Hooksmith traces and metrics composing with telemetry emitted
-by an extension. Hooksmith and the extension use only the standard OpenTelemetry
-API; Deno supplies the provider and exporter when telemetry is enabled.
+by an extension. The application imports the OpenTelemetry API itself and passes
+its `trace` and `metrics` APIs to the optional Hooksmith runtime and pipeline
+adapters. The base Hooksmith packages do not depend on OpenTelemetry.
 
 Run it with Deno's built-in console exporter:
 
@@ -18,5 +19,6 @@ extension-owned `example.publish` span nested below them. The console exporter
 also prints the Hooksmith runtime/pipeline metrics and the example extension's
 `example.messages.handled` counter.
 
-Without `OTEL_DENO=true`, the same program still runs and the OpenTelemetry API
-remains effectively no-op.
+Without `OTEL_DENO=true`, the same explicitly instrumented program still runs and
+the consumer-supplied OpenTelemetry API remains effectively no-op. Applications
+that do not enable the Hooksmith adapters need no OpenTelemetry imports at all.
