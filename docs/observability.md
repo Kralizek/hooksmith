@@ -69,8 +69,8 @@ evaluations, fallback selection, and individual pipeline transformations are
 represented as span events rather than additional child spans.
 
 Hooksmith uses bounded execution attributes such as `hooksmith.event.type`,
-`hooksmith.mode`, `hooksmith.outcome`, `hooksmith.route`,
-`hooksmith.listener`, `hooksmith.pipeline`, and `hooksmith.status`.
+`hooksmith.mode`, `hooksmith.outcome`, `hooksmith.route`, `hooksmith.listener`,
+`hooksmith.pipeline`, and `hooksmith.status`.
 
 ## Metrics
 
@@ -111,8 +111,8 @@ await tracer.startActiveSpan("deployment.finalize", async (span) => {
 ## Extension instrumentation
 
 Extensions that want their own telemetry should use OpenTelemetry directly and
-use their package name as the instrumentation scope. No Hooksmith tracer or meter
-abstraction is exposed to extension authors.
+use their package name as the instrumentation scope. No Hooksmith tracer or
+meter abstraction is exposed to extension authors.
 
 ```ts
 import { metrics, trace } from "npm:@opentelemetry/api@^1.9";
@@ -142,8 +142,8 @@ const logger = createLoggerFactory({
 });
 ```
 
-When Deno telemetry is enabled, Deno can capture those `console.*` calls into its
-OTel log pipeline and correlate them with the active trace context.
+When Deno telemetry is enabled, Deno can capture those `console.*` calls into
+its OTel log pipeline and correlate them with the active trace context.
 
 ### Experimental direct OpenTelemetry Logs bridge
 
