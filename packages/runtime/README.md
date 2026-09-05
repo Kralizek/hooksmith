@@ -68,8 +68,8 @@ OpenTelemetry is fully opt-in. The base runtime package has no OpenTelemetry
 dependency and uses the shared no-op telemetry backend from `@hooksmith/core` by
 default.
 
-Consumers that want Hooksmith traces and metrics enable the dedicated integration
-package once:
+Consumers that want Hooksmith traces and metrics enable the dedicated
+integration package once:
 
 ```ts
 import { enableOpenTelemetry } from "@hooksmith/opentelemetry";
