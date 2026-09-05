@@ -1,9 +1,11 @@
-import { SpanStatusCode } from "@opentelemetry/api";
 import type { Event, Listener, ListenerResult } from "@hooksmith/core";
 import { createTransformContext } from "./context.ts";
 import { errorMessage } from "./errors.ts";
 import type { MergeOperator } from "./merge.ts";
-import { elapsedSeconds, recordPipelineDuration, tracer } from "./telemetry.ts";
+import {
+  elapsedSeconds,
+  getPipelineTelemetry,
+} from "./telemetry.ts";
 import type { Transformer } from "./transformer.ts";
 
 /** Optional configuration used to assign an explicit pipeline listener name. */
@@ -75,17 +77,16 @@ export function pipe(
       const log = context.logger.getLogger(`Pipeline:${name}`);
       const transformContext = createTransformContext(context, event);
       const startedAt = performance.now();
+      const telemetry = getPipelineTelemetry();
       let status = "success";
 
-      return await tracer.startActiveSpan(
+      return await telemetry.startActiveSpan(
         "hooksmith.pipeline",
         {
-          attributes: {
-            "hooksmith.event.type": event.type,
-            "hooksmith.pipeline": name,
-            "hooksmith.listener": listener.name ?? "listener",
-            "hooksmith.transformation.count": transformations.length,
-          },
+          "hooksmith.event.type": event.type,
+          "hooksmith.pipeline": name,
+          "hooksmith.listener": listener.name ?? "listener",
+          "hooksmith.transformation.count": transformations.length,
         },
         async (span) => {
           let current: unknown = event.data;
@@ -129,10 +130,7 @@ export function pipe(
                   "hooksmith.transformation.index": ordinal,
                 });
                 span.recordException(toException(error));
-                span.setStatus({
-                  code: SpanStatusCode.ERROR,
-                  message,
-                });
+                span.setError(message);
 
                 log.error(
                   "Transformation {transformation} failed",
@@ -177,7 +175,7 @@ export function pipe(
             status = result.success ? "success" : "failure";
             span.setAttribute("hooksmith.status", status);
             if (!result.success) {
-              span.setStatus({ code: SpanStatusCode.ERROR });
+              span.setError();
             }
 
             log.debug("Pipeline completed with status {status}", { status });
@@ -185,14 +183,11 @@ export function pipe(
           } catch (error) {
             status = "error";
             span.recordException(toException(error));
-            span.setStatus({
-              code: SpanStatusCode.ERROR,
-              message: errorMessage(error),
-            });
+            span.setError(errorMessage(error));
             throw error;
           } finally {
             span.setAttribute("hooksmith.status", status);
-            recordPipelineDuration(elapsedSeconds(startedAt), {
+            telemetry.recordPipelineDuration(elapsedSeconds(startedAt), {
               "hooksmith.event.type": event.type,
               "hooksmith.pipeline": name,
               "hooksmith.status": status,
