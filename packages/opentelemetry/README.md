@@ -19,6 +19,6 @@ With Deno's built-in integration, the provider/exporter can be enabled with
 `OTEL_DENO=true`.
 
 The package also exports `createOpenTelemetryLogWriter(...)`, an experimental
-bridge for the JavaScript OpenTelemetry Logs API. The Logs API object is supplied
-by the consumer so this package does not depend on the experimental logs
-package.
+bridge for the JavaScript OpenTelemetry Logs API. The Logs API object is
+supplied by the consumer so this package does not depend on the experimental
+logs package.
