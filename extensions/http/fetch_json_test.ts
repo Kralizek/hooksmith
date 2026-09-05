@@ -1,9 +1,6 @@
 import { assertEquals, assertRejects } from "@std/assert";
-import {
-  type Context,
-  nullLoggerFactory,
-  type TransformContext,
-} from "@hooksmith/core";
+import type { Context, TransformContext } from "@hooksmith/core";
+import { nullLoggerFactory } from "@hooksmith/runtime";
 import { fetchJson } from "./mod.ts";
 
 const context: Context = {
