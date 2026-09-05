@@ -1,7 +1,7 @@
 import { type Counter, metrics, trace } from "@opentelemetry/api";
 import type { Config, Event, Listener } from "@hooksmith/core";
 import { pipe, project } from "@hooksmith/pipeline";
-import { createLoggerFactory, createRuntime } from "@hooksmith/runtime";
+import { createRuntime, nullLoggerFactory } from "@hooksmith/runtime";
 
 interface MessageData {
   text: string;
@@ -52,12 +52,7 @@ const config = {
   }],
 } satisfies Config<Event<MessageData>>;
 
-const logger = createLoggerFactory({
-  minimumLevel: "none",
-  write() {},
-});
-
-const runtime = createRuntime(config, { logger });
+const runtime = createRuntime(config, { logger: nullLoggerFactory });
 
 await runtime.process({
   type: "message.ready",
