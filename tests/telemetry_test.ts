@@ -86,7 +86,11 @@ Deno.test("OpenTelemetry composes consumer, Hooksmith, pipeline, and extension t
     const spans = spanExporter.getFinishedSpans();
     const singleSpan = (name: string) => {
       const matches = spans.filter((span) => span.name === name);
-      assertEquals(matches.length, 1, `Expected exactly one span named ${name}`);
+      assertEquals(
+        matches.length,
+        1,
+        `Expected exactly one span named ${name}`,
+      );
       const [span] = matches;
       assert(span);
       return span;
