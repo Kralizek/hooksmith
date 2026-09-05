@@ -14,7 +14,7 @@ import {
 } from "@opentelemetry/sdk-metrics";
 import type { Config, Event, Listener } from "@hooksmith/core";
 import { pipe, project } from "@hooksmith/pipeline";
-import { createLoggerFactory, createRuntime } from "@hooksmith/runtime";
+import { createRuntime, nullLoggerFactory } from "@hooksmith/runtime";
 
 Deno.test("OpenTelemetry composes consumer, Hooksmith, pipeline, and extension telemetry", async () => {
   const spanExporter = new InMemorySpanExporter();
@@ -62,12 +62,7 @@ Deno.test("OpenTelemetry composes consumer, Hooksmith, pipeline, and extension t
         listeners: [pipeline],
       }],
     };
-    const runtime = createRuntime(config, {
-      logger: createLoggerFactory({
-        minimumLevel: "none",
-        write() {},
-      }),
-    });
+    const runtime = createRuntime(config, { logger: nullLoggerFactory });
     const event: Event<string> = {
       type: "message.ready",
       timestamp: Temporal.Instant.from("2026-09-05T09:00:00Z"),
