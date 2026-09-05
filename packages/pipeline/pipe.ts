@@ -86,7 +86,7 @@ export function pipe(
           ? transformation.name
           : undefined;
 
-        log.debug("Executing transformation {transformation}", {
+        log.trace("Executing transformation {transformation}", {
           transformation: transformationName ?? `#${ordinal}`,
           index: ordinal,
         });
@@ -125,7 +125,7 @@ export function pipe(
           };
         }
 
-        log.debug("Transformation {transformation} completed", {
+        log.trace("Transformation {transformation} completed", {
           transformation: transformationName ?? `#${ordinal}`,
           index: ordinal,
         });
