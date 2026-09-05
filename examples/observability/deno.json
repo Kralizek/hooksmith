@@ -1,10 +1,9 @@
 {
   "imports": {
     "@hooksmith/core": "../../packages/core/mod.ts",
+    "@hooksmith/opentelemetry": "../../packages/opentelemetry/mod.ts",
     "@hooksmith/pipeline": "../../packages/pipeline/mod.ts",
-    "@hooksmith/pipeline/opentelemetry": "../../packages/pipeline/opentelemetry.ts",
     "@hooksmith/runtime": "../../packages/runtime/mod.ts",
-    "@hooksmith/runtime/opentelemetry": "../../packages/runtime/opentelemetry.ts",
     "@opentelemetry/api": "npm:@opentelemetry/api@^1.9.0"
   },
   "tasks": {
