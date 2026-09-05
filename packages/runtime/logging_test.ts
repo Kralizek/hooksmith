@@ -87,6 +87,19 @@ Deno.test("renderLogTemplate leaves missing placeholders visible", () => {
   );
 });
 
+Deno.test("renderLogTemplate ignores inherited properties", () => {
+  const properties = Object.create({ inherited: "value" }) as Record<
+    string,
+    unknown
+  >;
+  properties.own = "present";
+
+  assertEquals(
+    renderLogTemplate("Own {own}; inherited {inherited}", properties),
+    "Own present; inherited {inherited}",
+  );
+});
+
 Deno.test("renderLogTemplate renders structured placeholder values", () => {
   assertEquals(
     renderLogTemplate("Payload {payload}", { payload: { value: 42 } }),
