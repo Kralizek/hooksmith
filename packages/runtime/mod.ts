@@ -1,8 +1,5 @@
 export { hydrateEvent } from "./hydrate.ts";
-export {
-  createLoggerFactory,
-  renderLogTemplate,
-} from "./logging.ts";
+export { createLoggerFactory, renderLogTemplate } from "./logging.ts";
 export type {
   LoggerFactoryOptions,
   LogLevel,
