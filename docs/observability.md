@@ -153,8 +153,8 @@ its OTel log pipeline and correlate them with the active trace context.
 
 ### Experimental direct OpenTelemetry Logs bridge
 
-`@hooksmith/opentelemetry` also exports `createOpenTelemetryLogWriter(...)`.
-The consumer supplies the experimental JavaScript Logs API itself:
+`@hooksmith/opentelemetry` also exports `createOpenTelemetryLogWriter(...)`. The
+consumer supplies the experimental JavaScript Logs API itself:
 
 ```ts
 import { logs } from "npm:@opentelemetry/api-logs";
