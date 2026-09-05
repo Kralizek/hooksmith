@@ -6,6 +6,7 @@ export {
 export type {
   LoggerFactoryOptions,
   LogLevel,
+  LogLevelFilter,
   LogRecord,
 } from "./logging.ts";
 export { createRuntime } from "./runtime.ts";
