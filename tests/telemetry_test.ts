@@ -1,16 +1,16 @@
 import { assert, assertEquals } from "@std/assert";
-import { context, metrics, trace } from "npm:@opentelemetry/api@^1.9.0";
-import { AsyncLocalStorageContextManager } from "npm:@opentelemetry/context-async-hooks@^2.1.0";
+import { context, metrics, trace } from "@opentelemetry/api";
+import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import {
   BasicTracerProvider,
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from "npm:@opentelemetry/sdk-trace-base@^2.1.0";
+} from "@opentelemetry/sdk-trace-base";
 import {
   InMemoryMetricExporter,
   MeterProvider,
   PeriodicExportingMetricReader,
-} from "npm:@opentelemetry/sdk-metrics@^2.1.0";
+} from "@opentelemetry/sdk-metrics";
 import type { Config, Event, Listener } from "@hooksmith/core";
 import { pipe, project } from "@hooksmith/pipeline";
 import { createLoggerFactory, createRuntime } from "@hooksmith/runtime";
