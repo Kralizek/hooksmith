@@ -1,4 +1,4 @@
-import { metrics, trace } from "npm:@opentelemetry/api@^1.9.0";
+import { metrics, trace } from "@opentelemetry/api";
 
 export const tracer = trace.getTracer("@hooksmith/pipeline");
 
