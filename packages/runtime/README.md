@@ -58,3 +58,25 @@ Missing template properties are left visible in the rendered message.
 Framework components use stable source names. Named component instances qualify
 the component type with their configured name, for example `HttpListener:slack`
 or `Pipeline:announcement`.
+
+## OpenTelemetry
+
+The runtime is natively instrumented with the standard OpenTelemetry API. It
+creates active spans for event processing/planning and listener execution and
+emits counters and duration histograms for those boundaries. It does not install
+or configure an OpenTelemetry SDK, provider, exporter, or collector.
+
+With Deno's built-in OpenTelemetry integration, enable collection by setting
+`OTEL_DENO=true`. For local inspection without a collector, use:
+
+```sh
+OTEL_DENO=true OTEL_EXPORTER_OTLP_PROTOCOL=console deno run -A main.ts
+```
+
+Consumers and extensions can use `@opentelemetry/api` directly. Their active
+spans compose with Hooksmith's spans through the normal OpenTelemetry context;
+no additional Hooksmith context property is required.
+
+See [`../../docs/observability.md`](../../docs/observability.md) for the trace
+model, metric names, provider setup guidance, and extension instrumentation
+example.
