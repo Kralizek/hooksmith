@@ -9,7 +9,8 @@ import type {
 export function httpRequest<TEvent extends Event = Event>(
   options: HttpRequestOptions<TEvent>,
 ): Listener<TEvent> {
-  const name = options.name ?? `http-${(options.method ?? "GET").toLowerCase()}`;
+  const name = options.name ??
+    `http-${(options.method ?? "GET").toLowerCase()}`;
 
   return {
     name,
