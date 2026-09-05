@@ -1,12 +1,12 @@
 import { assertEquals } from "@std/assert";
-import {
-  type Config,
-  type Context,
-  type Event,
-  type Logger,
-  type LoggerFactory,
-  nullLoggerFactory,
+import type {
+  Config,
+  Context,
+  Event,
+  Logger,
+  LoggerFactory,
 } from "@hooksmith/core";
+import { nullLoggerFactory } from "@hooksmith/runtime";
 import {
   all,
   any,
