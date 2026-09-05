@@ -32,15 +32,15 @@ rendering and minimum-level filtering while the host decides how normalized log
 records are written.
 
 ```ts
-import { createLoggerFactory, createRuntime } from "@hooksmith/runtime";
+import {
+  createConsoleLogWriter,
+  createLoggerFactory,
+  createRuntime,
+} from "@hooksmith/runtime";
 
 const logger = createLoggerFactory({
   minimumLevel: "debug",
-  write(record) {
-    console.error(
-      `[${record.level.toUpperCase()}] [${record.source}] ${record.message}`,
-    );
-  },
+  write: createConsoleLogWriter(),
 });
 
 const runtime = createRuntime(config, { logger });
@@ -59,24 +59,35 @@ Framework components use stable source names. Named component instances qualify
 the component type with their configured name, for example `HttpListener:slack`
 or `Pipeline:announcement`.
 
+`nullLoggerFactory` provides a reusable no-op logger for hosts, tests, and samples
+that intentionally do not want log output.
+
 ## OpenTelemetry
 
-The runtime is natively instrumented with the standard OpenTelemetry API. It
-creates active spans for event processing/planning and listener execution and
-emits counters and duration histograms for those boundaries. It does not install
-or configure an OpenTelemetry SDK, provider, exporter, or collector.
+OpenTelemetry is fully opt-in. The base runtime package has no OpenTelemetry
+dependency and uses a no-op telemetry hook by default.
 
-With Deno's built-in OpenTelemetry integration, enable collection by setting
-`OTEL_DENO=true`. For local inspection without a collector, use:
+Consumers that want runtime traces and metrics import OpenTelemetry themselves
+and enable the optional adapter:
 
-```sh
-OTEL_DENO=true OTEL_EXPORTER_OTLP_PROTOCOL=console deno run -A main.ts
+```ts
+import { metrics, trace } from "npm:@opentelemetry/api@^1.9";
+import { enableOpenTelemetry } from "@hooksmith/runtime/opentelemetry";
+
+enableOpenTelemetry({ trace, metrics });
 ```
 
-Consumers and extensions can use `@opentelemetry/api` directly. Their active
-spans compose with Hooksmith's spans through the normal OpenTelemetry context;
-no additional Hooksmith context property is required.
+The adapter creates event and listener spans and emits counters and duration
+histograms. It does not install an SDK, provider, exporter, or collector.
+
+With Deno's built-in OpenTelemetry integration, `OTEL_DENO=true` can provide the
+registered provider and exporter for the API imported by the consumer.
+
+The optional `@hooksmith/runtime/opentelemetry` subpath also exposes an
+experimental `createOpenTelemetryLogWriter(...)` bridge for the JavaScript
+OpenTelemetry Logs API. The base runtime does not depend on the experimental logs
+package.
 
 See [`../../docs/observability.md`](../../docs/observability.md) for the trace
-model, metric names, provider setup guidance, and extension instrumentation
-example.
+model, metric names, provider setup guidance, logging paths, and extension
+instrumentation example.
