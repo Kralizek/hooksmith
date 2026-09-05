@@ -2,6 +2,7 @@ import { assertEquals } from "@std/assert";
 import {
   createLoggerFactory,
   type LogRecord,
+  nullLoggerFactory,
   renderLogTemplate,
 } from "./mod.ts";
 
@@ -63,6 +64,16 @@ Deno.test("none minimum level disables all logging", () => {
   log.error("error");
 
   assertEquals(records, []);
+});
+
+Deno.test("null logger factory discards all log entries", () => {
+  const log = nullLoggerFactory.getLogger("Runtime");
+
+  log.trace("trace");
+  log.debug("debug");
+  log.info("info");
+  log.warn("warn");
+  log.error("error", undefined, new Error("boom"));
 });
 
 Deno.test("logger factory preserves the dedicated error value", () => {
