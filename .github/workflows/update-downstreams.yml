@@ -1,0 +1,195 @@
+name: Update downstreams
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      version:
+        description: Hooksmith version to apply. Defaults to the latest stable release.
+        required: false
+        type: string
+    secrets:
+      HOOKSMITH_DOWNSTREAM_TOKEN:
+        required: true
+
+concurrency:
+  group: update-downstreams
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      repositories: ${{ steps.repositories.outputs.repositories }}
+      packages: ${{ steps.packages.outputs.packages }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve downstream repositories
+        id: repositories
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "repositories=$(jq -c '.repositories' .github/downstreams.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve Hooksmith packages
+        id: packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          packages="$(jq -c '[.workspace[] as $member | input_filename] | []' deno.json 2>/dev/null || true)"
+          packages="$(jq -c '[.workspace[]]' deno.json | jq -c --slurpfile root deno.json '[]' 2>/dev/null || true)"
+          packages="$(jq -cn --argjson members "$(jq -c '.workspace' deno.json)" '
+            $members
+          ')"
+
+          resolved='[]'
+          while IFS= read -r member; do
+            name="$(jq -r '.name' "$member/deno.json")"
+            resolved="$(jq -cn --argjson current "$resolved" --arg name "$name" '$current + [$name]')"
+          done < <(jq -r '.workspace[]' deno.json)
+
+          echo "packages=$resolved" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          version="$REQUESTED_VERSION"
+          if [[ -z "$version" ]]; then
+            latest_tag="$(git tag --list 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1 || true)"
+            if [[ -z "$latest_tag" ]]; then
+              echo "No stable Hooksmith release tag was found." >&2
+              exit 1
+            fi
+            version="${latest_tag#v}"
+          fi
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version $version is not a stable semantic version." >&2
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Updating downstream repositories to Hooksmith $version"
+
+  bump-downstreams:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        repository: ${{ fromJSON(needs.prepare.outputs.repositories) }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require downstream token
+        shell: bash
+        env:
+          DOWNSTREAM_TOKEN: ${{ secrets.HOOKSMITH_DOWNSTREAM_TOKEN }}
+        run: |
+          if [[ -z "$DOWNSTREAM_TOKEN" ]]; then
+            echo "HOOKSMITH_DOWNSTREAM_TOKEN is required to update downstream repositories." >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ matrix.repository }}
+          ref: master
+          token: ${{ secrets.HOOKSMITH_DOWNSTREAM_TOKEN }}
+          path: downstream
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+          cache: true
+
+      - name: Bump Hooksmith dependencies
+        id: bump
+        working-directory: downstream
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          PACKAGES: ${{ needs.prepare.outputs.packages }}
+        run: |
+          deno eval --allow-read --allow-write --allow-env '
+            const version = Deno.env.get("VERSION")!;
+            const packages = new Set(JSON.parse(Deno.env.get("PACKAGES")!));
+            const file = "deno.json";
+            const config = JSON.parse(await Deno.readTextFile(file));
+
+            for (const [name, specifier] of Object.entries(config.imports ?? {})) {
+              if (!packages.has(name)) continue;
+              if (typeof specifier !== "string" || !specifier.startsWith(`jsr:${name}@`)) continue;
+              config.imports[name] = `jsr:${name}@^${version}`;
+            }
+
+            await Deno.writeTextFile(file, `${JSON.stringify(config, null, 2)}\n`);
+          '
+
+          if git diff --quiet -- deno.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate downstream repository
+        if: steps.bump.outputs.changed == 'true'
+        working-directory: downstream
+        run: deno task check
+
+      - name: Open or update dependency bump pull request
+        if: steps.bump.outputs.changed == 'true'
+        working-directory: downstream
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.HOOKSMITH_DOWNSTREAM_TOKEN }}
+          REPOSITORY: ${{ matrix.repository }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          branch="chore/hooksmith-runtime"
+          title="Bump Hooksmith runtime to ${VERSION}"
+          body="Updates this repository's Hooksmith dependencies to \`^${VERSION}\` after [Hooksmith v${VERSION}](https://github.com/Kralizek/hooksmith/releases/tag/v${VERSION}) was published."
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add deno.json
+          git commit -m "$title"
+          git push --force origin "$branch"
+
+          pr="$(gh pr list --repo "$REPOSITORY" --head "$branch" --state open --json number --jq '.[0].number // empty')"
+          if [[ -n "$pr" ]]; then
+            gh pr edit "$pr" \
+              --repo "$REPOSITORY" \
+              --title "$title" \
+              --body "$body"
+            echo "Updated pull request #$pr."
+          else
+            gh pr create \
+              --repo "$REPOSITORY" \
+              --base master \
+              --head "$branch" \
+              --title "$title" \
+              --body "$body"
+            pr="$(gh pr list --repo "$REPOSITORY" --head "$branch" --state open --json number --jq '.[0].number // empty')"
+          fi
+
+          if [[ -z "$pr" ]]; then
+            echo "Unable to resolve dependency bump pull request." >&2
+            exit 1
+          fi
+
+          gh pr merge "$pr" \
+            --repo "$REPOSITORY" \
+            --auto \
+            --squash
