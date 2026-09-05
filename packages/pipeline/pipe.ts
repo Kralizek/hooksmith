@@ -1,4 +1,4 @@
-import { SpanStatusCode } from "npm:@opentelemetry/api@^1.9.0";
+import { SpanStatusCode } from "@opentelemetry/api";
 import type { Event, Listener, ListenerResult } from "@hooksmith/core";
 import { createTransformContext } from "./context.ts";
 import { errorMessage } from "./errors.ts";
