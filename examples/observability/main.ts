@@ -1,4 +1,4 @@
-import { metrics, trace } from "@opentelemetry/api";
+import { type Counter, metrics, trace } from "@opentelemetry/api";
 import type { Config, Event, Listener } from "@hooksmith/core";
 import { pipe, project } from "@hooksmith/pipeline";
 import { createLoggerFactory, createRuntime } from "@hooksmith/runtime";
@@ -13,10 +13,7 @@ interface PreparedMessage {
 }
 
 const tracer = trace.getTracer("example-extension");
-const meter = metrics.getMeter("example-extension");
-const messagesHandled = meter.createCounter("example.messages.handled", {
-  unit: "{message}",
-});
+let messagesHandled: Counter | undefined;
 
 const publish: Listener<Event<PreparedMessage>> = {
   name: "example-publisher",
@@ -24,7 +21,7 @@ const publish: Listener<Event<PreparedMessage>> = {
     return tracer.startActiveSpan("example.publish", (span) => {
       try {
         span.setAttribute("example.message.length", event.data.length);
-        messagesHandled.add(1);
+        recordMessageHandled();
         return {
           success: true,
           message: `Published ${event.data.text}`,
@@ -68,3 +65,10 @@ await runtime.process({
   source: { kind: "example", id: "observability" },
   data: { text: "hello from Hooksmith" },
 });
+
+function recordMessageHandled(): void {
+  const counter = messagesHandled ??= metrics
+    .getMeter("example-extension")
+    .createCounter("example.messages.handled", { unit: "{message}" });
+  counter.add(1);
+}
