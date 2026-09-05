@@ -1,28 +1,13 @@
 import { assertEquals } from "@std/assert";
-import type {
-  Context,
-  Event,
-  Listener,
-  Logger,
-  LoggerFactory,
+import {
+  type Context,
+  type Event,
+  type Listener,
+  nullLoggerFactory,
 } from "@hooksmith/core";
 import { pipe, project, tap, type Transformer } from "./mod.ts";
 
-const logger: Logger = {
-  trace() {},
-  debug() {},
-  info() {},
-  warn() {},
-  error() {},
-};
-
-const loggerFactory: LoggerFactory = {
-  getLogger() {
-    return logger;
-  },
-};
-
-const context: Context = { logger: loggerFactory };
+const context: Context = { logger: nullLoggerFactory };
 
 const event: Event<string> = {
   type: "message.ready",
