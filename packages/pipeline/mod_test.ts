@@ -1,9 +1,5 @@
 import { assertEquals, assertThrows } from "@std/assert";
-import type {
-  Context,
-  Event,
-  Listener,
-} from "@hooksmith/core";
+import type { Context, Event, Listener } from "@hooksmith/core";
 import { nullLoggerFactory } from "@hooksmith/runtime";
 import {
   each,
