@@ -5,12 +5,7 @@ import {
   assertRejects,
   assertThrows,
 } from "@std/assert";
-import type {
-  Context,
-  Event,
-  Logger,
-  TransformContext,
-} from "@hooksmith/core";
+import type { Context, Event, Logger, TransformContext } from "@hooksmith/core";
 import {
   basicAuth,
   bearerAuth,
