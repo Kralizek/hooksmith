@@ -125,6 +125,7 @@ Deno.test("OpenTelemetry composes consumer, Hooksmith, pipeline, and extension t
   } finally {
     await tracerProvider.shutdown();
     await meterProvider.shutdown();
+    contextManager.disable();
     context.disable();
     trace.disable();
     metrics.disable();
