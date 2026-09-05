@@ -99,13 +99,16 @@ Extensions should also use the OpenTelemetry API directly and use their package
 name as their instrumentation scope. No Hooksmith telemetry abstraction or
 execution-context property is required.
 
+Tracers can be acquired at module load. Metric instruments should be created
+only after the consumer has configured its provider; initializing them lazily on
+first use is a safe pattern for reusable extensions.
+
 ```ts
-import { metrics, trace } from "@opentelemetry/api";
+import { type Counter, metrics, trace } from "@opentelemetry/api";
 import type { Event, Listener } from "@hooksmith/core";
 
 const tracer = trace.getTracer("@acme/hooksmith-publisher");
-const meter = metrics.getMeter("@acme/hooksmith-publisher");
-const published = meter.createCounter("acme.messages.published");
+let published: Counter | undefined;
 
 export function publish<TEvent extends Event>(): Listener<TEvent> {
   return {
@@ -114,11 +117,11 @@ export function publish<TEvent extends Event>(): Listener<TEvent> {
       return tracer.startActiveSpan("acme.publish", async (span) => {
         try {
           await send(event);
-          published.add(1, { status: "success" });
+          recordPublished("success");
           return { success: true };
         } catch (error) {
           span.recordException(error as Error);
-          published.add(1, { status: "error" });
+          recordPublished("error");
           throw error;
         } finally {
           span.end();
@@ -126,6 +129,13 @@ export function publish<TEvent extends Event>(): Listener<TEvent> {
       });
     },
   };
+}
+
+function recordPublished(status: string): void {
+  const counter = published ??= metrics
+    .getMeter("@acme/hooksmith-publisher")
+    .createCounter("acme.messages.published");
+  counter.add(1, { status });
 }
 ```
 
