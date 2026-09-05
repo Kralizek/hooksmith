@@ -1,7 +1,7 @@
 {
   "imports": {
-    "@hooksmith/core": "../../packages/core/mod.ts",
-    "@hooksmith/standard": "../../extensions/standard/mod.ts",
+    "@hooksmith/core": "jsr:@hooksmith/core@^0.9.0",
+    "@hooksmith/standard": "jsr:@hooksmith/standard@^0.9.0",
     "@hooksmith/bluesky": "jsr:@hooksmith/bluesky@^0.1.0",
     "@hooksmith/slack": "jsr:@hooksmith/slack@^0.1.0"
   },
