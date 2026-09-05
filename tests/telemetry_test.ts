@@ -7,6 +7,7 @@ import {
   SimpleSpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
 import {
+  AggregationTemporality,
   InMemoryMetricExporter,
   MeterProvider,
   PeriodicExportingMetricReader,
@@ -24,7 +25,9 @@ Deno.test("OpenTelemetry composes consumer, Hooksmith, pipeline, and extension t
   trace.setGlobalTracerProvider(tracerProvider);
   context.setGlobalContextManager(contextManager);
 
-  const metricExporter = new InMemoryMetricExporter();
+  const metricExporter = new InMemoryMetricExporter(
+    AggregationTemporality.CUMULATIVE,
+  );
   const metricReader = new PeriodicExportingMetricReader({
     exporter: metricExporter,
     exportIntervalMillis: 60_000,
