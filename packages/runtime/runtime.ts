@@ -1,4 +1,4 @@
-import { type Span, SpanStatusCode } from "npm:@opentelemetry/api@^1.9.0";
+import { type Span, SpanStatusCode } from "@opentelemetry/api";
 import type {
   Config,
   Context,
