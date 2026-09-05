@@ -7,12 +7,14 @@ import type {
   ListenerResult,
   Logger,
   Route,
+  TelemetryAttributes,
+  TelemetrySpan,
 } from "@hooksmith/core";
 import {
   elapsedSeconds,
-  getRuntimeTelemetry,
-  type TelemetryAttributes,
-  type TelemetrySpan,
+  recordEventMetrics,
+  recordListenerMetrics,
+  startActiveSpan,
 } from "./telemetry.ts";
 import type { ListenerReport, RunReport, Runtime } from "./types.ts";
 import {
@@ -53,9 +55,8 @@ async function executeEvent<TEvent extends Event>(
 ): Promise<RunReport> {
   const mode = plan ? "plan" : "run";
   const startedAt = performance.now();
-  const telemetry = getRuntimeTelemetry();
 
-  return await telemetry.startActiveSpan(
+  return await startActiveSpan(
     plan ? "hooksmith.event.plan" : "hooksmith.event.process",
     {
       "hooksmith.event.type": event.type,
@@ -86,7 +87,7 @@ async function executeEvent<TEvent extends Event>(
           span.setError();
         }
 
-        telemetry.recordEventMetrics(elapsedSeconds(startedAt), attributes);
+        recordEventMetrics(elapsedSeconds(startedAt), attributes);
         return report;
       } catch (error) {
         span.recordException(toException(error));
@@ -98,7 +99,7 @@ async function executeEvent<TEvent extends Event>(
           "hooksmith.status": "error",
         };
         span.setAttributes(attributes);
-        telemetry.recordEventMetrics(elapsedSeconds(startedAt), attributes);
+        recordEventMetrics(elapsedSeconds(startedAt), attributes);
         throw error;
       } finally {
         span.end();
@@ -318,8 +319,7 @@ async function executeListeners<TEvent extends Event>(
     });
 
     const startedAt = performance.now();
-    const telemetry = getRuntimeTelemetry();
-    await telemetry.startActiveSpan(
+    await startActiveSpan(
       "hooksmith.listener",
       {
         "hooksmith.event.type": event.type,
@@ -344,10 +344,7 @@ async function executeListeners<TEvent extends Event>(
             span.setError();
           }
 
-          telemetry.recordListenerMetrics(
-            elapsedSeconds(startedAt),
-            attributes,
-          );
+          recordListenerMetrics(elapsedSeconds(startedAt), attributes);
 
           log.debug("Listener {listener} completed with status {status}", {
             listener: listenerName,
@@ -365,10 +362,7 @@ async function executeListeners<TEvent extends Event>(
             "hooksmith.status": "error",
           };
           span.setAttributes(attributes);
-          telemetry.recordListenerMetrics(
-            elapsedSeconds(startedAt),
-            attributes,
-          );
+          recordListenerMetrics(elapsedSeconds(startedAt), attributes);
 
           log.error(
             "Listener {listener} threw while executing route {route}",
