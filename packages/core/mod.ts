@@ -122,3 +122,17 @@ export interface Config<TEvent extends Event = Event> {
   routes: Route<TEvent>[];
   fallback?: Listener<TEvent>[];
 }
+
+export {
+  getTelemetry,
+  setTelemetry,
+} from "./telemetry.ts";
+export type {
+  Telemetry,
+  TelemetryAttributes,
+  TelemetryAttributeValue,
+  TelemetryCounter,
+  TelemetryHistogram,
+  TelemetryInstrumentOptions,
+  TelemetrySpan,
+} from "./telemetry.ts";
