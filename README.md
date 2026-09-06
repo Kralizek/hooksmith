@@ -1,6 +1,6 @@
 # hooksmith
 
-Hooksmith is a small, generic event-processing toolkit for Deno. It hydrates event documents, evaluates configured routes, and invokes listeners for every matching route. Around that runtime, the ecosystem adds typed listener-side pipelines, reusable conditions and HTTP listeners, command-line and streaming hosts, a GitHub Action, and provider-specific extensions.
+Hooksmith is a small, generic event-processing toolkit for Deno. It hydrates event documents, evaluates configured routes, and invokes listeners for every matching route. Around that runtime, the ecosystem adds typed listener-side pipelines, reusable conditions and HTTP listeners, command-line, streaming, HTTP server, and AWS Lambda hosts, a GitHub Action, and provider-specific extensions.
 
 The project deliberately keeps event production outside the runtime. A static-site pipeline, a release workflow, a deployment system, an AWS event source, or any other producer can serialize or adapt an event and hand it to Hooksmith.
 
@@ -19,8 +19,9 @@ The Hooksmith runtime packages in this repository are versioned and released tog
 | [`@hooksmith/runtime`](https://jsr.io/@hooksmith/runtime) | [![latest](https://jsr.io/badges/@hooksmith/runtime)](https://jsr.io/@hooksmith/runtime) | [![downloads](https://jsr.io/badges/@hooksmith/runtime/total-downloads)](https://jsr.io/@hooksmith/runtime) | Event hydration, validation, routing, planning, listener execution, fallback handling, and run reports. |
 | [`@hooksmith/standard`](https://jsr.io/@hooksmith/standard) | [![latest](https://jsr.io/badges/@hooksmith/standard)](https://jsr.io/@hooksmith/standard) | [![downloads](https://jsr.io/badges/@hooksmith/standard/total-downloads)](https://jsr.io/@hooksmith/standard) | Standard generic conditions, condition composition, and basic listeners for authoring Hooksmith configuration. |
 | [`@hooksmith/http`](https://jsr.io/@hooksmith/http) | [![latest](https://jsr.io/badges/@hooksmith/http)](https://jsr.io/@hooksmith/http) | [![downloads](https://jsr.io/badges/@hooksmith/http/total-downloads)](https://jsr.io/@hooksmith/http) | HTTP request listeners plus helpers for headers, authentication, request bodies, status assertions, response mapping, and reporting. |
+| [`@hooksmith/opentelemetry`](https://jsr.io/@hooksmith/opentelemetry) | [![latest](https://jsr.io/badges/@hooksmith/opentelemetry)](https://jsr.io/@hooksmith/opentelemetry) | [![downloads](https://jsr.io/badges/@hooksmith/opentelemetry/total-downloads)](https://jsr.io/@hooksmith/opentelemetry) | OpenTelemetry integration that connects Hooksmith telemetry to the global OpenTelemetry API providers without configuring an SDK or exporter. |
 
-For extension authors, `@hooksmith/core` is the primary dependency. `@hooksmith/pipeline` provides listener-side transformation composition without depending on the runtime engine. `@hooksmith/standard` provides reusable configuration building blocks without depending on the runtime engine, while `@hooksmith/http` provides protocol-level HTTP listeners that provider-specific extensions can build on.
+For extension authors, `@hooksmith/core` is the primary dependency. `@hooksmith/pipeline` provides listener-side transformation composition without depending on the runtime engine. `@hooksmith/standard` provides reusable configuration building blocks without depending on the runtime engine, `@hooksmith/http` provides protocol-level HTTP listeners that provider-specific extensions can build on, and `@hooksmith/opentelemetry` bridges Hooksmith telemetry to OpenTelemetry providers.
 
 ## Hosts
 
@@ -30,6 +31,7 @@ Hooksmith hosts provide environments for loading and running a Hooksmith runtime
 | --- | --- | --- | --- | --- |
 | [`@hooksmith/aws-lambda`](https://jsr.io/@hooksmith/aws-lambda) | [![latest](https://jsr.io/badges/@hooksmith/aws-lambda)](https://jsr.io/@hooksmith/aws-lambda) | [![downloads](https://jsr.io/badges/@hooksmith/aws-lambda/total-downloads)](https://jsr.io/@hooksmith/aws-lambda) | [`aws`](https://github.com/Kralizek/hooksmith-aws) | AWS Lambda host for Hooksmith runtimes. |
 | [`@hooksmith/cli`](https://jsr.io/@hooksmith/cli) | [![latest](https://jsr.io/badges/@hooksmith/cli)](https://jsr.io/@hooksmith/cli) | [![downloads](https://jsr.io/badges/@hooksmith/cli/total-downloads)](https://jsr.io/@hooksmith/cli) | [`cli`](https://github.com/Kralizek/hooksmith-cli) | Command-line and streaming host, also distributed as a Docker image and GitHub Action. |
+| [`@hooksmith/server`](https://jsr.io/@hooksmith/server) | [![latest](https://jsr.io/badges/@hooksmith/server)](https://jsr.io/@hooksmith/server) | [![downloads](https://jsr.io/badges/@hooksmith/server/total-downloads)](https://jsr.io/@hooksmith/server) | [`server`](https://github.com/Kralizek/hooksmith-server) | Long-running HTTP server host for processing Hooksmith events and adapting webhook ingress. |
 
 ## External extensions
 
@@ -49,9 +51,10 @@ Provider-specific extensions can live in separate repositories and follow their 
 
 ```text
 packages/
-  core/       Public contracts for extension authors
-  pipeline/   Typed listener-side transformation pipelines
-  runtime/    Validation, routing, execution, planning, and reports
+  core/            Public contracts for extension authors
+  opentelemetry/   OpenTelemetry bridge for Hooksmith telemetry
+  pipeline/        Typed listener-side transformation pipelines
+  runtime/         Validation, routing, execution, planning, and reports
 extensions/
   standard/   Generic conditions, composition, and basic listeners
   http/       HTTP request listeners and request/response helpers
@@ -64,7 +67,7 @@ examples/
   aws-sqs-slack-lambda/    SQS -> Hooksmith -> Slack Lambda example
 ```
 
-The main runtime dependency direction is intentionally one-way: `core <- runtime`. The pipeline, standard, and HTTP packages depend only on `core`.
+The main runtime dependency direction is intentionally one-way: `core <- runtime`. The pipeline, standard, and HTTP packages depend only on `core`; the OpenTelemetry package also depends on `core` and bridges it to the OpenTelemetry API.
 
 ## Event model
 
