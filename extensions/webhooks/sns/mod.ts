@@ -5,3 +5,4 @@
  */
 
 export * from "./sns.ts";
+export type { SnsNotification } from "./types.ts";
