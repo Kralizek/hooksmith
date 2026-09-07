@@ -20,6 +20,22 @@ Deno.test("fromSnsHttp rejects invalid JSON with SNS context", async () => {
   assertInstanceOf(error.cause, SyntaxError);
 });
 
+Deno.test("fromSnsHttp rejects non-object JSON payloads", async () => {
+  await assertRejects(
+    () =>
+      fromSnsHttp({
+        request: {
+          method: "POST",
+          url: "https://example.com/events",
+          headers: new Headers(),
+          body: new TextEncoder().encode(JSON.stringify(["not", "sns"])),
+        },
+      }),
+    TypeError,
+    "Invalid Amazon SNS webhook payload: expected a JSON object.",
+  );
+});
+
 Deno.test("fromSnsHttp rejects unsigned SNS HTTP deliveries", async () => {
   const body = new TextEncoder().encode(JSON.stringify({
     Type: "Notification",
