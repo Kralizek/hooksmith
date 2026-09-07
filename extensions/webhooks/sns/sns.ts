@@ -28,7 +28,9 @@ function parseSnsNotification(body: Uint8Array): SnsNotification {
     });
   }
 
-  if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
+  if (
+    payload === null || typeof payload !== "object" || Array.isArray(payload)
+  ) {
     throw new TypeError(
       "Invalid Amazon SNS webhook payload: expected a JSON object.",
     );
