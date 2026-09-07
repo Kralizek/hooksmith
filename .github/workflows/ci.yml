@@ -21,23 +21,8 @@ jobs:
           deno-version: v2.x
           cache: true
 
-      - name: Check formatting
-        run: deno fmt --check
-
-      - name: Capture lint output
-        shell: bash
-        run: deno lint --json > lint.json || true
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: lint-output
-          path: lint.json
-
-      - name: Check docs
-        run: deno task check:docs
-
-      - name: Test
-        run: deno test -A
+      - name: Check
+        run: deno task check
 
       - name: Validate packages
         run: deno publish --dry-run
