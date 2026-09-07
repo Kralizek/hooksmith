@@ -101,3 +101,27 @@ Deno.test("mapSnsNotification maps SNS fields into EventDocument", () => {
     data: { orderId: "order-42" },
   });
 });
+
+Deno.test("mapSnsNotification ignores inherited reserved metadata keys", () => {
+  const attributes = Object.create({ sns: "inherited" }) as Record<
+    string,
+    unknown
+  >;
+  attributes.tenant = { Type: "String", Value: "tenant-1" };
+
+  const document = mapSnsNotification({
+    Type: "Notification",
+    MessageId: "message-1",
+    TopicArn: "arn:aws:sns:eu-north-1:123:orders",
+    Message: "hello",
+    Timestamp: "2026-09-07T12:00:00Z",
+    MessageAttributes: attributes,
+  });
+
+  assertEquals(document.metadata, {
+    tenant: "tenant-1",
+    sns: {
+      notificationType: "Notification",
+    },
+  });
+});
