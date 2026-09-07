@@ -18,13 +18,23 @@ export async function fromSnsHttp<TData = unknown>(
 }
 
 function parseSnsNotification(body: Uint8Array): SnsNotification {
+  let payload: unknown;
+
   try {
-    return JSON.parse(new TextDecoder().decode(body)) as SnsNotification;
+    payload = JSON.parse(new TextDecoder().decode(body));
   } catch (error) {
     throw new TypeError("Invalid Amazon SNS webhook payload: expected JSON.", {
       cause: error,
     });
   }
+
+  if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new TypeError(
+      "Invalid Amazon SNS webhook payload: expected a JSON object.",
+    );
+  }
+
+  return payload as SnsNotification;
 }
 
 function validateSnsMessage(notification: SnsNotification): Promise<void> {
