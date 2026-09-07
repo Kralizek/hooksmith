@@ -79,7 +79,7 @@ function assertReservedMetadataKeyAvailable(
   attributes: Record<string, unknown> | undefined,
   key: string,
 ): void {
-  if (attributes !== undefined && key in attributes) {
+  if (attributes !== undefined && Object.hasOwn(attributes, key)) {
     throw new Error(
       `SNS message attribute "${key}" conflicts with reserved Hooksmith metadata key "${key}".`,
     );
