@@ -1,23 +1,7 @@
 import type { EventDocument } from "@hooksmith/core";
 import type { HttpIngressContext } from "@hooksmith/core/ingress";
 import MessageValidator from "npm:sns-validator@^0.3.5";
-
-/** Amazon SNS HTTP notification shape. */
-export interface SnsNotification {
-  Type: string;
-  MessageId: string;
-  TopicArn: string;
-  Subject?: string;
-  Message: string;
-  Timestamp: string;
-  SignatureVersion?: string;
-  Signature?: string;
-  SigningCertURL?: string;
-  UnsubscribeURL?: string;
-  SubscribeURL?: string;
-  Token?: string;
-  MessageAttributes?: Record<string, unknown>;
-}
+import type { SnsNotification } from "./types.ts";
 
 const validator = new MessageValidator();
 
