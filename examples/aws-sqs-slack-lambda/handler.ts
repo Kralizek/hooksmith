@@ -1,10 +1,17 @@
 import { fromSqs } from "@hooksmith/aws/sqs";
 import { createProcessor } from "@hooksmith/aws-lambda";
 import { createHandler } from "@hooksmith/aws-lambda/sqs";
-import { createRuntime } from "@hooksmith/runtime";
+import {
+  createConsoleLogWriter,
+  createLoggerFactory,
+  createRuntime,
+} from "@hooksmith/runtime";
 import config from "./hooksmith.config.ts";
 
-const context = { log: console };
+const logger = createLoggerFactory({
+  write: createConsoleLogWriter(),
+});
+const context = { logger };
 const processor = createProcessor(createRuntime(config, context));
 
 export const handler = createHandler(
