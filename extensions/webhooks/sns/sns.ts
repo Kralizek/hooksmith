@@ -1,5 +1,6 @@
 import type { EventDocument } from "@hooksmith/core";
 import type { HttpIngressContext } from "@hooksmith/core/ingress";
+// @deno-types="npm:@types/sns-validator@^0.3.3"
 import MessageValidator from "npm:sns-validator@^0.3.5";
 import type { SnsNotification } from "./types.ts";
 
