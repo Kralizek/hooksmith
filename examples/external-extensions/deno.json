@@ -2,8 +2,8 @@
   "imports": {
     "@hooksmith/core": "jsr:@hooksmith/core@^0.10.0",
     "@hooksmith/standard": "jsr:@hooksmith/standard@^0.10.0",
-    "@hooksmith/bluesky": "jsr:@hooksmith/bluesky@^0.1.0",
-    "@hooksmith/slack": "jsr:@hooksmith/slack@^0.2.2"
+    "@hooksmith/bluesky": "jsr:@hooksmith/bluesky@^0.1.3",
+    "@hooksmith/slack": "jsr:@hooksmith/slack@^0.2.3"
   },
   "tasks": {
     "check": "deno check hooksmith.config.ts"
