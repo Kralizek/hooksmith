@@ -2,13 +2,13 @@
 
 Reusable HTTP webhook ingress mappers for Hooksmith.
 
-Provider families are exposed through focused subpaths so their dependencies stay
-isolated. The package root does not import provider implementations.
+Provider families are exposed through focused subpaths so their dependencies
+stay isolated. The package root does not import provider implementations.
 
 ## Amazon SNS
 
-`@hooksmith/webhooks/sns` verifies Amazon SNS HTTP/HTTPS deliveries and maps them
-to Hooksmith `EventDocument` values.
+`@hooksmith/webhooks/sns` verifies Amazon SNS HTTP/HTTPS deliveries and maps
+them to Hooksmith `EventDocument` values.
 
 ```ts
 import { fromSnsHttp } from "@hooksmith/webhooks/sns";
