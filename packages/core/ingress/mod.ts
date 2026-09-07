@@ -1,3 +1,9 @@
+/**
+ * HTTP ingress contracts shared across Hooksmith hosts and webhook mappers.
+ *
+ * @module
+ */
+
 import type { EventDocument } from "../mod.ts";
 
 /** Normalized HTTP request data exposed to an ingress mapper. */
