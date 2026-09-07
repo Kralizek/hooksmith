@@ -1,5 +1,5 @@
 /** Amazon SNS HTTP notification shape. */
-export interface SnsNotification {
+export interface SnsNotification extends Record<string, unknown> {
   Type: string;
   MessageId: string;
   TopicArn: string;
