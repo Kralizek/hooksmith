@@ -19,9 +19,10 @@ The Hooksmith runtime packages in this repository are versioned and released tog
 | [`@hooksmith/runtime`](https://jsr.io/@hooksmith/runtime) | [![latest](https://jsr.io/badges/@hooksmith/runtime)](https://jsr.io/@hooksmith/runtime) | [![downloads](https://jsr.io/badges/@hooksmith/runtime/total-downloads)](https://jsr.io/@hooksmith/runtime) | Event hydration, validation, routing, planning, listener execution, fallback handling, and run reports. |
 | [`@hooksmith/standard`](https://jsr.io/@hooksmith/standard) | [![latest](https://jsr.io/badges/@hooksmith/standard)](https://jsr.io/@hooksmith/standard) | [![downloads](https://jsr.io/badges/@hooksmith/standard/total-downloads)](https://jsr.io/@hooksmith/standard) | Standard generic conditions, condition composition, and basic listeners for authoring Hooksmith configuration. |
 | [`@hooksmith/http`](https://jsr.io/@hooksmith/http) | [![latest](https://jsr.io/badges/@hooksmith/http)](https://jsr.io/@hooksmith/http) | [![downloads](https://jsr.io/badges/@hooksmith/http/total-downloads)](https://jsr.io/@hooksmith/http) | HTTP request listeners plus helpers for headers, authentication, request bodies, status assertions, response mapping, and reporting. |
+| [`@hooksmith/webhooks`](https://jsr.io/@hooksmith/webhooks) | [![latest](https://jsr.io/badges/@hooksmith/webhooks)](https://jsr.io/@hooksmith/webhooks) | [![downloads](https://jsr.io/badges/@hooksmith/webhooks/total-downloads)](https://jsr.io/@hooksmith/webhooks) | Reusable HTTP webhook ingress mappers with provider-specific subpaths such as Amazon SNS. |
 | [`@hooksmith/opentelemetry`](https://jsr.io/@hooksmith/opentelemetry) | [![latest](https://jsr.io/badges/@hooksmith/opentelemetry)](https://jsr.io/@hooksmith/opentelemetry) | [![downloads](https://jsr.io/badges/@hooksmith/opentelemetry/total-downloads)](https://jsr.io/@hooksmith/opentelemetry) | OpenTelemetry integration that connects Hooksmith telemetry to the global OpenTelemetry API providers without configuring an SDK or exporter. |
 
-For extension authors, `@hooksmith/core` is the primary dependency. `@hooksmith/pipeline` provides listener-side transformation composition without depending on the runtime engine. `@hooksmith/standard` provides reusable configuration building blocks without depending on the runtime engine, `@hooksmith/http` provides protocol-level HTTP listeners that provider-specific extensions can build on, and `@hooksmith/opentelemetry` bridges Hooksmith telemetry to OpenTelemetry providers.
+For extension authors, `@hooksmith/core` is the primary dependency. `@hooksmith/pipeline` provides listener-side transformation composition without depending on the runtime engine. `@hooksmith/standard` provides reusable configuration building blocks without depending on the runtime engine, `@hooksmith/http` provides protocol-level HTTP listeners that provider-specific extensions can build on, `@hooksmith/webhooks` provides reusable ingress mappers for vendor webhook protocols, and `@hooksmith/opentelemetry` bridges Hooksmith telemetry to OpenTelemetry providers.
 
 ## Hosts
 
@@ -58,6 +59,7 @@ packages/
 extensions/
   standard/   Generic conditions, composition, and basic listeners
   http/       HTTP request listeners and request/response helpers
+  webhooks/   HTTP webhook ingress mappers grouped by provider subpath
 examples/
   basic/                   Minimal event and configuration example
   pipeline/                Listener-side transformation composition
@@ -67,7 +69,7 @@ examples/
   aws-sqs-slack-lambda/    SQS -> Hooksmith -> Slack Lambda example
 ```
 
-The main runtime dependency direction is intentionally one-way: `core <- runtime`. The pipeline, standard, and HTTP packages depend only on `core`; the OpenTelemetry package also depends on `core` and bridges it to the OpenTelemetry API.
+The main runtime dependency direction is intentionally one-way: `core <- runtime`. The pipeline, standard, HTTP, and webhooks packages depend only on `core`; the OpenTelemetry package also depends on `core` and bridges it to the OpenTelemetry API.
 
 ## Event model
 
@@ -154,6 +156,8 @@ The Hooksmith CLI and GitHub Action are maintained in [`Kralizek/hooksmith-cli`]
 ## Extensions
 
 Hooksmith configuration can consume extension modules from JSR, local files, remote repositories, or import-map aliases. See [`docs/extensions.md`](docs/extensions.md) for the supported patterns and the CI-backed unpublished-extension example.
+
+First-party extensions in this repository include standard conditions/listeners, outbound HTTP helpers, and reusable webhook ingress mappers. The webhook package exposes provider families through isolated subpaths such as `@hooksmith/webhooks/sns`.
 
 The examples directory includes isolated provider extensions, remote unpublished extensions, HTTP and pipeline samples, and an end-to-end SQS-to-Slack Lambda composition.
 
