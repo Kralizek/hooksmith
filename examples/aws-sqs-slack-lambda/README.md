@@ -92,14 +92,15 @@ reports that complete unsuccessfully are also returned as failed batch items by
 
 ## Versions
 
-The example targets the published AWS integration packages from the `0.3` line:
+The example targets the current published Hooksmith lines used by this repo:
 
-- `@hooksmith/aws@^0.3.0`
-- `@hooksmith/aws-lambda@^0.3.0`
-
-It also uses `@hooksmith/slack@^0.2.2` and `@hooksmith/teams@^0.2.2`, so the
-resulting Hooksmith report identifies the provider listeners as `slack` and
-`teams` rather than the underlying HTTP listeners.
+- `@hooksmith/core@^0.11.0`
+- `@hooksmith/runtime@^0.11.0`
+- `@hooksmith/standard@^0.11.0`
+- `@hooksmith/aws@^0.3.1`
+- `@hooksmith/aws-lambda@^0.3.1`
+- `@hooksmith/slack@^0.2.3`
+- `@hooksmith/teams@^0.2.3`
 
 ## Packaging
 
@@ -118,7 +119,7 @@ From this directory:
 deno task check
 ```
 
-The example has its own import map. AWS, Slack, and Teams extensions come from
-their published JSR packages while `@hooksmith/core`, `@hooksmith/runtime`, and
-`@hooksmith/standard` point at the local main-repo packages, so CI also checks
-compatibility between the main repo and released external extensions.
+The example has its own import map and consumes published JSR packages for the
+Hooksmith runtime, AWS integration, Slack, and Teams packages. CI therefore
+checks that the example remains compatible with the currently published package
+set rather than relying on local workspace resolution.
