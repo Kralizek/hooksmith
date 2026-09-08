@@ -1,5 +1,8 @@
 # hooksmith
 
+[![CI](https://github.com/Kralizek/hooksmith/actions/workflows/ci.yml/badge.svg)](https://github.com/Kralizek/hooksmith/actions/workflows/ci.yml)
+[![GitHub Release](https://img.shields.io/github/v/release/Kralizek/hooksmith)](https://github.com/Kralizek/hooksmith/releases/latest)
+
 Hooksmith is a small, generic event-processing toolkit for Deno. It hydrates event documents, evaluates configured routes, and invokes listeners for every matching route. Around that runtime, the ecosystem adds typed listener-side pipelines, reusable conditions and HTTP listeners, command-line, streaming, HTTP server, and AWS Lambda hosts, a GitHub Action, and provider-specific extensions.
 
 The project deliberately keeps event production outside the runtime. A static-site pipeline, a release workflow, a deployment system, an AWS event source, or any other producer can serialize or adapt an event and hand it to Hooksmith.
