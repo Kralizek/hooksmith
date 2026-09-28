@@ -168,7 +168,7 @@ jobs:
 
       - name: Validate release tag
         id: version
-        uses: Kralizek/github-actions/actions/validate-release@v0.3
+        uses: Kralizek/github-actions/actions/validate-release@v0.4
         with:
           tag: ${{ steps.release.outputs.tag }}
           prerelease: ${{ github.event_name == 'release' && github.event.release.prerelease }}
