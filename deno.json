@@ -6,7 +6,8 @@
     "./packages/runtime",
     "./extensions/standard",
     "./extensions/http",
-    "./extensions/webhooks"
+    "./extensions/webhooks",
+    "./extensions/html"
   ],
   "imports": {
     "@opentelemetry/api": "npm:@opentelemetry/api@^1.9.0",

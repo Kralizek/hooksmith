@@ -71,6 +71,31 @@ export type HttpResponse<TEvent extends Event = Event> =
   | HttpResponseSuccess<TEvent>
   | HttpResponseOptions<TEvent>;
 
+/** Maps an HTTP text response and its input to the next transformation value. */
+export type TextResponseMap<TInput, TOutput> = (
+  input: TInput,
+  response: string,
+) => TOutput | Promise<TOutput>;
+
+/** Shared options used by text-returning HTTP transformers. */
+export interface TextTransformerOptions<TInput, TOutput = string> {
+  name?: string;
+  url: ValueOrFactory<string | URL, TInput, TransformContext>;
+  headers?:
+    | HeaderSource<TInput, TransformContext>
+    | readonly HeaderSource<TInput, TransformContext>[];
+  map?: TextResponseMap<TInput, TOutput>;
+}
+
+/** Options used by fetchText. */
+export interface FetchTextOptions<TInput, TOutput = string>
+  extends TextTransformerOptions<TInput, TOutput> {
+  method: string;
+  body?:
+    | ValueOrFactory<BodyInit | null, TInput, TransformContext>
+    | HttpBody<TInput, TransformContext>;
+}
+
 /** Options used to create a Hooksmith HTTP request listener. */
 export interface HttpRequestOptions<TEvent extends Event = Event> {
   name?: string;

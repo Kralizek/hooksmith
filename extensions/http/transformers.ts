@@ -6,9 +6,53 @@ import {
 } from "./request.ts";
 import type {
   FetchJsonOptions,
+  FetchTextOptions,
   JsonTransformerOptions,
   PostJsonOptions,
+  TextTransformerOptions,
 } from "./types.ts";
+
+/** Fetches a text response using an arbitrary HTTP method. */
+export function fetchText<TInput, TOutput = string>(
+  options: FetchTextOptions<TInput, TOutput>,
+): Transformer<TInput, TOutput> {
+  const name = options.name ?? `http-${options.method.toLowerCase()}-text`;
+
+  return {
+    name,
+    async transform(input, context): Promise<TOutput> {
+      const log = context.logger.getLogger(`HttpTransformer:${name}`);
+      const { response } = await executeRequest<TInput, TransformContext>(
+        input,
+        context,
+        log,
+        {
+          method: options.method,
+          url: options.url,
+          headers: options.headers,
+          body: options.body,
+          parser: "none",
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(unsuccessfulResponseMessage(response));
+      }
+
+      const responseBody = await response.text();
+      return options.map
+        ? await options.map(input, responseBody)
+        : responseBody as unknown as TOutput;
+    },
+  };
+}
+
+/** Fetches text with GET and replaces the current value with the mapped response. */
+export function getText<TInput, TOutput = string>(
+  options: TextTransformerOptions<TInput, TOutput>,
+): Transformer<TInput, TOutput> {
+  return fetchText({ ...options, method: "GET" });
+}
 
 /** Fetches and parses a JSON response using an arbitrary HTTP method. */
 export function fetchJson<
