@@ -75,7 +75,9 @@ function parseOpenGraphDocument(
 ): OpenGraphMetadata {
   const values = new Map<string, string>();
 
-  for (const match of html.matchAll(/<meta\b[^>]*>/giu)) {
+  for (const match of html.matchAll(
+    /<meta\b(?:"[^"]*"|'[^']*'|[^'">])*>/giu,
+  )) {
     const attributes = parseAttributes(match[0]);
     const property = (
       attributes.get("property") ??
@@ -120,12 +122,25 @@ function readTitle(html: string): string | undefined {
 }
 
 function decodeHtml(value: string): string {
-  return value
-    .replaceAll("&amp;", "&")
-    .replaceAll("&quot;", '"')
-    .replaceAll("&#39;", "'")
-    .replaceAll("&lt;", "<")
-    .replaceAll("&gt;", ">");
+  return value.replace(
+    /&(amp|quot|#39|lt|gt);/gu,
+    (entity) => {
+      switch (entity) {
+        case "&amp;":
+          return "&";
+        case "&quot;":
+          return '"';
+        case "&#39;":
+          return "'";
+        case "&lt;":
+          return "<";
+        case "&gt;":
+          return ">";
+        default:
+          return entity;
+      }
+    },
+  );
 }
 
 function resolveUrl(
