@@ -56,9 +56,11 @@ Deno.test("getOpenGraph fetches HTML through the HTTP transformer", async () => 
   const original = globalThis.fetch;
   globalThis.fetch = (input) => {
     assertEquals(String(input), "https://example.test/article");
-    return Promise.resolve(new Response(
-      '<meta property="og:title" content="Fetched">',
-    ));
+    return Promise.resolve(
+      new Response(
+        '<meta property="og:title" content="Fetched">',
+      ),
+    );
   };
 
   try {
