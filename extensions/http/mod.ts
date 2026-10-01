@@ -15,12 +15,19 @@ export {
   httpPut,
   httpRequest,
 } from "./listeners.ts";
-export { fetchJson, getJson, postJson } from "./transformers.ts";
+export {
+  fetchJson,
+  fetchText,
+  getJson,
+  getText,
+  postJson,
+} from "./transformers.ts";
 export type {
   EnrichmentOptions,
   EnrichmentResponseMap,
   FetchEnrichmentOptions,
   FetchJsonOptions,
+  FetchTextOptions,
   GetEnrichmentOptions,
   HeaderSource,
   HttpBody,
@@ -33,5 +40,7 @@ export type {
   JsonTransformerOptions,
   PostJsonOptions,
   ResponseParser,
+  TextResponseMap,
+  TextTransformerOptions,
   ValueOrFactory,
 } from "./types.ts";
