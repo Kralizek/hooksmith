@@ -74,9 +74,10 @@ function parseOpenGraphDocument(
   baseUrl?: string | URL,
 ): OpenGraphMetadata {
   const values = new Map<string, string>();
+  const document = stripIgnoredHtml(html);
 
   for (
-    const match of html.matchAll(
+    const match of document.matchAll(
       /<meta\b(?:"[^"]*"|'[^']*'|[^'">])*>/giu,
     )
   ) {
@@ -90,7 +91,7 @@ function parseOpenGraphDocument(
     if (!values.has(property)) values.set(property, decodeHtml(content));
   }
 
-  const title = values.get("og:title") ?? readTitle(html);
+  const title = values.get("og:title") ?? readTitle(document);
   const description = values.get("og:description") ??
     values.get("description");
 
@@ -102,6 +103,13 @@ function parseOpenGraphDocument(
     type: values.get("og:type"),
     siteName: values.get("og:site_name"),
   });
+}
+
+function stripIgnoredHtml(html: string): string {
+  return html
+    .replace(/<!--[\s\S]*?-->/gu, "")
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/giu, "")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/giu, "");
 }
 
 function parseAttributes(tag: string): Map<string, string> {
