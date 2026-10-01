@@ -105,3 +105,15 @@ Deno.test("parseOpenGraph ignores metadata-like text inside script and style", a
   const result = await parseOpenGraph().transform(html, transformContext);
   assertEquals(result, { title: "Real" });
 });
+
+
+Deno.test("parseOpenGraph ignores script and style tags with greater-than attributes", async () => {
+  const html = `
+    <script data-example="a > b"><meta property="og:title" content="Script"></script>
+    <style data-example="a > b"><meta property="og:title" content="Style"></style>
+    <title data-example="a > b">Fallback</title>
+  `;
+
+  const result = await parseOpenGraph().transform(html, transformContext);
+  assertEquals(result, { title: "Fallback" });
+});
