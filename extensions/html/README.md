@@ -11,5 +11,5 @@ const metadata = getOpenGraph({
 ```
 
 Use `parseOpenGraph()` when HTML is already part of a pipeline, or
-`getOpenGraph()` to fetch a page through `@hooksmith/http` and extract its
-Open Graph metadata in one transformation.
+`getOpenGraph()` to fetch a page through `@hooksmith/http` and extract its Open
+Graph metadata in one transformation.
