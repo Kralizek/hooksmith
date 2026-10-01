@@ -75,9 +75,11 @@ function parseOpenGraphDocument(
 ): OpenGraphMetadata {
   const values = new Map<string, string>();
 
-  for (const match of html.matchAll(
-    /<meta\b(?:"[^"]*"|'[^']*'|[^'">])*>/giu,
-  )) {
+  for (
+    const match of html.matchAll(
+      /<meta\b(?:"[^"]*"|'[^']*'|[^'">])*>/giu,
+    )
+  ) {
     const attributes = parseAttributes(match[0]);
     const property = (
       attributes.get("property") ??
