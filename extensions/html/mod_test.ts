@@ -86,7 +86,6 @@ Deno.test("parseOpenGraph decodes HTML entities exactly once", async () => {
   assertEquals(result, { title: "&lt;tag&gt;" });
 });
 
-
 Deno.test("parseOpenGraph ignores commented-out metadata", async () => {
   const html = `<!-- <meta property="og:title" content="Commented"> -->
     <meta property="og:title" content="Real">`;
@@ -105,7 +104,6 @@ Deno.test("parseOpenGraph ignores metadata-like text inside script and style", a
   const result = await parseOpenGraph().transform(html, transformContext);
   assertEquals(result, { title: "Real" });
 });
-
 
 Deno.test("parseOpenGraph ignores script and style tags with greater-than attributes", async () => {
   const html = `
