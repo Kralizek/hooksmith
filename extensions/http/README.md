@@ -150,6 +150,19 @@ Unsuccessful HTTP responses throw before the response body is parsed.
 
 ## Transformers
 
+### Text
+
+- `fetchText<TInput, TOutput = string>` sends an HTTP request with an arbitrary
+  method and reads the response body as text.
+- `getText<TInput, TOutput = string>` performs the same transformation with GET.
+
+Text transformers can resolve URL, headers, and (for `fetchText`) request bodies
+from the current pipeline value and `TransformContext`. Without a mapper, the
+response text becomes the next pipeline value; with `map`, the input and text
+response can be projected into another value. Unsuccessful HTTP responses throw.
+
+### JSON
+
 - `fetchJson<TInput, TResponse, TOutput = TResponse>` sends an HTTP request with
   an arbitrary method and parses the JSON response.
 - `getJson<TInput, TResponse, TOutput = TResponse>` performs a GET request and
@@ -157,9 +170,9 @@ Unsuccessful HTTP responses throw before the response body is parsed.
 - `postJson<TInput, TResponse, TOutput = TResponse>` performs a POST request,
   sends JSON, and parses the JSON response.
 
-All JSON transformers assume the response body is JSON that should become part
-of the data flow. They can resolve the URL and headers from the current pipeline
-value and `TransformContext`. Unsuccessful HTTP responses throw, so the pipeline
+JSON transformers assume the response body is JSON that should become part of the
+data flow. They can resolve the URL and headers from the current pipeline value
+and `TransformContext`. Unsuccessful HTTP responses throw, so the pipeline
 reports them as transformation failures.
 
 Use `fetchJson` when the method is not covered by a convenience transformer:
