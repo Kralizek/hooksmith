@@ -1,7 +1,4 @@
-import type {
-  TransformContext,
-  Transformer,
-} from "@hooksmith/core";
+import type { TransformContext, Transformer } from "@hooksmith/core";
 import {
   getText,
   type HeaderSource,
@@ -82,7 +79,7 @@ function parseOpenGraphDocument(
     const attributes = parseAttributes(match[0]);
     const property = (
       attributes.get("property") ??
-      attributes.get("name")
+        attributes.get("name")
     )?.toLowerCase();
     const content = attributes.get("content");
     if (!property || content === undefined) continue;
