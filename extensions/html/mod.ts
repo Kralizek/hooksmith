@@ -108,8 +108,14 @@ function parseOpenGraphDocument(
 function stripIgnoredHtml(html: string): string {
   return html
     .replace(/<!--[\s\S]*?-->/gu, "")
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/giu, "")
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/giu, "");
+    .replace(
+      /<script\b(?:"[^"]*"|'[^']*'|[^'">])*>[\s\S]*?<\/script>/giu,
+      "",
+    )
+    .replace(
+      /<style\b(?:"[^"]*"|'[^']*'|[^'">])*>[\s\S]*?<\/style>/giu,
+      "",
+    );
 }
 
 function parseAttributes(tag: string): Map<string, string> {
@@ -127,7 +133,8 @@ function parseAttributes(tag: string): Map<string, string> {
 }
 
 function readTitle(html: string): string | undefined {
-  const match = /<title\b[^>]*>([\s\S]*?)<\/title>/iu.exec(html);
+  const match =
+    /<title\b(?:"[^"]*"|'[^']*'|[^'">])*>([\s\S]*?)<\/title>/iu.exec(html);
   return match ? decodeHtml(match[1].trim()) : undefined;
 }
 
