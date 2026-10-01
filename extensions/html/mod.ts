@@ -133,8 +133,8 @@ function parseAttributes(tag: string): Map<string, string> {
 }
 
 function readTitle(html: string): string | undefined {
-  const match =
-    /<title\b(?:"[^"]*"|'[^']*'|[^'">])*>([\s\S]*?)<\/title>/iu.exec(html);
+  const match = /<title\b(?:"[^"]*"|'[^']*'|[^'">])*>([\s\S]*?)<\/title>/iu
+    .exec(html);
   return match ? decodeHtml(match[1].trim()) : undefined;
 }
 
