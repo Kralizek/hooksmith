@@ -73,3 +73,16 @@ Deno.test("getOpenGraph fetches HTML through the HTTP transformer", async () => 
     globalThis.fetch = original;
   }
 });
+
+
+Deno.test("parseOpenGraph preserves greater-than characters inside quoted attributes", async () => {
+  const html = '<meta property="og:title" content="A > B">';
+  const result = await parseOpenGraph().transform(html, transformContext);
+  assertEquals(result, { title: "A > B" });
+});
+
+Deno.test("parseOpenGraph decodes HTML entities exactly once", async () => {
+  const html = '<meta property="og:title" content="&amp;lt;tag&amp;gt;">';
+  const result = await parseOpenGraph().transform(html, transformContext);
+  assertEquals(result, { title: "&lt;tag&gt;" });
+});
