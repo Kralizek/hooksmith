@@ -5,7 +5,7 @@ HTML parsing and metadata extraction utilities for Hooksmith.
 ```ts
 import { getOpenGraph } from "@hooksmith/html";
 
-const metadata = getOpenGraph({
+const transformer = getOpenGraph({
   url: "https://example.com/article",
 });
 ```
