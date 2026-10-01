@@ -74,7 +74,6 @@ Deno.test("getOpenGraph fetches HTML through the HTTP transformer", async () => 
   }
 });
 
-
 Deno.test("parseOpenGraph preserves greater-than characters inside quoted attributes", async () => {
   const html = '<meta property="og:title" content="A > B">';
   const result = await parseOpenGraph().transform(html, transformContext);
