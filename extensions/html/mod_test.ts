@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
 import type { Context, TransformContext } from "@hooksmith/core";
 import { nullLoggerFactory } from "@hooksmith/runtime";
-import { getOpenGraph, parseOpenGraph } from "./mod.ts";
+import { parseOpenGraph } from "./mod.ts";
 
 const context: Context = {
   logger: nullLoggerFactory,
@@ -50,28 +50,6 @@ Deno.test("parseOpenGraph falls back to title and description metadata", async (
     title: "Fallback title",
     description: "Fallback description",
   });
-});
-
-Deno.test("getOpenGraph fetches HTML through the HTTP transformer", async () => {
-  const original = globalThis.fetch;
-  globalThis.fetch = (input) => {
-    assertEquals(String(input), "https://example.test/article");
-    return Promise.resolve(
-      new Response(
-        '<meta property="og:title" content="Fetched">',
-      ),
-    );
-  };
-
-  try {
-    const result = await getOpenGraph<unknown>({
-      url: "https://example.test/article",
-    }).transform({}, transformContext);
-
-    assertEquals(result, { title: "Fetched" });
-  } finally {
-    globalThis.fetch = original;
-  }
 });
 
 Deno.test("parseOpenGraph preserves greater-than characters inside quoted attributes", async () => {

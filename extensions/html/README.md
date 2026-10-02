@@ -3,13 +3,16 @@
 HTML parsing and metadata extraction utilities for Hooksmith.
 
 ```ts
-import { getOpenGraph } from "@hooksmith/html";
+import { parseOpenGraph } from "@hooksmith/html";
 
-const transformer = getOpenGraph({
-  url: "https://example.com/article",
+const transformer = parseOpenGraph({
+  baseUrl: "https://example.com/article",
 });
 ```
 
-Use `parseOpenGraph()` when HTML is already part of a pipeline, or
-`getOpenGraph()` to fetch a page through `@hooksmith/http` and extract its Open
-Graph metadata in one transformation.
+`parseOpenGraph()` transforms an HTML string into typed Open Graph metadata.
+When `baseUrl` is provided, relative metadata URLs such as `og:image` and
+`og:url` are resolved against it.
+
+The package operates on HTML strings and is independent of how that HTML is
+loaded or produced.

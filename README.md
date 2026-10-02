@@ -26,7 +26,7 @@ The Hooksmith runtime packages in this repository are versioned and released tog
 | [`@hooksmith/webhooks`](https://jsr.io/@hooksmith/webhooks) | [![latest](https://jsr.io/badges/@hooksmith/webhooks)](https://jsr.io/@hooksmith/webhooks) | [![downloads](https://jsr.io/badges/@hooksmith/webhooks/total-downloads)](https://jsr.io/@hooksmith/webhooks) | Reusable HTTP webhook ingress mappers with provider-specific subpaths such as Amazon SNS. |
 | [`@hooksmith/opentelemetry`](https://jsr.io/@hooksmith/opentelemetry) | [![latest](https://jsr.io/badges/@hooksmith/opentelemetry)](https://jsr.io/@hooksmith/opentelemetry) | [![downloads](https://jsr.io/badges/@hooksmith/opentelemetry/total-downloads)](https://jsr.io/@hooksmith/opentelemetry) | OpenTelemetry integration that connects Hooksmith telemetry to the global OpenTelemetry API providers without configuring an SDK or exporter. |
 
-For extension authors, `@hooksmith/core` is the primary dependency. `@hooksmith/pipeline` provides listener-side transformation composition without depending on the runtime engine. `@hooksmith/standard` provides reusable configuration building blocks without depending on the runtime engine, `@hooksmith/http` provides protocol-level HTTP listeners and transformers, `@hooksmith/html` provides HTML parsing and metadata extraction utilities built on the core and HTTP packages, `@hooksmith/webhooks` provides reusable ingress mappers for vendor webhook protocols, and `@hooksmith/opentelemetry` bridges Hooksmith telemetry to OpenTelemetry providers.
+For extension authors, `@hooksmith/core` is the primary dependency. `@hooksmith/pipeline` provides listener-side transformation composition without depending on the runtime engine. `@hooksmith/standard` provides reusable configuration building blocks without depending on the runtime engine, `@hooksmith/http` provides protocol-level HTTP listeners and transformers, `@hooksmith/html` provides HTML parsing and metadata extraction utilities for HTML strings, `@hooksmith/webhooks` provides reusable ingress mappers for vendor webhook protocols, and `@hooksmith/opentelemetry` bridges Hooksmith telemetry to OpenTelemetry providers.
 
 ## Hosts
 
@@ -74,7 +74,7 @@ examples/
   aws-sqs-slack-lambda/    SQS -> Hooksmith -> Slack Lambda example
 ```
 
-The main runtime dependency direction is intentionally one-way: `core <- runtime`. The pipeline, standard, HTTP, and webhooks packages depend only on `core`; the HTML package depends on `core` and `http`; the OpenTelemetry package also depends on `core` and bridges it to the OpenTelemetry API.
+The main runtime dependency direction is intentionally one-way: `core <- runtime`. The pipeline, standard, HTTP, and webhooks packages depend only on `core`; the HTML package depends only on `core`; the OpenTelemetry package also depends on `core` and bridges it to the OpenTelemetry API.
 
 ## Event model
 
